@@ -25,6 +25,8 @@
         CGRect rect = CGRectMake(0, 0, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
 
+	self.temp = @"?";
+	self.code = @"3200";
 	self.isCelsius = false;
 
 	NSBundle* bundle = [NSBundle mainBundle];
@@ -108,12 +110,15 @@ foundCharacters:(NSString *)string
 - (void) refresh
 {
 	NSLog(@"WI: Refreshing weather...");
-	NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
-	NSURL* url = [NSURL URLWithString:urlStr];
-	NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
-	[parser setDelegate:self];
-	[parser parse];
-	[parser release];
+	if (self.location)
+	{
+		NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
+		NSURL* url = [NSURL URLWithString:urlStr];
+		NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+		[parser setDelegate:self];
+		[parser parse];
+		[parser release];
+	}
 
 	NSBundle* sb = [NSBundle mainBundle];
 	NSString* iconName = [@"weather" stringByAppendingString:self.code];
