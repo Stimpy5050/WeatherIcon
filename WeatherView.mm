@@ -120,6 +120,12 @@ foundCharacters:(NSString *)string
 		[parser release];
 	}
 
+	if (!self.temp)
+		self.temp = @"?";
+
+	if (!self.code)
+		self.code = @"3200";
+
 	NSBundle* sb = [NSBundle mainBundle];
 	NSString* iconName = [@"weather" stringByAppendingString:self.code];
 	NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
