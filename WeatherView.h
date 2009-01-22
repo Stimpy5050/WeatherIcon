@@ -14,14 +14,17 @@
 {
 	SBApplicationIcon *_icon;
 	UIImageView *_image;
-	UILabel *_temp;
 }
 
 @property(nonatomic) BOOL isCelsius;
-@property(nonatomic) NSString* location;
-@property(nonatomic) NSString* temp;
-@property(nonatomic) NSString* code;
+@property(nonatomic retain) NSString* location;
+@property(nonatomic retain) NSString* temp;
+@property(nonatomic retain) NSString* code;
+@property(nonatomic) int refreshInterval;
+@property(nonatomic retain) NSDate* nextRefreshTime;
+@property(nonatomic retain) NSDate* lastUpdateTime;
 
++ (NSDictionary*)preferences;
 - (id)initWithIcon:(SBApplicationIcon*)icon;
 - (void)refresh;
 - (void)drawRect:(CGRect)rect;

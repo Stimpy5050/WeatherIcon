@@ -10,39 +10,64 @@
 #include <substrate.h>
 #import "WeatherView.h"
 #import <SpringBoard/SBApplicationIcon.h>
-#import <SpringBoard/SBBookmarkIcon.h>
-#import <SpringBoard/SBCalendarController.h>
-#import <SpringBoard/CDStructures.h>
+#import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBAwayController.h>
 #import <UIKit/UIKit.h>
  
 @protocol WeatherIcon
 - (id) wi_initWithApplication:(id) app;
+- (void) wi__unlockWithSound:(BOOL) b;
+- (BOOL) wi_deactivate;
 @end
 
-static bool _settingsLoaded = false;
-static bool _celsius = false;
-
-static NSTimer  *_timer;
+static NSString* _weatherBundleIdentifier;
 static WeatherView* _view;
 
 static void $initView$(SBApplicationIcon *icon) 
 {
-
 	_view = [[WeatherView alloc] initWithIcon:icon];
-	_view.opaque = NO;
-	_view.userInteractionEnabled = NO;
-
-	_timer = [NSTimer scheduledTimerWithTimeInterval:1800 target:_view selector:@selector(refresh) userInfo:nil repeats:YES];
-
 	[icon addSubview:_view];
+
+	[_view refresh];
+}
+
+static BOOL $SBApplication$deactivate(SBApplication<WeatherIcon> *self, SEL sel) 
+{
+	NSLog(@"WI: Deactivating...");
+	if (_view)
+		[_view refresh];
+
+	return [self wi_deactivate];
+}
+
+static void $SBAwayController$_unlockWithSound$(SBAwayController<WeatherIcon> *self, SEL sel, BOOL b) 
+{
+	[self wi__unlockWithSound:b];
+
+	if (_view)
+		[_view refresh];
 }
 
 static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon> *self, SEL sel, id app) 
 {
-	id ret =[self wi_initWithApplication:app];
+	id ret = [self wi_initWithApplication:app];
 
-	if ([[app bundleIdentifier] isEqualToString:@"com.apple.weather"])
+	if (!_weatherBundleIdentifier)
 	{
+		NSString* bundleIdentifier = @"com.apple.weather";
+	
+		NSDictionary* prefs = [WeatherView preferences];
+		if (prefs)
+			if (NSString* bi = [prefs objectForKey:@"WeatherBundleIdentifier"])
+				bundleIdentifier = bi;
+
+		NSLog(@"WI: Linking to %@", bundleIdentifier);
+		_weatherBundleIdentifier = [[NSString stringWithString:bundleIdentifier] retain];
+	}
+
+	if ([[app bundleIdentifier] isEqualToString:_weatherBundleIdentifier])
+	{
+		NSLog(@"WI: Linking weather icon to %@", _weatherBundleIdentifier);
 		$initView$(self);
 	}
 
@@ -55,7 +80,11 @@ extern "C" void WeatherIconInitialize() {
 
 	// Get the SBIcon class
 	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
+	Class $SBApplication = objc_getClass("SBApplication");
+	Class $SBAwayController = objc_getClass("SBAwayController");
 	
 	// MSHookMessage is what we use to redirect the methods to our own
 	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");
+	MSHookMessage($SBApplication, @selector(deactivate), (IMP) &$SBApplication$deactivate, "wi_");
+	MSHookMessage($SBAwayController, @selector(_unlockWithSound:), (IMP) &$SBAwayController$_unlockWithSound$, "wi_");
 }

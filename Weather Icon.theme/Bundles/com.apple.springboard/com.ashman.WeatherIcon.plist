@@ -6,5 +6,9 @@
 	<false/>
 	<key>Location</key>
 	<string>20852</string>
+	<key>RefreshInterval</key>
+	<integer>15</integer>
+	<key>WeatherBundleIdentifier</key>
+	<string>com.apple.weather</string>
 </dict>
 </plist>

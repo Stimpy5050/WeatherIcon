@@ -10,8 +10,10 @@
 #import "WeatherView.h"
 #import <substrate.h>
 #import <SpringBoard/SBApplicationIcon.h>
+#import <SpringBoard/SleepProofTimer.h>
 #import <UIKit/UIStringDrawing.h>
 #import <UIKit/UIKit.h>
+#import <Foundation/NSObjCRuntime.h>
 
 @implementation WeatherView
 
@@ -19,6 +21,24 @@
 @synthesize location;
 @synthesize temp;
 @synthesize code;
+@synthesize refreshInterval;
+@synthesize nextRefreshTime;
+@synthesize lastUpdateTime;
+
++ (NSDictionary*) preferences
+{
+	NSBundle* bundle = [NSBundle mainBundle];
+	NSString* settingsPath = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
+	NSLog(@"WI: Settings: %@", settingsPath);
+	if (settingsPath)
+	{
+		NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:settingsPath];
+		[dict autorelease];
+		return dict;
+	}
+
+	return nil;
+}
 
 - (id) initWithIcon:(SBApplicationIcon*)icon
 {
@@ -28,15 +48,13 @@
 	self.temp = @"?";
 	self.code = @"3200";
 	self.isCelsius = false;
+	self.refreshInterval = 900;
+	self.opaque = NO;
+	self.userInteractionEnabled = NO;
 
-	NSBundle* bundle = [NSBundle mainBundle];
-	NSString* settingsPath = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
-	NSLog(@"WI: Settings: %@", settingsPath);
-	if (settingsPath)
+	NSDictionary* dict = [WeatherView preferences];
+	if (dict)
 	{
-		NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:settingsPath];
-		[dict autorelease];
-
 		if (NSString* loc = [dict objectForKey:@"Location"])
 			self.location = [[NSString alloc] initWithString:loc];
 		NSLog(@"WI: Location: %@", self.location);
@@ -44,19 +62,21 @@
 		if (NSNumber* celsius = [dict objectForKey:@"Celsius"])
 			self.isCelsius = [celsius boolValue];
 		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
+
+		if (NSNumber* interval = [dict objectForKey:@"RefreshInterval"])
+			self.refreshInterval = ([interval intValue] * 60);
+		NSLog(@"WI: Refresh Interval: %d seconds", self.refreshInterval);
 	}	
 	
         _icon = icon;
 
 	_image = [[UIImageView alloc] initWithFrame:CGRectMake((rect.size.width - 35) / 2, 4, 35, 35)];
 	[self addSubview:_image];
-	
-	// refresh the weather info
-	[self refresh];
 
+	self.nextRefreshTime = [NSDate date];
+	
 	return ret;
 }
-
 
 - (void) drawRect:(CGRect) rect
 {
@@ -73,7 +93,7 @@
 //        float leeway(10);
 //        CGSize tempSize = [self.temp sizeWithFont:[UIFont systemFontOfSize:14]];
 	float width = [self.temp length] * 8;
-	NSLog(@"WI: Size? %@", width);
+//	NSLog(@"WI: Size? %@", width);
 	NSString* t = [self.temp stringByAppendingString:@"\u00B0"];
 	[t drawAtPoint:CGPointMake((viewWidth + 1 - width) / 2, 38) withStyle:tempStyle];
 //        NSLog(@"WI: Rendered temp.");
@@ -91,6 +111,11 @@ qualifiedName:(NSString *)qName
 		NSLog(@"WI: Temp: %@", self.temp);
 		self.code = [[NSString alloc] initWithString:[attributeDict objectForKey:@"code"]];
 		NSLog(@"WI: Code: %@", self.code);
+
+//		if (self.lastUpdateTime)
+//			[self.lastUpdateTime release];
+
+		self.lastUpdateTime = [[NSDate alloc] init];
 	}
 }
 
@@ -109,15 +134,35 @@ foundCharacters:(NSString *)string
 
 - (void) refresh
 {
-	NSLog(@"WI: Refreshing weather...");
-	if (self.location)
+	NSDate* now = [NSDate date];
+	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
+
+	// are we ready for an update?
+	if ([now compare:self.nextRefreshTime] == NSOrderedAscending)
 	{
-		NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
-		NSURL* url = [NSURL URLWithString:urlStr];
-		NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
-		[parser setDelegate:self];
-		[parser parse];
-		[parser release];
+		NSLog(@"WI: No refresh yet.");
+		return;
+	}
+
+	if (!self.location)
+	{
+		NSLog(@"WI: No location set.");
+		return;
+	}
+
+	NSLog(@"WI: Refreshing weather...");
+	NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
+	NSURL* url = [NSURL URLWithString:urlStr];
+	NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+	[parser setDelegate:self];
+	[parser parse];
+	[parser release];
+
+	NSLog(@"WI: Did the update succeed? %@ vs %@", self.lastUpdateTime, self.nextRefreshTime);
+	if (!self.lastUpdateTime || [self.lastUpdateTime compare:self.nextRefreshTime] == NSOrderedAscending)
+	{
+		NSLog(@"WI: Update failed.");
+		return;
 	}
 
 	if (!self.temp)
@@ -136,12 +181,12 @@ foundCharacters:(NSString *)string
 		CGImageAlphaInfo alphaInfo = CGImageGetAlphaInfo(imageRef);
 		CGRect iconRect = CGRectMake(0, 0, 35, 35);
 	
-	// There's a wierdness with kCGImageAlphaNone and CGBitmapContextCreate
-	// see Supported Pixel Formats in the Quartz 2D Programming Guide
-	// Creating a Bitmap Graphics Context section
-	// only RGB 8 bit images with alpha of kCGImageAlphaNoneSkipFirst, kCGImageAlphaNoneSkipLast, kCGImageAlphaPremultipliedFirst,
-	// and kCGImageAlphaPremultipliedLast, with a few other oddball image kinds are supported
-	// The images on input here are likely to be png or jpeg files
+		// There's a wierdness with kCGImageAlphaNone and CGBitmapContextCreate
+		// see Supported Pixel Formats in the Quartz 2D Programming Guide
+		// Creating a Bitmap Graphics Context section
+		// only RGB 8 bit images with alpha of kCGImageAlphaNoneSkipFirst, kCGImageAlphaNoneSkipLast, kCGImageAlphaPremultipliedFirst,
+		// and kCGImageAlphaPremultipliedLast, with a few other oddball image kinds are supported
+		// The images on input here are likely to be png or jpeg files
 		if (alphaInfo == kCGImageAlphaNone)
 			alphaInfo = kCGImageAlphaNoneSkipLast;
 
@@ -172,11 +217,14 @@ foundCharacters:(NSString *)string
 		_image.image = nil;
 	}
 
-	[_temp setText:self.temp];
-
 	[_image setNeedsDisplay];
-	[_temp setNeedsDisplay];
 	[self setNeedsDisplay];
+
+//	if (self.nextRefreshTime)
+//		[self.nextRefreshTime release];
+	
+	self.nextRefreshTime = [[NSDate alloc] initWithTimeIntervalSinceNow:self.refreshInterval];
+	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 }
 
 @end
