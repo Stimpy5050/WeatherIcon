@@ -27,6 +27,7 @@
 + (NSDictionary*)preferences;
 - (id)initWithIcon:(SBApplicationIcon*)icon;
 - (void)refresh;
+- (void)_refresh;
 - (void)drawRect:(CGRect)rect;
 
 @end

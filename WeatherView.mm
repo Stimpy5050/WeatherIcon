@@ -150,6 +150,13 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
+	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
+}
+
+- (void) _refresh
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
 	NSLog(@"WI: Refreshing weather...");
 	NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
 	NSURL* url = [NSURL URLWithString:urlStr];
@@ -225,6 +232,8 @@ foundCharacters:(NSString *)string
 	
 	self.nextRefreshTime = [[NSDate alloc] initWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
+
+	[pool release];
 }
 
 @end
