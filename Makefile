@@ -5,6 +5,7 @@ LDFLAGS=	-lobjc \
 				-framework UIKit \
 				-framework CoreFoundation \
 				-framework CoreGraphics \
+				-framework CoreLocation \
 				-framework GraphicsServices \
 				-framework Celestial \
 				-multiply_defined suppress \

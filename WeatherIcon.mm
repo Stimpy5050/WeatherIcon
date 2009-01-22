@@ -33,11 +33,17 @@ static void $initView$(SBApplicationIcon *icon)
 
 static BOOL $SBApplication$deactivate(SBApplication<WeatherIcon> *self, SEL sel) 
 {
-	NSLog(@"WI: Deactivating...");
-	if (_view)
-		[_view refresh];
+	BOOL ret = [self wi_deactivate];
 
-	return [self wi_deactivate];
+	if (_view)
+	{
+//		if ([[self bundleIdentifier] isEqualToString:_weatherBundleIdentifier] || [[self bundleIdentifier] isEqualToString:@"com.apple.weather"])
+//			_view.nextRefreshTime = [[NSDate alloc] initWithTimeIntervalSinceNow:-10];
+
+		[_view refresh];
+	}
+
+	return ret;
 }
 
 static void $SBAwayController$_unlockWithSound$(SBAwayController<WeatherIcon> *self, SEL sel, BOOL b) 
