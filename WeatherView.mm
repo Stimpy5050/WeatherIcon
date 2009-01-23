@@ -18,29 +18,82 @@
 
 @implementation WeatherView
 
+@synthesize temp, code, tempStyle, imageScale, imageMarginTop;
+
 @synthesize isCelsius;
 @synthesize overrideLocation;
 @synthesize location;
-@synthesize temp;
-@synthesize code;
 @synthesize refreshInterval;
 @synthesize nextRefreshTime;
 @synthesize lastUpdateTime;
-@synthesize tempStyle;
 
-+ (NSDictionary*) preferences
++ (NSMutableDictionary*) preferences
 {
-	NSBundle* bundle = [NSBundle mainBundle];
-	NSString* settingsPath = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
-	NSLog(@"WI: Settings: %@", settingsPath);
-	if (settingsPath)
+	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
+	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
+	[dict autorelease];
+	return dict;
+}
+
+- (void) _parsePreferences
+{
+	NSMutableDictionary* prefs = [WeatherView preferences];
+	if (prefs)
 	{
-		NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:settingsPath];
-		[dict autorelease];
-		return dict;
+		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
+			self.overrideLocation = [ol boolValue];
+		NSLog(@"WI: Location: %@", self.location);
+
+		if (self.overrideLocation)
+		{
+			if (NSString* loc = [prefs objectForKey:@"Location"])
+				self.location = [[NSString alloc] initWithString:loc];
+
+			if (NSNumber* celsius = [prefs objectForKey:@"Celsius"])
+				self.isCelsius = [celsius boolValue];
+		}
+		else
+		{
+			[self _parseWeatherPreferences];
+		}
+
+		NSLog(@"WI: Location: %@", self.location);
+		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
+
+		if (NSNumber* interval = [prefs objectForKey:@"RefreshInterval"])
+			self.refreshInterval = ([interval intValue] * 60);
+		NSLog(@"WI: Refresh Interval: %d seconds", self.refreshInterval);
+	}
+	else
+	{
+		prefs = [NSMutableDictionary dictionaryWithCapacity:4];
+		[prefs setValue:[NSNumber numberWithBool:self.overrideLocation] forKey:@"OverrideLocation"];
+		[prefs setValue:self.location forKey:@"Location"];
+		[prefs setValue:[NSNumber numberWithBool:self.isCelsius] forKey:@"Celsius"];
+		[prefs setValue:[NSNumber numberWithInt:(int)(self.refreshInterval / 60)] forKey:@"RefreshInterval"];
+		[prefs setValue:@"com.apple.weather" forKey:@"WeatherBundleIdentifier"];
+
+	        NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
+		[prefs writeToFile:prefsPath atomically:YES];
 	}
 
-	return nil;
+	NSBundle* bundle = [NSBundle mainBundle];
+	NSString* themePrefs = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
+	if (themePrefs)
+	{
+		NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:themePrefs];
+		if (dict)
+		{
+			if (NSString* style = [dict objectForKey:@"TempStyle"])
+				self.tempStyle = [[NSString alloc] initWithString:style];
+
+			if (NSNumber* scale = [dict objectForKey:@"ImageScale"])
+				self.imageScale = [scale floatValue];
+
+			if (NSNumber* top = [dict objectForKey:@"ImageMarginTop"])
+				self.imageMarginTop = [top intValue];
+		}
+	}	
 }
 
 - (void) _parseWeatherPreferences
@@ -65,49 +118,20 @@
         CGRect rect = CGRectMake(0, 0, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
 
+        _icon = icon;
+
 	self.temp = @"?";
 	self.code = @"3200";
+	self.imageScale = 1.0;
+	self.imageMarginTop = 0;
 	self.isCelsius = false;
 	self.overrideLocation = false;
 	self.refreshInterval = 900;
+
 	self.opaque = NO;
 	self.userInteractionEnabled = NO;
 
-	NSDictionary* dict = [WeatherView preferences];
-	if (dict)
-	{
-		if (NSNumber* ol = [dict objectForKey:@"OverrideLocation"])
-			self.overrideLocation = [ol boolValue];
-		NSLog(@"WI: Location: %@", self.location);
-
-		if (self.overrideLocation)
-		{
-			if (NSString* loc = [dict objectForKey:@"Location"])
-				self.location = [[NSString alloc] initWithString:loc];
-
-			if (NSNumber* celsius = [dict objectForKey:@"Celsius"])
-				self.isCelsius = [celsius boolValue];
-		}
-		else
-		{
-			[self _parseWeatherPreferences];
-		}
-
-		NSLog(@"WI: Location: %@", self.location);
-		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
-
-		if (NSString* style = [dict objectForKey:@"TempStyle"])
-			self.tempStyle = [[NSString alloc] initWithString:style];
-
-		if (NSNumber* interval = [dict objectForKey:@"RefreshInterval"])
-			self.refreshInterval = ([interval intValue] * 60);
-		NSLog(@"WI: Refresh Interval: %d seconds", self.refreshInterval);
-	}	
-	
-        _icon = icon;
-
-	_image = [[UIImageView alloc] initWithFrame:CGRectMake((rect.size.width - 35) / 2, 4, 35, 35)];
-	[self addSubview:_image];
+	[self _parsePreferences];
 
 	self.nextRefreshTime = [NSDate date];
 
@@ -122,27 +146,6 @@
 	return ret;
 }
 
-- (void) drawRect:(CGRect) rect
-{
-	NSString* t = [self.temp stringByAppendingString: @"\u00B0"];
-
-        NSString* tempStyle(@""
-               	"font-family: Helvetica; "
-	        "font-weight: bold; "
-	        "font-size: 13px; "
-	        "color: white; "
-	        "margin-top: 38px; "
-		"margin-left: 3px; "
-	        "width: 59px; "
-		"text-align: center; "
-		"text-shadow: rgba(0, 0, 0, 0.4) -1px -1px 2px; "
-	"");
-
-	if (self.tempStyle)
-		tempStyle = [tempStyle stringByAppendingString:self.tempStyle];
-	
-	[t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
-}
 
 - (void)parser:(NSXMLParser *)parser
 didStartElement:(NSString *)elementName
@@ -156,9 +159,6 @@ qualifiedName:(NSString *)qName
 		NSLog(@"WI: Temp: %@", self.temp);
 		self.code = [[NSString alloc] initWithString:[attributeDict objectForKey:@"code"]];
 		NSLog(@"WI: Code: %@", self.code);
-
-//		if (self.lastUpdateTime)
-//			[self.lastUpdateTime release];
 
 		self.lastUpdateTime = [[NSDate alloc] init];
 	}
@@ -227,69 +227,46 @@ foundCharacters:(NSString *)string
 	if (!self.code)
 		self.code = @"3200";
 
-	NSBundle* sb = [NSBundle mainBundle];
-	NSString* iconName = [@"weather" stringByAppendingString:self.code];
-	NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
-	if (iconPath)
-	{
-		UIImage* weatherIcon = [UIImage imageWithContentsOfFile:iconPath];
-		UIImage* appIcon = [_icon icon];
-
-		if (weatherIcon.size.width == appIcon.size.width && weatherIcon.size.height == appIcon.size.height)
-			_image = weatherIcon;
-		else
-		{
-			CGImageRef imageRef = [weatherIcon CGImage];
-			CGImageAlphaInfo alphaInfo = CGImageGetAlphaInfo(imageRef);
-			CGRect iconRect = CGRectMake(0, 0, 35, 35);
-	
-			// There's a wierdness with kCGImageAlphaNone and CGBitmapContextCreate
-			// see Supported Pixel Formats in the Quartz 2D Programming Guide
-			// Creating a Bitmap Graphics Context section
-			// only RGB 8 bit images with alpha of kCGImageAlphaNoneSkipFirst, kCGImageAlphaNoneSkipLast, kCGImageAlphaPremultipliedFirst,
-			// and kCGImageAlphaPremultipliedLast, with a few other oddball image kinds are supported
-			// The images on input here are likely to be png or jpeg files
-			if (alphaInfo == kCGImageAlphaNone)
-				alphaInfo = kCGImageAlphaNoneSkipLast;
-	
-			// Build a bitmap context that's the size of the thumbRect
-			CGContextRef bitmap = CGBitmapContextCreate(
-					NULL,
-					iconRect.size.width,		// width
-					iconRect.size.height,		// height
-					CGImageGetBitsPerComponent(imageRef),	// really needs to always be 8
-					4 * iconRect.size.width,	// rowbytes
-					CGImageGetColorSpace(imageRef),
-					alphaInfo
-			);
-	
-			// Draw into the context, this scales the image
-			CGContextDrawImage(bitmap, iconRect, imageRef);
-	
-			// Get an image from the context and a UIImage
-			CGImageRef ref = CGBitmapContextCreateImage(bitmap);
-			UIImage* result = [UIImage imageWithCGImage:ref];
-	
-			CGContextRelease(bitmap);	// ok if NULL
-			CGImageRelease(ref);
-			_image.image = result;
-		}
-	}
-	else
-	{
-		_image.image = nil;
-	}
-
-	[_image setNeedsDisplay];
 	[self setNeedsDisplay];
 
-//	if (self.nextRefreshTime)
-//		[self.nextRefreshTime release];
-	
 	self.nextRefreshTime = [[NSDate alloc] initWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
 	[pool release];
+}
+
+- (void) drawRect:(CGRect) rect
+{
+        NSBundle* sb = [NSBundle mainBundle];
+        NSString* iconName = [@"weather" stringByAppendingString:self.code];
+        NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
+
+        if (iconPath)
+        {
+                UIImage* weatherIcon = [UIImage imageWithContentsOfFile:iconPath];
+		float width = weatherIcon.size.width * self.imageScale;
+		float height = weatherIcon.size.height * self.imageScale;
+                CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+                [weatherIcon drawInRect:iconRect];
+        }
+
+        NSString* t = [self.temp stringByAppendingString: @"\u00B0"];
+        NSString* tempStyle(@""
+                "font-family: Helvetica; "
+                "font-weight: bold; "
+                "font-size: 13px; "
+                "color: white; "
+                "margin-top: 38px; "
+                "margin-left: 3px; "
+                "width: 59px; "
+                "text-align: center; "
+                "text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
+        "");
+
+        if (self.tempStyle && [self.tempStyle length] > 0)
+                tempStyle = [tempStyle stringByAppendingString:self.tempStyle];
+
+        [t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
 }
 
 - (void)locationManager:(CLLocationManager *)manager

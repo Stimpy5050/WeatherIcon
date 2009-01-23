@@ -2,16 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>OverrideLocation</key>
-	<false/>
-	<key>Location</key>
-	<string></string>
-	<key>Celsius</key>
-	<false/>
-	<key>RefreshInterval</key>
-	<integer>15</integer>
-	<key>WeatherBundleIdentifier</key>
-	<string>com.apple.weather</string>
+	<key>ImageMarginTop</key>
+	<integer>3</integer>
+	<key>ImageScale</key>
+	<real>0.3</real>
 	<key>TempStyle</key>
 	<string></string>
 </dict>
