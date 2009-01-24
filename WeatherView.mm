@@ -19,19 +19,13 @@
 @implementation WeatherView
 
 @synthesize temp, code, tempStyle, imageScale, imageMarginTop;
-
-@synthesize isCelsius;
-@synthesize overrideLocation;
-@synthesize location;
-@synthesize refreshInterval;
-@synthesize nextRefreshTime;
-@synthesize lastUpdateTime;
+@synthesize isCelsius, overrideLocation, location, refreshInterval;
+@synthesize nextRefreshTime, lastUpdateTime;
 
 + (NSMutableDictionary*) preferences
 {
 	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
-	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
-	return dict;
+	return [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 }
 
 - (void) _parsePreferences
@@ -46,7 +40,7 @@
 		if (self.overrideLocation)
 		{
 			if (NSString* loc = [prefs objectForKey:@"Location"])
-				self.location = [[NSString alloc] initWithString:loc];
+				self.location = [NSString stringWithString:loc];
 
 			if (NSNumber* celsius = [prefs objectForKey:@"Celsius"])
 				self.isCelsius = [celsius boolValue];
@@ -80,11 +74,11 @@
 	NSString* themePrefs = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
 	if (themePrefs)
 	{
-		NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:themePrefs];
+		NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:themePrefs];
 		if (dict)
 		{
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
-				self.tempStyle = [[NSString alloc] initWithString:style];
+				self.tempStyle = [NSString stringWithString:style];
 
 			if (NSNumber* scale = [dict objectForKey:@"ImageScale"])
 				self.imageScale = [scale floatValue];
@@ -98,7 +92,7 @@
 - (void) _parseWeatherPreferences
 {
 	NSString* prefsPath = @"/User/Library/Preferences/com.apple.weather.plist";
-	NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:prefsPath];
+	NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
 
 	if (dict)
 	{
@@ -115,8 +109,6 @@
 {
         CGRect rect = CGRectMake(0, 0, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
-
-        _icon = icon;
 
 	self.temp = @"?";
 	self.code = @"3200";
@@ -153,12 +145,12 @@ qualifiedName:(NSString *)qName
 {
 	if ([elementName isEqualToString:@"yweather:condition"])
 	{
-		self.temp = [[NSString alloc] initWithString:[attributeDict objectForKey:@"temp"]];
+		self.temp = [NSString stringWithString:[attributeDict objectForKey:@"temp"]];
 		NSLog(@"WI: Temp: %@", self.temp);
-		self.code = [[NSString alloc] initWithString:[attributeDict objectForKey:@"code"]];
+		self.code = [NSString stringWithString:[attributeDict objectForKey:@"code"]];
 		NSLog(@"WI: Code: %@", self.code);
 
-		self.lastUpdateTime = [[NSDate alloc] init];
+		self.lastUpdateTime = [NSDate date];
 	}
 }
 
@@ -226,7 +218,7 @@ foundCharacters:(NSString *)string
 	if (!self.code)
 		self.code = @"3200";
 
-	self.nextRefreshTime = [[NSDate alloc] initWithTimeIntervalSinceNow:self.refreshInterval];
+	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
 	[self setNeedsDisplay];
@@ -294,5 +286,16 @@ foundCharacters:(NSString *)string
 	   didFailWithError:(NSError *)error
 {
 	NSLog(@"WI: Location Error: %@", error);
+}
+
+- (void) dealloc
+{
+	[self.temp release];
+	[self.tempStyle release];
+	[self.code release];
+	[self.location release];
+	[self.lastUpdateTime release];
+	[self.nextRefreshTime release];
+	[super dealloc];
 }
 @end

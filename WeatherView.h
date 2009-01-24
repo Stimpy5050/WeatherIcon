@@ -12,24 +12,20 @@
 #import <UIKit/UIKit.h>
 
 @interface WeatherView : UIView <CLLocationManagerDelegate>
-{
-	SBApplicationIcon *_icon;
-	CLLocationManager *_locationManager;
-}
 
-@property(nonatomic) NSString* temp;
-@property(nonatomic) NSString* tempStyle;
-@property(nonatomic) NSString* code;
+@property(nonatomic, retain) NSString* temp;
+@property(nonatomic, retain) NSString* tempStyle;
+@property(nonatomic, retain) NSString* code;
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
 
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
-@property(nonatomic retain) NSString* location;
+@property(nonatomic, retain) NSString* location;
 @property(nonatomic) int refreshInterval;
 
-@property(nonatomic retain) NSDate* nextRefreshTime;
-@property(nonatomic retain) NSDate* lastUpdateTime;
+@property(nonatomic, retain) NSDate* nextRefreshTime;
+@property(nonatomic, retain) NSDate* lastUpdateTime;
 
 + (NSMutableDictionary*) preferences;
 - (void) _parsePreferences;
@@ -38,6 +34,7 @@
 - (void)refresh;
 - (void)_refresh;
 - (void)drawRect:(CGRect) rect;
+- (void)dealloc;
 
 - (void)locationManager:(CLLocationManager *)manager
 	didUpdateToLocation:(CLLocation *)newLocation
