@@ -66,5 +66,6 @@ package:	$(Target)
 	cp -a *.theme package/Library/Themes
 	cp -a $(Target) package/Library/MobileSubstrate/DynamicLibraries
 	cp -a control package/DEBIAN
+	find package -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
 

@@ -1,5 +1,5 @@
 /*
- *  ReflectiveDock.mm
+ *  WeatherView.mm
  *  
  *
  *  Created by David Ashman on 1/12/09.
@@ -31,7 +31,6 @@
 {
 	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
-	[dict autorelease];
 	return dict;
 }
 
@@ -100,7 +99,6 @@
 {
 	NSString* prefsPath = @"/User/Library/Preferences/com.apple.weather.plist";
 	NSDictionary* dict = [[NSDictionary alloc] initWithContentsOfFile:prefsPath];
-	[dict autorelease];
 
 	if (dict)
 	{
@@ -189,7 +187,8 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
-	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
+//	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
+	[[NSRunLoop currentRunLoop] performSelector:@selector(_refresh) target:self argument:nil order:1 modes:[NSArray arrayWithObject:NSDefaultRunLoopMode]];
 }
 
 - (void) _refresh
@@ -227,10 +226,10 @@ foundCharacters:(NSString *)string
 	if (!self.code)
 		self.code = @"3200";
 
-	[self setNeedsDisplay];
-
 	self.nextRefreshTime = [[NSDate alloc] initWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
+
+	[self setNeedsDisplay];
 
 	[pool release];
 }
@@ -244,13 +243,17 @@ foundCharacters:(NSString *)string
         if (iconPath)
         {
                 UIImage* weatherIcon = [UIImage imageWithContentsOfFile:iconPath];
-		float width = weatherIcon.size.width * self.imageScale;
-		float height = weatherIcon.size.height * self.imageScale;
-                CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-                [weatherIcon drawInRect:iconRect];
+		if (weatherIcon)
+		{
+			float width = weatherIcon.size.width * self.imageScale;
+			float height = weatherIcon.size.height * self.imageScale;
+                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+                	[weatherIcon drawInRect:iconRect];	
+		}
         }
 
         NSString* t = [self.temp stringByAppendingString: @"\u00B0"];
+//	NSLog(@"WI: Temp: %@", t);
         NSString* tempStyle(@""
                 "font-family: Helvetica; "
                 "font-weight: bold; "
@@ -258,15 +261,26 @@ foundCharacters:(NSString *)string
                 "color: white; "
                 "margin-top: 38px; "
                 "margin-left: 3px; "
-                "width: 59px; "
+                "width: %dpx; "
                 "text-align: center; "
                 "text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
         "");
 
+	tempStyle = [NSString stringWithFormat:tempStyle, (int)self.frame.size.width];
+
         if (self.tempStyle && [self.tempStyle length] > 0)
                 tempStyle = [tempStyle stringByAppendingString:self.tempStyle];
 
-        [t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
+//	NSLog(@"WI: Style: %@", tempStyle);
+
+	@try
+	{
+        	[t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
+	}
+	@catch (NSException *e)
+	{
+		NSLog(@"WI: Failed to draw temperature: %@", [e name]);
+	}
 }
 
 - (void)locationManager:(CLLocationManager *)manager
