@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>ImageMarginTop</key>
-	<integer>1</integer>
+	<integer>3</integer>
 	<key>ImageScale</key>
-	<real>0.3</real>
+	<real>1</real>
 	<key>TempStyle</key>
 	<string></string>
 </dict>

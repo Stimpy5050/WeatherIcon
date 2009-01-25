@@ -18,6 +18,7 @@
 
 @implementation WeatherView
 
+@synthesize applicationIcon;
 @synthesize temp, code, tempStyle, imageScale, imageMarginTop;
 @synthesize isCelsius, overrideLocation, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
@@ -110,6 +111,7 @@
         CGRect rect = CGRectMake(0, 0, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
 
+	self.applicationIcon = icon;
 	self.temp = @"?";
 	self.code = @"3200";
 	self.imageScale = 1.0;
@@ -182,6 +184,29 @@ foundCharacters:(NSString *)string
 	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
 }
 
+- (void) updateImage
+{
+/*
+        NSBundle* sb = [NSBundle mainBundle];
+        NSString* iconName = [@"weather" stringByAppendingString:self.code];
+        NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
+
+        if (iconPath)
+        {
+                UIImage* weatherIcon = [UIImage imageWithContentsOfFile:iconPath];
+		if (weatherIcon)
+		{
+			float width = weatherIcon.size.width * self.imageScale;
+			float height = weatherIcon.size.height * self.imageScale;
+                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+                	[self.applicationIcon setDisplayedIcon:weatherIcon];	
+		}
+	}
+*/
+
+	[self setNeedsDisplay];
+}
+
 - (void) _refresh
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -220,7 +245,7 @@ foundCharacters:(NSString *)string
 	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
-	[self performSelectorOnMainThread:@selector(setNeedsDisplay) withObject:nil waitUntilDone:NO];
+	[self performSelectorOnMainThread:@selector(updateImage) withObject:nil waitUntilDone:NO];
 
 	[pool release];
 }

@@ -13,6 +13,8 @@
 
 @interface WeatherView : UIView <CLLocationManagerDelegate>
 
+@property(nonatomic, retain) SBApplicationIcon* applicationIcon;
+
 @property(nonatomic, retain) NSString* temp;
 @property(nonatomic, retain) NSString* tempStyle;
 @property(nonatomic, retain) NSString* code;
@@ -31,6 +33,7 @@
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
 - (id)initWithIcon:(SBApplicationIcon*)icon;
+- (void)updateImage;
 - (void)refresh;
 - (void)_refresh;
 - (void)drawRect:(CGRect) rect;
