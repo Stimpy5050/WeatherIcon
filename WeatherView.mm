@@ -263,7 +263,7 @@ foundCharacters:(NSString *)string
         {
                 UIImage* bgIcon = [UIImage imageWithContentsOfFile:bgPath];
 		if (bgIcon)
-	                [bgIcon drawAtPoint:CGPointMake(0, 0)];	
+	                [bgIcon drawAtPoint:CGPointMake(0, -1)];	
 	}
 
         NSString* iconName = [@"weather" stringByAppendingString:self.code];
@@ -276,7 +276,7 @@ foundCharacters:(NSString *)string
 		{
 			float width = weatherIcon.size.width * self.imageScale;
 			float height = weatherIcon.size.height * self.imageScale;
-                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop - 1, width, height);
 	                [weatherIcon drawInRect:iconRect];	
 		}
         }
