@@ -18,7 +18,7 @@
 
 @implementation WeatherView
 
-@synthesize applicationIcon;
+@synthesize applicationIcon, highlighted;
 @synthesize temp, code, tempStyle, imageScale, imageMarginTop;
 @synthesize isCelsius, overrideLocation, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
@@ -138,7 +138,6 @@
 	return ret;
 }
 
-
 - (void)parser:(NSXMLParser *)parser
 didStartElement:(NSString *)elementName
 namespaceURI:(NSString *)namespaceURI
@@ -204,6 +203,7 @@ foundCharacters:(NSString *)string
 	}
 */
 
+	[self.applicationIcon setNeedsDisplay];
 	[self setNeedsDisplay];
 }
 
@@ -252,7 +252,20 @@ foundCharacters:(NSString *)string
 
 - (void) drawRect:(CGRect) rect
 {
+	// if we're highlighted, we want the icon to dim
+	self.alpha = (self.highlighted ? 0.5 : 1.0);
+
         NSBundle* sb = [NSBundle mainBundle];
+        NSString* bgName = [@"weatherbg" stringByAppendingString:self.code];
+        NSString* bgPath = [sb pathForResource:bgName ofType:@"png"];
+
+        if (bgPath)
+        {
+                UIImage* bgIcon = [UIImage imageWithContentsOfFile:bgPath];
+		if (bgIcon)
+	                [bgIcon drawAtPoint:CGPointMake(0, 0)];	
+	}
+
         NSString* iconName = [@"weather" stringByAppendingString:self.code];
         NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
 
@@ -264,7 +277,7 @@ foundCharacters:(NSString *)string
 			float width = weatherIcon.size.width * self.imageScale;
 			float height = weatherIcon.size.height * self.imageScale;
                 	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-                	[weatherIcon drawInRect:iconRect];	
+	                [weatherIcon drawInRect:iconRect];	
 		}
         }
 

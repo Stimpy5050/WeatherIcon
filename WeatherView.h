@@ -20,6 +20,7 @@
 @property(nonatomic, retain) NSString* code;
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
+@property(nonatomic) BOOL highlighted;
 
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
