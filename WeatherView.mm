@@ -98,7 +98,7 @@
 	{
 		self.isCelsius = [[dict objectForKey:@"Celsius"] boolValue];
 
-		NSNumber* activeCity = [dict objectForKey:@"ActiveCity"];
+//		NSNumber* activeCity = [dict objectForKey:@"ActiveCity"];
 		NSArray* cities = [dict objectForKey:@"Cities"];
 		NSDictionary* city = [cities objectAtIndex:0];
 		self.location = [[city objectForKey:@"Zip"] substringToIndex:8];
@@ -179,8 +179,7 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
-//	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
-	[[NSRunLoop currentRunLoop] performSelector:@selector(_refresh) target:self argument:nil order:1 modes:[NSArray arrayWithObject:NSDefaultRunLoopMode]];
+	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
 }
 
 - (void) _refresh
@@ -221,7 +220,7 @@ foundCharacters:(NSString *)string
 	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
-	[self setNeedsDisplay];
+	[self performSelectorOnMainThread:@selector(setNeedsDisplay) withObject:nil waitUntilDone:NO];
 
 	[pool release];
 }

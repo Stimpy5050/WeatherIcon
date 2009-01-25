@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>ImageMarginTop</key>
-	<integer>3</integer>
+	<integer>1</integer>
 	<key>ImageScale</key>
 	<real>0.3</real>
 	<key>TempStyle</key>

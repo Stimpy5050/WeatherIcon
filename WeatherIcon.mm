@@ -28,6 +28,9 @@ static void $initView$(SBApplicationIcon *icon)
 	_view = [[WeatherView alloc] initWithIcon:icon];
 	[icon addSubview:_view];
 
+	UIImageView* image = MSHookIvar<UIImageView*>(icon, "_image");
+//	[image addSubview:_view];
+
 	[_view refresh];
 }
 
