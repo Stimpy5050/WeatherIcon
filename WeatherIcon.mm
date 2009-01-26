@@ -99,7 +99,7 @@ static void initWeatherView(SBIcon* icon)
 static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SEL sel, id clip) 
 {
 	id ret = [self wi_initWithWebClip:clip];
-	NSLog(@"WI: Link to %@?", self.displayIdentifier);
+//	NSLog(@"WI: Link to %@?", self.displayIdentifier);
 	initWeatherView(self);
 	return ret;
 }

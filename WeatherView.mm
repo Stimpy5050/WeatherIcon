@@ -108,7 +108,7 @@
 
 - (id) initWithIcon:(SBIcon*)icon
 {
-        CGRect rect = CGRectMake(0, -2, icon.frame.size.width, icon.frame.size.height);
+        CGRect rect = CGRectMake(0, -1, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
 
 	self.applicationIcon = icon;
@@ -235,6 +235,9 @@ foundCharacters:(NSString *)string
 - (void) drawRect:(CGRect) rect
 {
 	UIGraphicsBeginImageContext(self.frame.size);
+
+	//UIImageView* appIconImageView(MSHookIvar<UIImageView*>(self.applicationIcon, "_image"));
+	//appIconImageView.alpha = 0;
 
         NSBundle* sb = [NSBundle mainBundle];
         NSString* bgName = [@"weatherbg" stringByAppendingString:self.code];
