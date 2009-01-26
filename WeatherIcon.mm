@@ -18,6 +18,7 @@
  
 @protocol WeatherIcon
 - (id) wi_initWithApplication:(id) app;
+- (id) wi_initWithWebClip:(id) clip;
 - (void) wi__unlockWithSound:(BOOL) b;
 - (BOOL) wi_deactivate;
 - (void) wi_setHighlighted:(BOOL) b;
@@ -68,10 +69,8 @@ static void $SBIcon$setHighlighted$(SBIcon<WeatherIcon> *self, SEL sel, BOOL b)
 	}
 }
 
-static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon> *self, SEL sel, id app) 
+static NSString* getWeatherBundleIdentifier()
 {
-	id ret = [self wi_initWithApplication:app];
-
 	if (!_weatherBundleIdentifier)
 	{
 		NSString* bundleIdentifier = @"com.apple.weather";
@@ -84,12 +83,31 @@ static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon>
 		_weatherBundleIdentifier = [[NSString stringWithString:bundleIdentifier] retain];
 	}
 
-	if ([[app bundleIdentifier] isEqualToString:_weatherBundleIdentifier])
-	{
-		NSLog(@"WI: Linking weather icon to %@", _weatherBundleIdentifier);
-		$initView$(self);
-	}
+	return _weatherBundleIdentifier;
+}
 
+static void initWeatherView(SBIcon* icon)
+{
+	NSString* bi = getWeatherBundleIdentifier();
+	if ([[icon displayIdentifier] isEqualToString:bi])
+	{
+		NSLog(@"WI: Linking weather icon to %@", bi);
+		$initView$(icon);
+	}
+}
+
+static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SEL sel, id clip) 
+{
+	id ret = [self wi_initWithWebClip:clip];
+	NSLog(@"WI: Link to %@?", self.displayIdentifier);
+	initWeatherView(self);
+	return ret;
+}
+
+static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon> *self, SEL sel, id app) 
+{
+	id ret = [self wi_initWithApplication:app];
+	initWeatherView(self);
 	return ret;
 }
 
@@ -106,7 +124,7 @@ extern "C" void WeatherIconInitialize() {
 	
 	// MSHookMessage is what we use to redirect the methods to our own
 	MSHookMessage($SBIcon, @selector(setHighlighted:), (IMP) &$SBIcon$setHighlighted$, "wi_");
-//	MSHookMessage($SBBookmarkIcon, @selector(icon), (IMP) &$SBBookmarkIcon$icon, "wi_clip_");
+	MSHookMessage($SBBookmarkIcon, @selector(initWithWebClip:), (IMP) &$SBBookmarkIcon$initWithWebClip$, "wi_");
 	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");
 	MSHookMessage($SBApplication, @selector(deactivate), (IMP) &$SBApplication$deactivate, "wi_");
 	MSHookMessage($SBAwayController, @selector(_unlockWithSound:), (IMP) &$SBAwayController$_unlockWithSound$, "wi_");

@@ -25,7 +25,7 @@
 
 + (NSMutableDictionary*) preferences
 {
-	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
+	NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 	return [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 }
 
@@ -67,7 +67,7 @@
 		[prefs setValue:[NSNumber numberWithInt:(int)(self.refreshInterval / 60)] forKey:@"RefreshInterval"];
 		[prefs setValue:@"com.apple.weather" forKey:@"WeatherBundleIdentifier"];
 
-	        NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
+	        NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 		[prefs writeToFile:prefsPath atomically:YES];
 	}
 
@@ -92,7 +92,7 @@
 
 - (void) _parseWeatherPreferences
 {
-	NSString* prefsPath = @"/User/Library/Preferences/com.apple.weather.plist";
+	NSString* prefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
 	NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
 
 	if (dict)
@@ -106,9 +106,9 @@
 	}
 }
 
-- (id) initWithIcon:(SBApplicationIcon*)icon
+- (id) initWithIcon:(SBIcon*)icon
 {
-        CGRect rect = CGRectMake(0, 0, icon.frame.size.width, icon.frame.size.height);
+        CGRect rect = CGRectMake(0, -2, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
 
 	self.applicationIcon = icon;
@@ -185,24 +185,6 @@ foundCharacters:(NSString *)string
 
 - (void) updateImage
 {
-/*
-        NSBundle* sb = [NSBundle mainBundle];
-        NSString* iconName = [@"weather" stringByAppendingString:self.code];
-        NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
-
-        if (iconPath)
-        {
-                UIImage* weatherIcon = [UIImage imageWithContentsOfFile:iconPath];
-		if (weatherIcon)
-		{
-			float width = weatherIcon.size.width * self.imageScale;
-			float height = weatherIcon.size.height * self.imageScale;
-                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-                	[self.applicationIcon setDisplayedIcon:weatherIcon];	
-		}
-	}
-*/
-
 	[self.applicationIcon setNeedsDisplay];
 	[self setNeedsDisplay];
 }
@@ -252,8 +234,7 @@ foundCharacters:(NSString *)string
 
 - (void) drawRect:(CGRect) rect
 {
-	// if we're highlighted, we want the icon to dim
-	self.alpha = (self.highlighted ? 0.5 : 1.0);
+	UIGraphicsBeginImageContext(self.frame.size);
 
         NSBundle* sb = [NSBundle mainBundle];
         NSString* bgName = [@"weatherbg" stringByAppendingString:self.code];
@@ -263,7 +244,7 @@ foundCharacters:(NSString *)string
         {
                 UIImage* bgIcon = [UIImage imageWithContentsOfFile:bgPath];
 		if (bgIcon)
-	                [bgIcon drawAtPoint:CGPointMake(0, -1)];	
+	                [bgIcon drawAtPoint:CGPointMake(0, 0)];	
 	}
 
         NSString* iconName = [@"weather" stringByAppendingString:self.code];
@@ -276,8 +257,8 @@ foundCharacters:(NSString *)string
 		{
 			float width = weatherIcon.size.width * self.imageScale;
 			float height = weatherIcon.size.height * self.imageScale;
-                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop - 1, width, height);
-	                [weatherIcon drawInRect:iconRect];	
+                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+	                [weatherIcon drawInRect:iconRect];
 		}
         }
 
@@ -310,6 +291,27 @@ foundCharacters:(NSString *)string
 	{
 		NSLog(@"WI: Failed to draw temperature: %@", [e name]);
 	}
+
+	UIImage* weather = UIGraphicsGetImageFromCurrentImageContext();
+	UIGraphicsEndImageContext();
+
+	if (self.highlighted)
+	{
+		NSLog(@"WI: Rendering highlight.");
+		CGRect darkRect = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
+		UIGraphicsBeginImageContext(darkRect.size);
+		CGContextRef ctx = UIGraphicsGetCurrentContext();
+		[weather drawInRect:darkRect];
+		CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
+		CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
+		CGContextFillRect(ctx, darkRect);
+		UIImage* blackLayer = UIGraphicsGetImageFromCurrentImageContext();
+		UIGraphicsEndImageContext();
+	        [blackLayer drawAtPoint:darkRect.origin];
+		[weather drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:0.60];
+	}
+	else
+		[weather drawAtPoint:CGPointMake(0, 0)];
 }
 
 - (void)locationManager:(CLLocationManager *)manager
@@ -327,6 +329,7 @@ foundCharacters:(NSString *)string
 
 - (void) dealloc
 {
+	[self.applicationIcon release];
 	[self.temp release];
 	[self.tempStyle release];
 	[self.code release];

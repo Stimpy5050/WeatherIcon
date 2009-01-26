@@ -7,13 +7,13 @@
  *
  */
 
-#import <SpringBoard/SBApplicationIcon.h>
+#import <SpringBoard/SBIcon.h>
 #import <CoreLocation/CoreLocation.h>
 #import <UIKit/UIKit.h>
 
 @interface WeatherView : UIView <CLLocationManagerDelegate>
 
-@property(nonatomic, retain) SBApplicationIcon* applicationIcon;
+@property(nonatomic, retain) SBIcon* applicationIcon;
 
 @property(nonatomic, retain) NSString* temp;
 @property(nonatomic, retain) NSString* tempStyle;
@@ -33,7 +33,7 @@
 + (NSMutableDictionary*) preferences;
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
-- (id)initWithIcon:(SBApplicationIcon*)icon;
+- (id)initWithIcon:(SBIcon*)icon;
 - (void)updateImage;
 - (void)refresh;
 - (void)_refresh;
