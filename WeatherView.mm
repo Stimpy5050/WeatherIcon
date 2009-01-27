@@ -278,8 +278,12 @@ foundCharacters:(NSString *)string
 
 - (void) updateImage
 {
+	// reset the images
+	self.bgIcon = nil;
+	self.weatherIcon = nil;
+	
         NSBundle* sb = [NSBundle mainBundle];
-
+	
 	if (self.night)
 	{
 		// if it's night, always try the night icon first
