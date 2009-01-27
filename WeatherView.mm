@@ -68,6 +68,7 @@
 		[prefs setValue:[NSNumber numberWithBool:self.overrideLocation] forKey:@"OverrideLocation"];
 		[prefs setValue:self.location forKey:@"Location"];
 		[prefs setValue:[NSNumber numberWithBool:self.isCelsius] forKey:@"Celsius"];
+		[prefs setValue:[NSNumber numberWithBool:self.showFeelsLike] forKey:@"ShowFeelsLike"];
 		[prefs setValue:[NSNumber numberWithInt:(int)(self.refreshInterval / 60)] forKey:@"RefreshInterval"];
 		[prefs setValue:@"com.apple.weather" forKey:@"WeatherBundleIdentifier"];
 
