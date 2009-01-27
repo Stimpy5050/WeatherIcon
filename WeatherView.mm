@@ -13,14 +13,14 @@
 #import <SpringBoard/SleepProofTimer.h>
 #import <UIKit/UIStringDrawing.h>
 #import <UIKit/UIKit.h>
-#import <CoreLocation/CoreLocation.h>
 #import <Foundation/NSObjCRuntime.h>
 
 @implementation WeatherView
 
 @synthesize applicationIcon, highlighted;
-@synthesize temp, code, night, tempStyle, imageScale, imageMarginTop;
-@synthesize isCelsius, overrideLocation, location, refreshInterval;
+@synthesize temp, windChill, code, night, tempStyle, imageScale, imageMarginTop;
+@synthesize bgIcon, weatherIcon;
+@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
 
 + (NSMutableDictionary*) preferences
@@ -36,7 +36,11 @@
 	{
 		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
 			self.overrideLocation = [ol boolValue];
-		NSLog(@"WI: Location: %@", self.location);
+		NSLog(@"WI: Override Location: %d", self.overrideLocation);
+
+		if (NSNumber* chill = [prefs objectForKey:@"ShowFeelsLike"])
+			self.showFeelsLike = [chill boolValue];
+		NSLog(@"WI: Show Feels Like: %d", self.showFeelsLike);
 
 		if (self.overrideLocation)
 		{
@@ -79,7 +83,24 @@
 		if (dict)
 		{
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
-				self.tempStyle = [NSString stringWithString:style];
+			{
+        			NSString* defaultTempStyle(@""
+			                "font-family: Helvetica; "
+			                "font-weight: bold; "
+			                "font-size: 13px; "
+			                "color: white; "
+			                "margin-top: 38px; "
+			                "margin-left: 3px; "
+			                "width: %dpx; "
+			                "text-align: center; "
+			                "text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
+			        "");
+
+				self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)self.frame.size.width];
+
+			        if (style && [style length] > 0)
+			                self.tempStyle = [self.tempStyle stringByAppendingString:style];
+			}
 
 			if (NSNumber* scale = [dict objectForKey:@"ImageScale"])
 				self.imageScale = [scale floatValue];
@@ -119,6 +140,7 @@
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
 	self.overrideLocation = false;
+	self.showFeelsLike = false;
 	self.refreshInterval = 900;
 
 	self.opaque = NO;
@@ -165,6 +187,11 @@ qualifiedName:(NSString *)qName
 			self.night = ([sunriseDate compare:now] == NSOrderedDescending || [sunsetDate compare:now] == NSOrderedAscending);
 			NSLog(@"WI: Dates: %@ to %@, Night? %d", sunriseDate, sunsetDate, self.night);
 		}
+	}
+	else if ([elementName isEqualToString:@"yweather:wind"])
+	{
+		self.windChill = [NSString stringWithString:[attributeDict objectForKey:@"chill"]];
+		NSLog(@"WI: Wind Chill: %@", self.windChill);
 	}
 	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
@@ -250,6 +277,34 @@ foundCharacters:(NSString *)string
 
 - (void) updateImage
 {
+        NSBundle* sb = [NSBundle mainBundle];
+
+	if (self.night)
+	{
+		// if it's night, always try the night icon first
+	        NSString* bgPath = [sb pathForResource:@"weatherbg_night" ofType:@"png"];
+	        self.bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
+	}
+
+	if (!self.bgIcon)
+	{
+		// next try the code-specific one
+ 		NSString* bgName = [@"weatherbg" stringByAppendingString:self.code];
+		NSString* bgPath = [sb pathForResource:bgName ofType:@"png"];
+		self.bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
+	}
+
+	if (!self.bgIcon)
+	{
+		// no code specific icon, so look for day
+	        NSString* bgPath = [sb pathForResource:@"weatherbg_day" ofType:@"png"];
+	        self.bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
+	}
+
+        NSString* iconName = [@"weather" stringByAppendingString:self.code];
+        NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
+        self.weatherIcon = (iconPath ? [UIImage imageWithContentsOfFile:iconPath] : nil);
+
 	[self.applicationIcon setNeedsDisplay];
 	[self setNeedsDisplay];
 }
@@ -258,75 +313,19 @@ foundCharacters:(NSString *)string
 {
 	UIGraphicsBeginImageContext(self.frame.size);
 
-	//UIImageView* appIconImageView(MSHookIvar<UIImageView*>(self.applicationIcon, "_image"));
-	//appIconImageView.alpha = 0;
+	if (self.bgIcon)
+		[self.bgIcon drawAtPoint:CGPointMake(0, 0)];	
 
-        NSBundle* sb = [NSBundle mainBundle];
-	NSString* bgName = nil;
-	NSString* bgPath = nil;
-	UIImage* bgIcon = nil;
-
-	if (self.night)
+	if (self.weatherIcon)
 	{
-		// if it's night, always try the night icon first
-        	bgName = @"weatherbg_night";
-	        bgPath = [sb pathForResource:bgName ofType:@"png"];
-	        bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
-	}
-
-	if (!bgIcon)
-	{
-		// next try the code-specific one
- 		bgName = [@"weatherbg" stringByAppendingString:self.code];
-		bgPath = [sb pathForResource:bgName ofType:@"png"];
-		bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
-	}
-
-	if (!bgIcon)
-	{
-		// no code specific icon, so look for day
-        	bgName = @"weatherbg_day";
-	        bgPath = [sb pathForResource:bgName ofType:@"png"];
-	        bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
-	}
-
-	if (bgIcon)
-		[bgIcon drawAtPoint:CGPointMake(0, 0)];	
-
-        NSString* iconName = [@"weather" stringByAppendingString:self.code];
-        NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
-        UIImage* weatherIcon = (iconPath ? [UIImage imageWithContentsOfFile:iconPath] : nil);
-
-	if (weatherIcon)
-	{
-		float width = weatherIcon.size.width * self.imageScale;
-		float height = weatherIcon.size.height * self.imageScale;
+		float width = self.weatherIcon.size.width * self.imageScale;
+		float height = self.weatherIcon.size.height * self.imageScale;
                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-	        [weatherIcon drawInRect:iconRect];
+	        [self.weatherIcon drawInRect:iconRect];
         }
 
-        NSString* t = [self.temp stringByAppendingString: @"\u00B0"];
-//	NSLog(@"WI: Temp: %@", t);
-        NSString* tempStyle(@""
-                "font-family: Helvetica; "
-                "font-weight: bold; "
-                "font-size: 13px; "
-                "color: white; "
-                "margin-top: 38px; "
-                "margin-left: 3px; "
-                "width: %dpx; "
-                "text-align: center; "
-                "text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
-        "");
-
-	tempStyle = [NSString stringWithFormat:tempStyle, (int)self.frame.size.width];
-
-        if (self.tempStyle && [self.tempStyle length] > 0)
-                tempStyle = [tempStyle stringByAppendingString:self.tempStyle];
-
-//	NSLog(@"WI: Style: %@", tempStyle);
-
-        [t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
+	NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
+        [t drawAtPoint:CGPointMake(0, 0) withStyle:self.tempStyle];
 
 	UIImage* weather = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();
@@ -348,19 +347,6 @@ foundCharacters:(NSString *)string
 	}
 	else
 		[weather drawAtPoint:CGPointMake(0, 0)];
-}
-
-- (void)locationManager:(CLLocationManager *)manager
-	didUpdateToLocation:(CLLocation *)newLocation
-		   fromLocation:(CLLocation *)oldLocation
-{
-	NSLog(@"WI: New location: %@", newLocation);
-}
-
-- (void)locationManager:(CLLocationManager *)manager
-	   didFailWithError:(NSError *)error
-{
-	NSLog(@"WI: Location Error: %@", error);
 }
 
 - (void) dealloc

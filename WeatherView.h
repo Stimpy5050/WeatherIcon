@@ -8,14 +8,14 @@
  */
 
 #import <SpringBoard/SBIcon.h>
-#import <CoreLocation/CoreLocation.h>
 #import <UIKit/UIKit.h>
 
-@interface WeatherView : UIView <CLLocationManagerDelegate>
+@interface WeatherView : UIView 
 
 @property(nonatomic, retain) SBIcon* applicationIcon;
 
 @property(nonatomic, retain) NSString* temp;
+@property(nonatomic, retain) NSString* windChill;
 @property(nonatomic, retain) NSString* tempStyle;
 @property(nonatomic, retain) NSString* code;
 @property(nonatomic) BOOL night;
@@ -23,8 +23,12 @@
 @property(nonatomic) int imageMarginTop;
 @property(nonatomic) BOOL highlighted;
 
+@property(nonatomic, retain) UIImage* bgIcon;
+@property(nonatomic, retain) UIImage* weatherIcon;
+
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
+@property(nonatomic) BOOL showFeelsLike;
 @property(nonatomic, retain) NSString* location;
 @property(nonatomic) int refreshInterval;
 
@@ -40,12 +44,5 @@
 - (void)_refresh;
 - (void)drawRect:(CGRect) rect;
 - (void)dealloc;
-
-- (void)locationManager:(CLLocationManager *)manager
-	didUpdateToLocation:(CLLocation *)newLocation
-		   fromLocation:(CLLocation *)oldLocation;
-
-- (void)locationManager:(CLLocationManager *)manager
-	   didFailWithError:(NSError *)error;
 
 @end
