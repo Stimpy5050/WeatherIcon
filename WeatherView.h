@@ -18,13 +18,18 @@
 @property(nonatomic, retain) NSString* windChill;
 @property(nonatomic, retain) NSString* tempStyle;
 @property(nonatomic, retain) NSString* code;
-@property(nonatomic) BOOL night;
+@property(nonatomic, retain) NSDate* sunrise;
+@property(nonatomic, retain) NSDate* sunset;
+@property(nonatomic, retain) NSDate* lastWeatherUpdate;
+
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
 @property(nonatomic) BOOL highlighted;
 
 @property(nonatomic, retain) UIImage* bgIcon;
+@property(nonatomic, retain) UIImage* weatherImage;
 @property(nonatomic, retain) UIImage* weatherIcon;
+@property(nonatomic, retain) UIImage* shadow;
 
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
@@ -39,10 +44,11 @@
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
 - (id)initWithIcon:(SBIcon*)icon;
-- (void)updateImage;
+- (void)updateWeatherView;
 - (void)refresh;
 - (void)_refresh;
 - (void)drawRect:(CGRect) rect;
 - (void)dealloc;
+- (BOOL) isNight;
 
 @end

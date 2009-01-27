@@ -18,8 +18,9 @@
 @implementation WeatherView
 
 @synthesize applicationIcon, highlighted;
-@synthesize temp, windChill, code, night, tempStyle, imageScale, imageMarginTop;
-@synthesize bgIcon, weatherIcon;
+@synthesize temp, windChill, code, tempStyle, imageScale, imageMarginTop;
+@synthesize sunset, sunrise, lastWeatherUpdate;
+@synthesize bgIcon, weatherImage, shadow, weatherIcon;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
 
@@ -136,7 +137,6 @@
 	self.applicationIcon = icon;
 	self.temp = @"?";
 	self.code = @"3200";
-	self.night = false;
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
@@ -161,6 +161,13 @@
 
 	return ret;
 }
+- (BOOL) isNight
+{
+	if (self.sunrise && self.sunset && self.lastWeatherUpdate)
+		return ([self.sunrise compare:self.lastWeatherUpdate] == NSOrderedDescending || [self.sunset compare:self.lastWeatherUpdate] == NSOrderedAscending);
+
+	return false;
+}
 
 - (void)parser:(NSXMLParser *)parser
 didStartElement:(NSString *)elementName
@@ -182,11 +189,11 @@ qualifiedName:(NSString *)qName
 			NSString* today = [format stringFromDate:now];
 
 			[format setDateFormat:@"MM/dd/yyyy hh:mm a"];
-			NSDate* sunriseDate = [format dateFromString:[today stringByAppendingString:sunrise]];
-			NSDate* sunsetDate = [format dateFromString:[today stringByAppendingString:sunset]];
+			self.sunrise = [format dateFromString:[today stringByAppendingString:sunrise]];
+			self.sunset = [format dateFromString:[today stringByAppendingString:sunset]];
 		
-			self.night = ([sunriseDate compare:now] == NSOrderedDescending || [sunsetDate compare:now] == NSOrderedAscending);
-			NSLog(@"WI: Dates: %@ to %@, Night? %d", sunriseDate, sunsetDate, self.night);
+			NSLog(@"WI: Sunrise: %@", self.sunrise);
+			NSLog(@"WI: Sunset: %@", self.sunset);
 		}
 	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
@@ -201,7 +208,14 @@ qualifiedName:(NSString *)qName
 		self.code = [NSString stringWithString:[attributeDict objectForKey:@"code"]];
 		NSLog(@"WI: Code: %@", self.code);
 
+		NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
+		[format setDateFormat:@"EEE, d MMM yyyy h:mm a z"];
+		NSString* date = [NSString stringWithString:[attributeDict objectForKey:@"date"]];
+		self.lastWeatherUpdate = [format dateFromString:date];
+		NSLog(@"WI: Last Weather Update: %@", self.lastWeatherUpdate);
+
 		self.lastUpdateTime = [NSDate date];
+		NSLog(@"WI: Last Update Succeeded: %@", self.lastUpdateTime);
 	}
 }
 
@@ -255,7 +269,7 @@ foundCharacters:(NSString *)string
 	[parser parse];
 	[parser release];
 
-	NSLog(@"WI: Did the update succeed? %@ vs %@", self.lastUpdateTime, self.nextRefreshTime);
+//	NSLog(@"WI: Did the update succeed? %@ vs %@", self.lastUpdateTime, self.nextRefreshTime);
 	if (!self.lastUpdateTime || [self.lastUpdateTime compare:self.nextRefreshTime] == NSOrderedAscending)
 	{
 		NSLog(@"WI: Update failed.");
@@ -271,20 +285,22 @@ foundCharacters:(NSString *)string
 	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
-	[self performSelectorOnMainThread:@selector(updateImage) withObject:nil waitUntilDone:NO];
+	[self performSelectorOnMainThread:@selector(updateWeatherView) withObject:nil waitUntilDone:NO];
 
 	[pool release];
 }
 
-- (void) updateImage
+- (void) updateWeatherView
 {
 	// reset the images
 	self.bgIcon = nil;
+	self.weatherImage = nil;
 	self.weatherIcon = nil;
+	self.shadow = nil;
 	
         NSBundle* sb = [NSBundle mainBundle];
 	
-	if (self.night)
+	if (self.isNight)
 	{
 		// if it's night, always try the night icon first
 	        NSString* bgPath = [sb pathForResource:@"weatherbg_night" ofType:@"png"];
@@ -308,7 +324,7 @@ foundCharacters:(NSString *)string
 
         NSString* iconName = [@"weather" stringByAppendingString:self.code];
         NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
-        self.weatherIcon = (iconPath ? [UIImage imageWithContentsOfFile:iconPath] : nil);
+        self.weatherImage = (iconPath ? [UIImage imageWithContentsOfFile:iconPath] : nil);
 
 	[self.applicationIcon setNeedsDisplay];
 	[self setNeedsDisplay];
@@ -316,38 +332,40 @@ foundCharacters:(NSString *)string
 
 - (void) drawRect:(CGRect) rect
 {
-	UIGraphicsBeginImageContext(self.frame.size);
-
-	if (self.bgIcon)
-		[self.bgIcon drawAtPoint:CGPointMake(0, 0)];	
-
-	if (self.weatherIcon)
+	if (!self.weatherIcon)
 	{
-		float width = self.weatherIcon.size.width * self.imageScale;
-		float height = self.weatherIcon.size.height * self.imageScale;
-               	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-	        [self.weatherIcon drawInRect:iconRect];
-        }
+		UIGraphicsBeginImageContext(self.frame.size);
 
-	NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
-        [t drawAtPoint:CGPointMake(0, 0) withStyle:self.tempStyle];
+		if (self.bgIcon)
+			[self.bgIcon drawAtPoint:CGPointMake(0, 0)];	
 
-	UIImage* weather = UIGraphicsGetImageFromCurrentImageContext();
-	UIGraphicsEndImageContext();
+		if (self.weatherImage)
+		{
+			float width = self.weatherImage.size.width * self.imageScale;
+			float height = self.weatherImage.size.height * self.imageScale;
+       	        	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+		        [self.weatherImage drawInRect:iconRect];
+        	}
 
-	NSLog(@"WI: Rendering highlight.");
-	CGRect darkRect = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
-	UIGraphicsBeginImageContext(darkRect.size);
-	CGContextRef ctx = UIGraphicsGetCurrentContext();
-	[weather drawInRect:darkRect];
-	CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
-	CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
-	CGContextFillRect(ctx, darkRect);
-	UIImage* blackLayer = UIGraphicsGetImageFromCurrentImageContext();
-	UIGraphicsEndImageContext();
+		NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
+        	[t drawAtPoint:CGPointMake(0, 0) withStyle:self.tempStyle];
 
-	[blackLayer drawAtPoint:CGPointMake(0, 0)];
-	[weather drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:(self.highlighted ? 0.60 : 1.0)];
+		self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
+		UIGraphicsEndImageContext();
+
+		CGRect darkRect = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
+		UIGraphicsBeginImageContext(darkRect.size);
+		CGContextRef ctx = UIGraphicsGetCurrentContext();
+		[self.weatherImage drawInRect:darkRect];
+		CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
+		CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
+		CGContextFillRect(ctx, darkRect);
+		self.shadow = UIGraphicsGetImageFromCurrentImageContext();
+		UIGraphicsEndImageContext();
+	}
+
+	[self.shadow drawAtPoint:CGPointMake(0, 0)];
+	[self.weatherIcon drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:(self.highlighted ? 0.60 : 1.0)];
 }
 
 - (void) dealloc
