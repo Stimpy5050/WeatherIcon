@@ -335,23 +335,19 @@ foundCharacters:(NSString *)string
 	UIImage* weather = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();
 
-	if (self.highlighted)
-	{
-		NSLog(@"WI: Rendering highlight.");
-		CGRect darkRect = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
-		UIGraphicsBeginImageContext(darkRect.size);
-		CGContextRef ctx = UIGraphicsGetCurrentContext();
-		[weather drawInRect:darkRect];
-		CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
-		CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
-		CGContextFillRect(ctx, darkRect);
-		UIImage* blackLayer = UIGraphicsGetImageFromCurrentImageContext();
-		UIGraphicsEndImageContext();
-	        [blackLayer drawAtPoint:darkRect.origin];
-		[weather drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:0.60];
-	}
-	else
-		[weather drawAtPoint:CGPointMake(0, 0)];
+	NSLog(@"WI: Rendering highlight.");
+	CGRect darkRect = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
+	UIGraphicsBeginImageContext(darkRect.size);
+	CGContextRef ctx = UIGraphicsGetCurrentContext();
+	[weather drawInRect:darkRect];
+	CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
+	CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
+	CGContextFillRect(ctx, darkRect);
+	UIImage* blackLayer = UIGraphicsGetImageFromCurrentImageContext();
+	UIGraphicsEndImageContext();
+
+	[blackLayer drawAtPoint:CGPointMake(0, 0)];
+	[weather drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:(self.highlighted ? 0.60 : 1.0)];
 }
 
 - (void) dealloc
