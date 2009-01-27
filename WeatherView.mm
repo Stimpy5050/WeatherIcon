@@ -19,7 +19,7 @@
 @implementation WeatherView
 
 @synthesize applicationIcon, highlighted;
-@synthesize temp, code, tempStyle, imageScale, imageMarginTop;
+@synthesize temp, code, night, tempStyle, imageScale, imageMarginTop;
 @synthesize isCelsius, overrideLocation, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
 
@@ -114,6 +114,7 @@
 	self.applicationIcon = icon;
 	self.temp = @"?";
 	self.code = @"3200";
+	self.night = false;
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
@@ -144,7 +145,28 @@ namespaceURI:(NSString *)namespaceURI
 qualifiedName:(NSString *)qName
    attributes:(NSDictionary *)attributeDict
 {
-	if ([elementName isEqualToString:@"yweather:condition"])
+	if ([elementName isEqualToString:@"yweather:astronomy"])
+	{
+		NSString* sunrise = [NSString stringWithString:[attributeDict objectForKey:@"sunrise"]];
+		NSString* sunset = [NSString stringWithString:[attributeDict objectForKey:@"sunset"]];
+
+		if (sunrise && sunset)
+		{
+			NSDate* now = [NSDate date];
+
+			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
+			[format setDateFormat:@"MM/dd/yyyy "];
+			NSString* today = [format stringFromDate:now];
+
+			[format setDateFormat:@"MM/dd/yyyy hh:mm a"];
+			NSDate* sunriseDate = [format dateFromString:[today stringByAppendingString:sunrise]];
+			NSDate* sunsetDate = [format dateFromString:[today stringByAppendingString:sunset]];
+		
+			self.night = ([sunriseDate compare:now] == NSOrderedDescending || [sunsetDate compare:now] == NSOrderedAscending);
+			NSLog(@"WI: Dates: %@ to %@, Night? %d", sunriseDate, sunsetDate, self.night);
+		}
+	}
+	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
 		self.temp = [NSString stringWithString:[attributeDict objectForKey:@"temp"]];
 		NSLog(@"WI: Temp: %@", self.temp);
@@ -181,12 +203,6 @@ foundCharacters:(NSString *)string
 	}
 
 	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
-}
-
-- (void) updateImage
-{
-	[self.applicationIcon setNeedsDisplay];
-	[self setNeedsDisplay];
 }
 
 - (void) _refresh
@@ -232,6 +248,12 @@ foundCharacters:(NSString *)string
 	[pool release];
 }
 
+- (void) updateImage
+{
+	[self.applicationIcon setNeedsDisplay];
+	[self setNeedsDisplay];
+}
+
 - (void) drawRect:(CGRect) rect
 {
 	UIGraphicsBeginImageContext(self.frame.size);
@@ -240,29 +262,47 @@ foundCharacters:(NSString *)string
 	//appIconImageView.alpha = 0;
 
         NSBundle* sb = [NSBundle mainBundle];
-        NSString* bgName = [@"weatherbg" stringByAppendingString:self.code];
-        NSString* bgPath = [sb pathForResource:bgName ofType:@"png"];
+	NSString* bgName = nil;
+	NSString* bgPath = nil;
+	UIImage* bgIcon = nil;
 
-        if (bgPath)
-        {
-                UIImage* bgIcon = [UIImage imageWithContentsOfFile:bgPath];
-		if (bgIcon)
-	                [bgIcon drawAtPoint:CGPointMake(0, 0)];	
+	if (self.night)
+	{
+		// if it's night, always try the night icon first
+        	bgName = @"weatherbg_night";
+	        bgPath = [sb pathForResource:bgName ofType:@"png"];
+	        bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
 	}
+
+	if (!bgIcon)
+	{
+		// next try the code-specific one
+ 		bgName = [@"weatherbg" stringByAppendingString:self.code];
+		bgPath = [sb pathForResource:bgName ofType:@"png"];
+		bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
+	}
+
+	if (!bgIcon)
+	{
+		// no code specific icon, so look for day
+        	bgName = @"weatherbg_day";
+	        bgPath = [sb pathForResource:bgName ofType:@"png"];
+	        bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
+	}
+
+	if (bgIcon)
+		[bgIcon drawAtPoint:CGPointMake(0, 0)];	
 
         NSString* iconName = [@"weather" stringByAppendingString:self.code];
         NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
+        UIImage* weatherIcon = (iconPath ? [UIImage imageWithContentsOfFile:iconPath] : nil);
 
-        if (iconPath)
-        {
-                UIImage* weatherIcon = [UIImage imageWithContentsOfFile:iconPath];
-		if (weatherIcon)
-		{
-			float width = weatherIcon.size.width * self.imageScale;
-			float height = weatherIcon.size.height * self.imageScale;
-                	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-	                [weatherIcon drawInRect:iconRect];
-		}
+	if (weatherIcon)
+	{
+		float width = weatherIcon.size.width * self.imageScale;
+		float height = weatherIcon.size.height * self.imageScale;
+               	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+	        [weatherIcon drawInRect:iconRect];
         }
 
         NSString* t = [self.temp stringByAppendingString: @"\u00B0"];
@@ -286,14 +326,7 @@ foundCharacters:(NSString *)string
 
 //	NSLog(@"WI: Style: %@", tempStyle);
 
-	@try
-	{
-        	[t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
-	}
-	@catch (NSException *e)
-	{
-		NSLog(@"WI: Failed to draw temperature: %@", [e name]);
-	}
+        [t drawAtPoint:CGPointMake(0, 0) withStyle:tempStyle];
 
 	UIImage* weather = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();

@@ -18,6 +18,7 @@
 @property(nonatomic, retain) NSString* temp;
 @property(nonatomic, retain) NSString* tempStyle;
 @property(nonatomic, retain) NSString* code;
+@property(nonatomic) BOOL night;
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
 @property(nonatomic) BOOL highlighted;
