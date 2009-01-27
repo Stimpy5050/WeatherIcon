@@ -20,7 +20,7 @@
 @property(nonatomic, retain) NSString* code;
 @property(nonatomic, retain) NSDate* sunrise;
 @property(nonatomic, retain) NSDate* sunset;
-@property(nonatomic, retain) NSDate* lastWeatherUpdate;
+@property(nonatomic) BOOL night;
 
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
@@ -49,6 +49,5 @@
 - (void)_refresh;
 - (void)drawRect:(CGRect) rect;
 - (void)dealloc;
-- (BOOL) isNight;
 
 @end

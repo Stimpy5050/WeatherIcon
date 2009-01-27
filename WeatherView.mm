@@ -15,11 +15,23 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/NSObjCRuntime.h>
 
+static NSString* defaultTempStyle(@""
+	"font-family: Helvetica; "
+	"font-weight: bold; "
+	"font-size: 13px; "
+	"color: white; "
+	"margin-top: 38px; "
+	"margin-left: 3px; "
+	"width: %dpx; "
+	"text-align: center; "
+	"text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
+"");
+
 @implementation WeatherView
 
 @synthesize applicationIcon, highlighted;
 @synthesize temp, windChill, code, tempStyle, imageScale, imageMarginTop;
-@synthesize sunset, sunrise, lastWeatherUpdate;
+@synthesize sunset, sunrise, night;
 @synthesize bgIcon, weatherImage, shadow, weatherIcon;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
@@ -86,18 +98,6 @@
 		{
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
 			{
-        			NSString* defaultTempStyle(@""
-			                "font-family: Helvetica; "
-			                "font-weight: bold; "
-			                "font-size: 13px; "
-			                "color: white; "
-			                "margin-top: 38px; "
-			                "margin-left: 3px; "
-			                "width: %dpx; "
-			                "text-align: center; "
-			                "text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
-			        "");
-
 				self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)self.frame.size.width];
 
 			        if (style && [style length] > 0)
@@ -137,6 +137,7 @@
 	self.applicationIcon = icon;
 	self.temp = @"?";
 	self.code = @"3200";
+	self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)rect.size.width];
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
@@ -160,13 +161,6 @@
 */
 
 	return ret;
-}
-- (BOOL) isNight
-{
-	if (self.sunrise && self.sunset && self.lastWeatherUpdate)
-		return ([self.sunrise compare:self.lastWeatherUpdate] == NSOrderedDescending || [self.sunset compare:self.lastWeatherUpdate] == NSOrderedAscending);
-
-	return false;
 }
 
 - (void)parser:(NSXMLParser *)parser
@@ -209,13 +203,20 @@ qualifiedName:(NSString *)qName
 		NSLog(@"WI: Code: %@", self.code);
 
 		NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
-		[format setDateFormat:@"EEE, d MMM yyyy h:mm a z"];
-		NSString* date = [NSString stringWithString:[attributeDict objectForKey:@"date"]];
-		self.lastWeatherUpdate = [format dateFromString:date];
-		NSLog(@"WI: Last Weather Update: %@", self.lastWeatherUpdate);
+		[format setDateFormat:@"EEE, d MMM yyyy h:mm a"];
+		NSString* date = [attributeDict objectForKey:@"date"];
+		NSDate* lastWeatherUpdate = [format dateFromString:date];
 
 		self.lastUpdateTime = [NSDate date];
 		NSLog(@"WI: Last Update Succeeded: %@", self.lastUpdateTime);
+
+		// safety net to make sure we have a good time
+		if (!lastWeatherUpdate)
+			lastWeatherUpdate = self.lastUpdateTime;
+
+		NSLog(@"WI: Weather Update Time: %@", lastWeatherUpdate);	
+		self.night = (self.sunrise && self.sunset && ([self.sunrise compare:lastWeatherUpdate] == NSOrderedDescending || [self.sunset compare:lastWeatherUpdate] == NSOrderedAscending));
+		NSLog(@"WI: Night? %d", self.night);
 	}
 }
 
@@ -290,41 +291,50 @@ foundCharacters:(NSString *)string
 	[pool release];
 }
 
+- (UIImage*) findWeatherImage:(NSBundle*) bundle prefix:(NSString*) prefix code:(NSString*) code suffix:(NSString*) suffix
+{
+	NSString* name = [[prefix stringByAppendingString:code] stringByAppendingString:suffix];
+	NSString* path = [bundle pathForResource:name ofType:@"png"];
+	UIImage* image = (path ? [UIImage imageWithContentsOfFile:path] : nil);
+	if (image)
+	{
+		NSLog(@"WI: Found %@ Image: %@", prefix, path);
+		return image;
+	}
+
+	return nil;
+}
+
+- (UIImage*) findWeatherImage:(NSString*) prefix
+{
+        NSBundle* bundle = [NSBundle mainBundle];
+	NSString* suffix = (self.night ? @"_night" : @"_day");	
+	NSString* blank = @"";
+
+	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:self.code suffix:suffix])
+		return img;
+
+	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:suffix])
+		return img;
+
+	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:self.code suffix:blank])
+		return img;
+
+	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:blank])
+		return img;
+
+	return nil;
+}
+
 - (void) updateWeatherView
 {
 	// reset the images
-	self.bgIcon = nil;
-	self.weatherImage = nil;
 	self.weatherIcon = nil;
 	self.shadow = nil;
-	
-        NSBundle* sb = [NSBundle mainBundle];
-	
-	if (self.isNight)
-	{
-		// if it's night, always try the night icon first
-	        NSString* bgPath = [sb pathForResource:@"weatherbg_night" ofType:@"png"];
-	        self.bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
-	}
 
-	if (!self.bgIcon)
-	{
-		// next try the code-specific one
- 		NSString* bgName = [@"weatherbg" stringByAppendingString:self.code];
-		NSString* bgPath = [sb pathForResource:bgName ofType:@"png"];
-		self.bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
-	}
-
-	if (!self.bgIcon)
-	{
-		// no code specific icon, so look for day
-	        NSString* bgPath = [sb pathForResource:@"weatherbg_day" ofType:@"png"];
-	        self.bgIcon = (bgPath ? [UIImage imageWithContentsOfFile:bgPath] : nil);
-	}
-
-        NSString* iconName = [@"weather" stringByAppendingString:self.code];
-        NSString* iconPath = [sb pathForResource:iconName ofType:@"png"];
-        self.weatherImage = (iconPath ? [UIImage imageWithContentsOfFile:iconPath] : nil);
+	// find the weather images
+	self.bgIcon = [self findWeatherImage:@"weatherbg"];
+	self.weatherImage = [self findWeatherImage:@"weather"];
 
 	[self.applicationIcon setNeedsDisplay];
 	[self setNeedsDisplay];
