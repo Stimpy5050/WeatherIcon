@@ -391,8 +391,15 @@ foundCharacters:(NSString *)string
 		UIGraphicsEndImageContext();
 	}
 
-	[self.shadow drawAtPoint:CGPointMake(0, 0)];
-	[self.weatherIcon drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:(self.highlighted ? 0.60 : 1.0)];
+	if (self.highlighted)
+	{
+		[self.shadow drawAtPoint:CGPointMake(0, 0)];
+		[self.weatherIcon drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:0.60];
+	}
+	else
+	{
+		[self.weatherIcon drawAtPoint:CGPointMake(0, 0)];
+	}
 }
 
 - (void) dealloc
