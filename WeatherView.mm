@@ -215,7 +215,24 @@ qualifiedName:(NSString *)qName
 			lastWeatherUpdate = self.lastUpdateTime;
 
 		NSLog(@"WI: Weather Update Time: %@", lastWeatherUpdate);	
-		self.night = (self.sunrise && self.sunset && ([self.sunrise compare:lastWeatherUpdate] == NSOrderedDescending || [self.sunset compare:lastWeatherUpdate] == NSOrderedAscending));
+		switch ([self.code intValue])
+		{
+			case 28:
+			case 30:
+			case 32:
+			case 34:
+			case 36:
+				self.night = false;
+				break;
+			case 27:
+			case 29:
+			case 31:
+			case 33:
+				self.night = true;
+				break;
+			default:	
+				self.night = (self.sunrise && self.sunset && ([self.sunrise compare:lastWeatherUpdate] == NSOrderedDescending || [self.sunset compare:lastWeatherUpdate] == NSOrderedAscending));
+		}
 		NSLog(@"WI: Night? %d", self.night);
 	}
 }
@@ -363,10 +380,10 @@ foundCharacters:(NSString *)string
 		self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 		UIGraphicsEndImageContext();
 
-		CGRect darkRect = CGRectMake(0, 0, self.frame.size.width, self.frame.size.height);
+		CGRect darkRect = CGRectMake(0, 0, self.weatherIcon.size.width, self.weatherIcon.size.height);
 		UIGraphicsBeginImageContext(darkRect.size);
 		CGContextRef ctx = UIGraphicsGetCurrentContext();
-		[self.weatherImage drawInRect:darkRect];
+		[self.weatherIcon drawAtPoint:darkRect.origin];
 		CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
 		CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
 		CGContextFillRect(ctx, darkRect);
