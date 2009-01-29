@@ -18,8 +18,8 @@
 @property(nonatomic, retain) NSString* windChill;
 @property(nonatomic, retain) NSString* tempStyle;
 @property(nonatomic, retain) NSString* code;
-@property(nonatomic, retain) NSDate* sunrise;
-@property(nonatomic, retain) NSDate* sunset;
+@property(nonatomic, retain) NSString* sunrise;
+@property(nonatomic, retain) NSString* sunset;
 @property(nonatomic) BOOL night;
 
 @property(nonatomic) float imageScale;

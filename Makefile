@@ -63,8 +63,10 @@ package:	$(Target)
 	mkdir -p package/DEBIAN
 	mkdir -p package/Library/Themes
 	mkdir -p package/Library/MobileSubstrate/DynamicLibraries
+	mkdir -p package/System/Library/CoreServices/SpringBoard.app
 	cp -a *.theme package/Library/Themes
 	cp -a $(Target) package/Library/MobileSubstrate/DynamicLibraries
+	cp -a *.png package/System/Library/CoreServices/SpringBoard.app
 	cp -a control package/DEBIAN
 	find package -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb

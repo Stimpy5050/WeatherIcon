@@ -20,11 +20,11 @@ static NSString* defaultTempStyle(@""
 	"font-weight: bold; "
 	"font-size: 13px; "
 	"color: white; "
-	"margin-top: 38px; "
+	"margin-top: 40px; "
 	"margin-left: 3px; "
 	"width: %dpx; "
 	"text-align: center; "
-	"text-shadow: rgba(0, 0, 0, 0.2) -1px -1px 1px; "
+	"text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 0px; "
 "");
 
 @implementation WeatherView
@@ -171,24 +171,8 @@ qualifiedName:(NSString *)qName
 {
 	if ([elementName isEqualToString:@"yweather:astronomy"])
 	{
-		NSString* sunrise = [NSString stringWithString:[attributeDict objectForKey:@"sunrise"]];
-		NSString* sunset = [NSString stringWithString:[attributeDict objectForKey:@"sunset"]];
-
-		if (sunrise && sunset)
-		{
-			NSDate* now = [NSDate date];
-
-			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
-			[format setDateFormat:@"MM/dd/yyyy "];
-			NSString* today = [format stringFromDate:now];
-
-			[format setDateFormat:@"MM/dd/yyyy hh:mm a"];
-			self.sunrise = [format dateFromString:[today stringByAppendingString:sunrise]];
-			self.sunset = [format dateFromString:[today stringByAppendingString:sunset]];
-		
-			NSLog(@"WI: Sunrise: %@", self.sunrise);
-			NSLog(@"WI: Sunset: %@", self.sunset);
-		}
+		self.sunrise = [NSString stringWithString:[attributeDict objectForKey:@"sunrise"]];
+		self.sunset = [NSString stringWithString:[attributeDict objectForKey:@"sunset"]];
 	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
@@ -202,36 +186,34 @@ qualifiedName:(NSString *)qName
 		self.code = [NSString stringWithString:[attributeDict objectForKey:@"code"]];
 		NSLog(@"WI: Code: %@", self.code);
 
-		NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
-		[format setDateFormat:@"EEE, d MMM yyyy h:mm a"];
-		NSString* date = [attributeDict objectForKey:@"date"];
-		NSDate* lastWeatherUpdate = [format dateFromString:date];
-
 		self.lastUpdateTime = [NSDate date];
-		NSLog(@"WI: Last Update Succeeded: %@", self.lastUpdateTime);
+		NSLog(@"WI: Last Update Time: %@", self.lastUpdateTime);
 
-		// safety net to make sure we have a good time
-		if (!lastWeatherUpdate)
-			lastWeatherUpdate = self.lastUpdateTime;
-
-		NSLog(@"WI: Weather Update Time: %@", lastWeatherUpdate);	
-		switch ([self.code intValue])
+		self.night = false;
+		if (self.sunrise && self.sunset)
 		{
-			case 28:
-			case 30:
-			case 32:
-			case 34:
-			case 36:
-				self.night = false;
-				break;
-			case 27:
-			case 29:
-			case 31:
-			case 33:
-				self.night = true;
-				break;
-			default:	
-				self.night = (self.sunrise && self.sunset && ([self.sunrise compare:lastWeatherUpdate] == NSOrderedDescending || [self.sunset compare:lastWeatherUpdate] == NSOrderedAscending));
+			NSString* date = [attributeDict objectForKey:@"date"];
+			NSMutableArray* dateParts = [[date componentsSeparatedByString:@" "] mutableCopy];
+			NSArray* sunriseParts = [self.sunrise componentsSeparatedByString:@" "];
+			NSArray* sunsetParts = [self.sunset componentsSeparatedByString:@" "];
+
+			[dateParts replaceObjectAtIndex:4 withObject:[sunriseParts objectAtIndex:0]];
+			[dateParts replaceObjectAtIndex:5 withObject:[sunriseParts objectAtIndex:1]];
+			NSString* localSunrise = [dateParts componentsJoinedByString:@" "];
+
+			[dateParts replaceObjectAtIndex:4 withObject:[sunsetParts objectAtIndex:0]];
+			[dateParts replaceObjectAtIndex:5 withObject:[sunsetParts objectAtIndex:1]];
+			NSString* localSunset = [dateParts componentsJoinedByString:@" "];
+
+			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
+			[format setDateFormat:@"EEE, d MMM yyyy h:mm a z"];
+			NSDate* sunriseDate = [format dateFromString:localSunrise];
+			NSDate* sunsetDate = [format dateFromString:localSunset];
+
+			NSLog(@"WI: Sunrise: %@", sunriseDate);
+			NSLog(@"WI: Sunset: %@", sunsetDate);
+
+			self.night = ([sunriseDate compare:self.lastUpdateTime] == NSOrderedDescending || [sunsetDate compare:self.lastUpdateTime] == NSOrderedAscending);
 		}
 		NSLog(@"WI: Night? %d", self.night);
 	}
