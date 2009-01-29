@@ -24,7 +24,7 @@ static NSString* defaultTempStyle(@""
 	"margin-left: 3px; "
 	"width: %dpx; "
 	"text-align: center; "
-	"text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 0px; "
+	"text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 0px; "
 "");
 
 @implementation WeatherView
