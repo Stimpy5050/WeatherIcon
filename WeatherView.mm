@@ -192,21 +192,14 @@ qualifiedName:(NSString *)qName
 		self.night = false;
 		if (self.sunrise && self.sunset)
 		{
-			NSString* date = [attributeDict objectForKey:@"date"];
-			NSMutableArray* dateParts = [[date componentsSeparatedByString:@" "] mutableCopy];
-			NSArray* sunriseParts = [self.sunrise componentsSeparatedByString:@" "];
-			NSArray* sunsetParts = [self.sunset componentsSeparatedByString:@" "];
-
-			[dateParts replaceObjectAtIndex:4 withObject:[sunriseParts objectAtIndex:0]];
-			[dateParts replaceObjectAtIndex:5 withObject:[sunriseParts objectAtIndex:1]];
-			NSString* localSunrise = [dateParts componentsJoinedByString:@" "];
-
-			[dateParts replaceObjectAtIndex:4 withObject:[sunsetParts objectAtIndex:0]];
-			[dateParts replaceObjectAtIndex:5 withObject:[sunsetParts objectAtIndex:1]];
-			NSString* localSunset = [dateParts componentsJoinedByString:@" "];
-
 			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
-			[format setDateFormat:@"EEE, d MMM yyyy h:mm a z"];
+			[format setDateFormat:@"d MMM yyyy "];
+			NSString* today = [format stringFromDate:self.lastUpdateTime];
+
+			NSString* localSunrise = [today stringByAppendingString:self.sunrise];
+			NSString* localSunset = [today stringByAppendingString:self.sunset];
+
+			[format setDateFormat:[format.dateFormat stringByAppendingString:@"h:mm a"]];
 			NSDate* sunriseDate = [format dateFromString:localSunrise];
 			NSDate* sunsetDate = [format dateFromString:localSunset];
 
