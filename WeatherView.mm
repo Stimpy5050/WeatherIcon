@@ -30,7 +30,7 @@ static NSString* defaultTempStyle(@""
 @implementation WeatherView
 
 @synthesize applicationIcon, highlighted;
-@synthesize temp, windChill, code, tempStyle, imageScale, imageMarginTop;
+@synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop;
 @synthesize sunset, sunrise, night;
 @synthesize bgIcon, weatherImage, shadow, weatherIcon;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
@@ -97,12 +97,12 @@ static NSString* defaultTempStyle(@""
 		if (dict)
 		{
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
-			{
-				self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)self.frame.size.width];
+				self.tempStyle = [self.tempStyle stringByAppendingString:style];
 
-			        if (style && [style length] > 0)
-			                self.tempStyle = [self.tempStyle stringByAppendingString:style];
-			}
+			if (NSString* nstyle = [dict objectForKey:@"TempStyleNight"])
+			        self.tempStyleNight = [self.tempStyle stringByAppendingString:nstyle];
+			else
+				self.tempStyleNight = self.tempStyle;
 
 			if (NSNumber* scale = [dict objectForKey:@"ImageScale"])
 				self.imageScale = [scale floatValue];
@@ -138,6 +138,7 @@ static NSString* defaultTempStyle(@""
 	self.temp = @"?";
 	self.code = @"3200";
 	self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)rect.size.width];
+	self.tempStyleNight = self.tempStyle;
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
@@ -173,6 +174,8 @@ qualifiedName:(NSString *)qName
 	{
 		self.sunrise = [NSString stringWithString:[attributeDict objectForKey:@"sunrise"]];
 		self.sunset = [NSString stringWithString:[attributeDict objectForKey:@"sunset"]];
+		NSLog(@"WI: Sunrise: %@", self.sunrise);
+		NSLog(@"WI: Sunset: %@", self.sunset);
 	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
@@ -193,20 +196,44 @@ qualifiedName:(NSString *)qName
 		if (self.sunrise && self.sunset)
 		{
 			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
-			[format setDateFormat:@"d MMM yyyy "];
-			NSString* today = [format stringFromDate:self.lastUpdateTime];
+			[format setDateFormat:@"HH:mm"];
+			NSString* now = [format stringFromDate:self.lastUpdateTime];
+			NSLog(@"WI: Update Time: %@", now);
 
-			NSString* localSunrise = [today stringByAppendingString:self.sunrise];
-			NSString* localSunset = [today stringByAppendingString:self.sunset];
+			//AM/PM
+			NSString* srAM = [self.sunrise substringFromIndex:self.sunrise.length - 2];
+			NSString* ssAM = [self.sunset substringFromIndex:self.sunset.length - 2];
+			
+			// Raw time	
+			NSString* rsr = [self.sunrise substringToIndex:self.sunrise.length - 3];
+			NSString* rss = [self.sunset substringToIndex:self.sunset.length - 3];
 
-			[format setDateFormat:[format.dateFormat stringByAppendingString:@"h:mm a"]];
-			NSDate* sunriseDate = [format dateFromString:localSunrise];
-			NSDate* sunsetDate = [format dateFromString:localSunset];
+			// parts
+			NSArray* na = [now componentsSeparatedByString:@":"];
+			NSArray* sra = [rsr componentsSeparatedByString:@":"];
+			NSArray* ssa = [rss componentsSeparatedByString:@":"];
 
-			NSLog(@"WI: Sunrise: %@", sunriseDate);
-			NSLog(@"WI: Sunset: %@", sunsetDate);
+			// check the hour
+			int nh = [[na objectAtIndex:0] intValue];
+			int srh = [[sra objectAtIndex:0] intValue];
+			int ssh = [[ssa objectAtIndex:0] intValue];
 
-			self.night = ([sunriseDate compare:self.lastUpdateTime] == NSOrderedDescending || [sunsetDate compare:self.lastUpdateTime] == NSOrderedAscending);
+			// account for AM/PM
+			if ([srAM isEqualToString:@"pm"])
+				srh += 12;
+
+			if ([ssAM isEqualToString:@"pm"])
+				ssh += 12;
+
+			NSLog(@"WI: Hours: %d, %d, %d", nh, srh, ssh);
+
+			int nm = [[na objectAtIndex:1] intValue] + (nh * 60);
+			int srm = [[sra objectAtIndex:1] intValue] + (srh * 60);
+			int ssm = [[ssa objectAtIndex:1] intValue] + (ssh * 60);
+
+			NSLog(@"WI: Minutes: %d, %d, %d", nm, srm, ssm);
+
+			self.night = (nm < srm || nm > ssm);
 		}
 		NSLog(@"WI: Night? %d", self.night);
 	}
@@ -350,7 +377,7 @@ foundCharacters:(NSString *)string
         	}
 
 		NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
-        	[t drawAtPoint:CGPointMake(0, 0) withStyle:self.tempStyle];
+        	[t drawAtPoint:CGPointMake(0, 0) withStyle:(self.night ? self.tempStyleNight : self.tempStyle)];
 
 		self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 		UIGraphicsEndImageContext();

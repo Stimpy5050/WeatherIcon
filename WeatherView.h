@@ -17,6 +17,7 @@
 @property(nonatomic, retain) NSString* temp;
 @property(nonatomic, retain) NSString* windChill;
 @property(nonatomic, retain) NSString* tempStyle;
+@property(nonatomic, retain) NSString* tempStyleNight;
 @property(nonatomic, retain) NSString* code;
 @property(nonatomic, retain) NSString* sunrise;
 @property(nonatomic, retain) NSString* sunset;
