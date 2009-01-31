@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Type</key>
+	<string>kweather</string>
+	<key>ImageMarginTop</key>
+	<integer>2</integer>
+	<key>ImageScale</key>
+	<real>0.3</real>
+	<key>TempStyle</key>
+	<string>text-align:right; margin-left:-3px;</string>
+</dict>
+</plist>

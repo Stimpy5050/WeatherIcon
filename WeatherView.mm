@@ -27,10 +27,69 @@ static NSString* defaultTempStyle(@""
 	"text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 0px; "
 "");
 
+static NSMutableDictionary* kweatherMapping;
+
+static void initKweatherMapping()
+{
+	if (kweatherMapping)
+		return;
+
+	kweatherMapping = [[NSMutableDictionary alloc] initWithCapacity:50];
+	[kweatherMapping setValue:@"tstorm3" forKey:@"0"];
+	[kweatherMapping setValue:@"tstorm3" forKey:@"1"];
+	[kweatherMapping setValue:@"tstorm3" forKey:@"2"];
+	[kweatherMapping setValue:@"tstorm3" forKey:@"3"];
+	[kweatherMapping setValue:@"tstorm2" forKey:@"4"];
+	[kweatherMapping setValue:@"sleet" forKey:@"5"];
+	[kweatherMapping setValue:@"sleet" forKey:@"6"];
+	[kweatherMapping setValue:@"sleet" forKey:@"7"];
+	[kweatherMapping setValue:@"hail" forKey:@"8"];
+	[kweatherMapping setValue:@"light_rain" forKey:@"9"];
+	[kweatherMapping setValue:@"hail" forKey:@"10"];
+	[kweatherMapping setValue:@"shower2" forKey:@"11"];
+	[kweatherMapping setValue:@"shower2" forKey:@"12"];
+	[kweatherMapping setValue:@"snow1" forKey:@"13"];
+	[kweatherMapping setValue:@"snow2" forKey:@"14"];
+	[kweatherMapping setValue:@"snow3" forKey:@"15"];
+	[kweatherMapping setValue:@"snow4" forKey:@"16"];
+	[kweatherMapping setValue:@"hail" forKey:@"17"];
+	[kweatherMapping setValue:@"sleet" forKey:@"18"];
+	[kweatherMapping setValue:@"mist" forKey:@"19"];
+	[kweatherMapping setValue:@"fog" forKey:@"20"];
+	[kweatherMapping setValue:@"mist" forKey:@"21"];
+	[kweatherMapping setValue:@"fog" forKey:@"22"];
+	[kweatherMapping setValue:@"sunny" forKey:@"23"];
+	[kweatherMapping setValue:@"fog" forKey:@"24"];
+	[kweatherMapping setValue:@"cloudy5" forKey:@"25"];
+	[kweatherMapping setValue:@"cloudy5" forKey:@"26"];
+	[kweatherMapping setValue:@"cloudy4" forKey:@"27"];
+	[kweatherMapping setValue:@"cloudy4" forKey:@"28"];
+	[kweatherMapping setValue:@"cloudy2" forKey:@"29"];
+	[kweatherMapping setValue:@"cloudy2" forKey:@"30"];
+	[kweatherMapping setValue:@"sunny" forKey:@"31"];
+	[kweatherMapping setValue:@"sunny" forKey:@"32"];
+	[kweatherMapping setValue:@"cloudy1" forKey:@"33"];
+	[kweatherMapping setValue:@"cloudy1" forKey:@"34"];
+	[kweatherMapping setValue:@"hail" forKey:@"35"];
+	[kweatherMapping setValue:@"sunny" forKey:@"36"];
+	[kweatherMapping setValue:@"tstorm1" forKey:@"37"];
+	[kweatherMapping setValue:@"tstorm2" forKey:@"38"];
+	[kweatherMapping setValue:@"tstorm2" forKey:@"39"];
+	[kweatherMapping setValue:@"shower1" forKey:@"40"];
+	[kweatherMapping setValue:@"snow5" forKey:@"41"];
+	[kweatherMapping setValue:@"snow3" forKey:@"42"];
+	[kweatherMapping setValue:@"snow5" forKey:@"43"];
+	[kweatherMapping setValue:@"cloudy2" forKey:@"44"];
+	[kweatherMapping setValue:@"tstorm2" forKey:@"45"];
+	[kweatherMapping setValue:@"snow3" forKey:@"46"];
+	[kweatherMapping setValue:@"tstorm1" forKey:@"47"];
+	[kweatherMapping setValue:@"dunno" forKey:@"3200"];
+}
+
 @implementation WeatherView
 
 @synthesize applicationIcon, highlighted;
-@synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop;
+@synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize sunset, sunrise, night;
 @synthesize bgIcon, weatherImage, shadow, weatherIcon;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
@@ -41,6 +100,7 @@ static NSString* defaultTempStyle(@""
 	NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 	return [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 }
+
 
 - (void) _parsePreferences
 {
@@ -96,6 +156,12 @@ static NSString* defaultTempStyle(@""
 		NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:themePrefs];
 		if (dict)
 		{
+			if (NSString* type = [dict objectForKey:@"Type"])
+			{
+				self.type = [NSString stringWithString:type];
+				initKweatherMapping();
+			}
+
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
 				self.tempStyle = [self.tempStyle stringByAppendingString:style];
 
@@ -133,6 +199,14 @@ static NSString* defaultTempStyle(@""
 {
         CGRect rect = CGRectMake(0, -1, icon.frame.size.width, icon.frame.size.height);
         id ret = [self initWithFrame:rect];
+
+/*
+	UIWebView* wv = [[UIWebView alloc] initWithFrame:rect];
+	wv.opaque = NO;
+	wv.backgroundColor = [UIColor clearColor];
+	[self addSubview:wv];
+	[wv loadHTMLString:@"<html><body><font color='white'>Hello World</font></body></html>" baseURL:nil];
+*/
 
 	self.applicationIcon = icon;
 	self.temp = @"?";
@@ -324,19 +398,30 @@ foundCharacters:(NSString *)string
 	return nil;
 }
 
-- (UIImage*) findWeatherImage:(NSString*) prefix
+- (UIImage*) findWeatherImage:(BOOL) background
 {
+	NSString* blank = @"";
+	NSString* prefix = (background ? @"weatherbg" : @"weather");
+	NSString* code = self.code;
+
+	if (!background && [self.type isEqualToString:@"kweather"])
+	{
+		code = [kweatherMapping objectForKey:self.code];
+		NSLog(@"WI: Mapping %@ to %@", self.code, code);
+		prefix = blank;
+	}
+
+	NSLog(@"WI: Find image for %@", code);
         NSBundle* bundle = [NSBundle mainBundle];
 	NSString* suffix = (self.night ? @"_night" : @"_day");	
-	NSString* blank = @"";
 
-	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:self.code suffix:suffix])
+	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:code suffix:suffix])
 		return img;
 
 	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:suffix])
 		return img;
 
-	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:self.code suffix:blank])
+	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:code suffix:blank])
 		return img;
 
 	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:blank])
@@ -352,8 +437,8 @@ foundCharacters:(NSString *)string
 	self.shadow = nil;
 
 	// find the weather images
-	self.bgIcon = [self findWeatherImage:@"weatherbg"];
-	self.weatherImage = [self findWeatherImage:@"weather"];
+	self.bgIcon = [self findWeatherImage:YES];
+	self.weatherImage = [self findWeatherImage:NO];
 
 	[self.applicationIcon setNeedsDisplay];
 	[self setNeedsDisplay];
