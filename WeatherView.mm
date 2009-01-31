@@ -190,8 +190,11 @@ static void initKweatherMapping()
 
 //		NSNumber* activeCity = [dict objectForKey:@"ActiveCity"];
 		NSArray* cities = [dict objectForKey:@"Cities"];
-		NSDictionary* city = [cities objectAtIndex:0];
-		self.location = [[city objectForKey:@"Zip"] substringToIndex:8];
+		if (cities.count > 0)
+		{
+			NSDictionary* city = [cities objectAtIndex:0];
+			self.location = [[city objectForKey:@"Zip"] substringToIndex:8];
+		}	
 	}
 }
 
