@@ -1,0 +1,13 @@
+#/bin/sh
+
+pkg=`grep ^Package: "$1"/control | cut -d ' ' -f 2`
+version=`grep ^Version: "$1"/control | cut -d ' ' -f 2`
+
+rm -rf $pkg
+mkdir -p $pkg/DEBIAN
+mkdir -p $pkg/Library/Themes
+cp -a "$1" $pkg/Library/Themes
+cp -a "$1"/control $pkg/DEBIAN
+rm $pkg/Library/Themes/"$1"/control
+find $pkg -name .svn -print0 | xargs -0 rm -rf
+dpkg-deb -b $pkg ${pkg}_${version}_iphoneos-arm.deb
