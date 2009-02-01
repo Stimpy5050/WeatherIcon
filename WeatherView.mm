@@ -156,6 +156,8 @@ static void initKweatherMapping()
 		NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:themePrefs];
 		if (dict)
 		{
+			NSLog(@"Loading theme prefs: %@", themePrefs);
+
 			if (NSString* type = [dict objectForKey:@"Type"])
 			{
 				self.type = [NSString stringWithString:type];
