@@ -443,8 +443,12 @@ foundCharacters:(NSString *)string
 	self.bgIcon = [self findWeatherImage:YES];
 	self.weatherImage = [self findWeatherImage:NO];
 
+	// HACK: Looping over all of the views to mark for redraw
+	NSArray* views = [self.applicationIcon subviews];
+	for (int i = 0; i < views.count; i++)
+		[[views objectAtIndex:i] setNeedsDisplay];
+
 	[self.applicationIcon setNeedsDisplay];
-	[self setNeedsDisplay];
 }
 
 - (void) drawRect:(CGRect) rect
@@ -454,16 +458,21 @@ foundCharacters:(NSString *)string
 		UIGraphicsBeginImageContext(self.frame.size);
 
 		if (self.bgIcon)
+		{
+//			NSLog(@"WI: Drawing Background");
 			[self.bgIcon drawAtPoint:CGPointMake(0, 0)];	
+		}
 
 		if (self.weatherImage)
 		{
+//			NSLog(@"WI: Drawing Weather Image");
 			float width = self.weatherImage.size.width * self.imageScale;
 			float height = self.weatherImage.size.height * self.imageScale;
        	        	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
 		        [self.weatherImage drawInRect:iconRect];
         	}
 
+//		NSLog(@"WI: Drawing Temperature");
 		NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
         	[t drawAtPoint:CGPointMake(0, 0) withStyle:(self.night ? self.tempStyleNight : self.tempStyle)];
 
