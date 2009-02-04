@@ -26,10 +26,7 @@
 
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
-@property(nonatomic) BOOL highlighted;
 
-@property(nonatomic, retain) UIImage* bgIcon;
-@property(nonatomic, retain) UIImage* weatherImage;
 @property(nonatomic, retain) UIImage* weatherIcon;
 
 @property(nonatomic) BOOL isCelsius;
@@ -45,9 +42,11 @@
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
 - (id)initWithIcon:(SBIcon*)icon;
-- (void)updateWeatherView;
 - (void)refresh;
 - (void)_refresh;
+- (void)_refreshInBackground;
+- (void)_initWeatherIcon;
+- (void)_updateWeatherIcon;
 - (UIImage*)icon;
 - (void)dealloc;
 

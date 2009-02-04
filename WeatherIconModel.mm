@@ -89,10 +89,10 @@ static void initKweatherMapping()
 
 @implementation WeatherIconModel
 
-@synthesize applicationIcon, highlighted;
+@synthesize applicationIcon;
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize sunset, sunrise, night;
-@synthesize bgIcon, weatherImage, weatherIcon;
+@synthesize weatherIcon;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
 
@@ -218,9 +218,7 @@ static void initKweatherMapping()
 	[self _parsePreferences];
 
 	self.nextRefreshTime = [NSDate date];
-
-	[self refreshNow];
-	[self updateWeatherView];
+	[self _initWeatherIcon];
 
 	return self;
 }
@@ -315,9 +313,6 @@ foundCharacters:(NSString *)string
 
 - (void) refresh
 {
-//	SBIconModel* model = [SBIconModel sharedInstance];
-//	[model reloadIconImageForDisplayIdentifier:self.applicationIcon.displayIdentifier];
-
 	NSDate* now = [NSDate date];
 //	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
 
@@ -328,13 +323,11 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
-	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
+	[NSThread detachNewThreadSelector:@selector(_refreshInBackground) toTarget:self withObject:nil];
 }
 
-- (void) refreshNow
+- (void) _refresh
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
 	// reparse the preferences
 	if (!self.overrideLocation)
 		[self _parseWeatherPreferences];
@@ -369,13 +362,22 @@ foundCharacters:(NSString *)string
 	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
-	[pool release];
 }
 
-- (void) _refresh
+- (void) _refreshInBackground
 {
-	[self refreshNow];
-	[self performSelectorOnMainThread:@selector(updateWeatherView) withObject:nil waitUntilDone:NO];
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	[self _refresh];
+	[pool release];
+
+	// update the weather info
+	[self performSelectorOnMainThread:@selector(_updateWeatherIcon) withObject:nil waitUntilDone:NO];
+}
+
+- (void) _initWeatherIcon
+{
+	[self _refresh];
+	[self _updateWeatherIcon];
 }
 
 - (UIImage*) findWeatherImage:(NSBundle*) bundle prefix:(NSString*) prefix code:(NSString*) code suffix:(NSString*) suffix
@@ -424,48 +426,31 @@ foundCharacters:(NSString *)string
 	return nil;
 }
 
-- (void) updateWeatherView
+- (void) _updateWeatherIcon
 {
-	// reset the images
-	self.weatherIcon = nil;
+	UIImage* bgIcon = [self findWeatherImage:YES];
+	UIGraphicsBeginImageContext(bgIcon.size);
 
-	// find the weather images
-	self.bgIcon = [self findWeatherImage:YES];
-	self.weatherImage = [self findWeatherImage:NO];
+//	NSLog(@"WI: Drawing Background");
+	[bgIcon drawAtPoint:CGPointMake(0, 0)];	
 
-//	SBIconModel* model = [SBIconModel sharedInstance];
-//	[[SBIconModel sharedInstance] reloadIconImageForDisplayIdentifier:self.applicationIcon.displayIdentifier];
+//	NSLog(@"WI: Drawing Weather Image");
+	UIImage* weatherImage = [self findWeatherImage:NO];
+	float width = weatherImage.size.width * self.imageScale;
+	float height = weatherImage.size.height * self.imageScale;
+        CGRect iconRect = CGRectMake((self.applicationIcon.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+	[weatherImage drawInRect:iconRect];
+
+//	NSLog(@"WI: Drawing Temperature");
+	NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
+       	[t drawAtPoint:CGPointMake(0, 0) withStyle:(self.night ? self.tempStyleNight : self.tempStyle)];
+
+	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
+	UIGraphicsEndImageContext();
 }
 
 - (UIImage*) icon
 {
-	if (!self.weatherIcon)
-	{
-		UIGraphicsBeginImageContext(self.bgIcon.size);
-
-		if (self.bgIcon)
-		{
-//			NSLog(@"WI: Drawing Background");
-			[self.bgIcon drawAtPoint:CGPointMake(0, 0)];	
-		}
-
-		if (self.weatherImage)
-		{
-//			NSLog(@"WI: Drawing Weather Image");
-			float width = self.weatherImage.size.width * self.imageScale;
-			float height = self.weatherImage.size.height * self.imageScale;
-       	        	CGRect iconRect = CGRectMake((self.applicationIcon.frame.size.width - width) / 2, self.imageMarginTop, width, height);
-		        [self.weatherImage drawInRect:iconRect];
-        	}
-
-//		NSLog(@"WI: Drawing Temperature");
-		NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
-        	[t drawAtPoint:CGPointMake(0, 0) withStyle:(self.night ? self.tempStyleNight : self.tempStyle)];
-
-		self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
-		UIGraphicsEndImageContext();
-	}
-
 	return self.weatherIcon;
 }
 
