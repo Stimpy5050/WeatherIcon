@@ -7,7 +7,6 @@ LDFLAGS=	-lobjc \
 				-framework CoreGraphics \
 				-framework CoreLocation \
 				-framework GraphicsServices \
-				-framework Celestial \
 				-multiply_defined suppress \
 				-L/usr/lib \
 				-F/System/Library/Frameworks \
@@ -24,7 +23,7 @@ LDFLAGS=	-lobjc \
 				-mcpu=arm1176jzf-s \
 				-fobjc-call-cxx-cdtors
 
-CFLAGS= -dynamiclib \
+CFLAGS= -O2 -dynamiclib \
   -fsigned-char -g -fobjc-exceptions \
   -Wall -Wundeclared-selector -Wreturn-type \
   -Wredundant-decls \
@@ -36,9 +35,9 @@ CFLAGS= -dynamiclib \
   -D_BSD_ARM_SETJMP_H \
   -D_UNISTD_H_
 
-Objects= WeatherView.o WeatherIcon.o
+Objects= WeatherIconModel.o WeatherView.o WeatherIcon.o
 
-Target=WeatherIcon.dylib
+Target=weathericon.dylib
 
 all:	$(Target)
 
@@ -46,6 +45,7 @@ install: 	$(Target)
 		chmod 755 $(Target)
 		rm -f /Library/MobileSubstrate/DynamicLibraries/$(Target)
 		cp $(Target) /Library/MobileSubstrate/DynamicLibraries/
+		cp *.plist /Library/MobileSubstrate/DynamicLibraries/
 		restart
 
 $(Target):	$(Objects)
@@ -68,6 +68,7 @@ package:	$(Target)
 	cp -a Transparent*.theme package/Library/Themes
 	cp -a Weather\ Icon.theme package/Library/Themes
 	cp -a $(Target) package/Library/MobileSubstrate/DynamicLibraries
+	cp -a *.plist package/Library/MobileSubstrate/DynamicLibraries
 	cp -a *.png package/System/Library/CoreServices/SpringBoard.app
 	cp -a control package/DEBIAN
 	find package -name .svn -print0 | xargs -0 rm -rf

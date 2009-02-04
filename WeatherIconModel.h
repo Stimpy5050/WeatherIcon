@@ -10,7 +10,7 @@
 #import <SpringBoard/SBIcon.h>
 #import <UIKit/UIKit.h>
 
-@interface WeatherView : UIView 
+@interface WeatherIconModel : NSObject
 
 @property(nonatomic, retain) SBIcon* applicationIcon;
 
@@ -31,7 +31,6 @@
 @property(nonatomic, retain) UIImage* bgIcon;
 @property(nonatomic, retain) UIImage* weatherImage;
 @property(nonatomic, retain) UIImage* weatherIcon;
-@property(nonatomic, retain) UIImage* shadow;
 
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
@@ -49,8 +48,7 @@
 - (void)updateWeatherView;
 - (void)refresh;
 - (void)_refresh;
-- (void)createImages;
-- (void)drawRect:(CGRect) rect;
+- (UIImage*)icon;
 - (void)dealloc;
 
 @end

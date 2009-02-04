@@ -7,8 +7,9 @@
  *
  */
 
-#import "WeatherView.h"
+#import "WeatherIconModel.h"
 #import <substrate.h>
+#import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SleepProofTimer.h>
 #import <UIKit/UIStringDrawing.h>
@@ -86,12 +87,12 @@ static void initKweatherMapping()
 	[kweatherMapping setValue:@"dunno" forKey:@"3200"];
 }
 
-@implementation WeatherView
+@implementation WeatherIconModel
 
 @synthesize applicationIcon, highlighted;
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize sunset, sunrise, night;
-@synthesize bgIcon, weatherImage, shadow, weatherIcon;
+@synthesize bgIcon, weatherImage, weatherIcon;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
 @synthesize nextRefreshTime, lastUpdateTime;
 
@@ -104,7 +105,7 @@ static void initKweatherMapping()
 
 - (void) _parsePreferences
 {
-	NSMutableDictionary* prefs = [WeatherView preferences];
+	NSMutableDictionary* prefs = [WeatherIconModel preferences];
 	if (prefs)
 	{
 		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
@@ -202,21 +203,10 @@ static void initKweatherMapping()
 
 - (id) initWithIcon:(SBIcon*)icon
 {
-        CGRect rect = CGRectMake(0, -1, icon.frame.size.width, icon.frame.size.height);
-        id ret = [self initWithFrame:rect];
-
-/*
-	UIWebView* wv = [[UIWebView alloc] initWithFrame:rect];
-	wv.opaque = NO;
-	wv.backgroundColor = [UIColor clearColor];
-	[self addSubview:wv];
-	[wv loadHTMLString:@"<html><body><font color='white'>Hello World</font></body></html>" baseURL:nil];
-*/
-
 	self.applicationIcon = icon;
 	self.temp = @"?";
 	self.code = @"3200";
-	self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)rect.size.width];
+	self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)icon.frame.size.width];
 	self.tempStyleNight = self.tempStyle;
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
@@ -225,24 +215,14 @@ static void initKweatherMapping()
 	self.showFeelsLike = false;
 	self.refreshInterval = 900;
 
-	self.opaque = NO;
-	self.userInteractionEnabled = NO;
-
 	[self _parsePreferences];
 
 	self.nextRefreshTime = [NSDate date];
 
-	[self _refresh];
+	[self refreshNow];
+	[self updateWeatherView];
 
-/*
-	_locationManager = [[[CLLocationManager alloc] init] autorelease];
-	_locationManager.delegate = self; // Tells the location manager to send updates to this object
-	_locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers;
-	[_locationManager startUpdatingLocation];
-	NSLog(@"WI: Location: %@", _locationManager.location);
-*/
-
-	return ret;
+	return self;
 }
 
 - (void)parser:(NSXMLParser *)parser
@@ -335,6 +315,9 @@ foundCharacters:(NSString *)string
 
 - (void) refresh
 {
+//	SBIconModel* model = [SBIconModel sharedInstance];
+//	[model reloadIconImageForDisplayIdentifier:self.applicationIcon.displayIdentifier];
+
 	NSDate* now = [NSDate date];
 //	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
 
@@ -348,7 +331,7 @@ foundCharacters:(NSString *)string
 	[NSThread detachNewThreadSelector:@selector(_refresh) toTarget:self withObject:nil];
 }
 
-- (void) _refresh
+- (void) refreshNow
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
@@ -386,9 +369,13 @@ foundCharacters:(NSString *)string
 	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
 
-	[self performSelectorOnMainThread:@selector(updateWeatherView) withObject:nil waitUntilDone:NO];
-
 	[pool release];
+}
+
+- (void) _refresh
+{
+	[self refreshNow];
+	[self performSelectorOnMainThread:@selector(updateWeatherView) withObject:nil waitUntilDone:NO];
 }
 
 - (UIImage*) findWeatherImage:(NSBundle*) bundle prefix:(NSString*) prefix code:(NSString*) code suffix:(NSString*) suffix
@@ -441,23 +428,20 @@ foundCharacters:(NSString *)string
 {
 	// reset the images
 	self.weatherIcon = nil;
-	self.shadow = nil;
 
 	// find the weather images
 	self.bgIcon = [self findWeatherImage:YES];
 	self.weatherImage = [self findWeatherImage:NO];
 
-	// HACK: Looping over all of the views to mark for redraw
-	NSArray* views = [self.applicationIcon subviews];
-	for (int i = 0; i < views.count; i++)
-		[[views objectAtIndex:i] setNeedsDisplay];
-
-	[self.applicationIcon setNeedsDisplay];
+//	SBIconModel* model = [SBIconModel sharedInstance];
+//	[[SBIconModel sharedInstance] reloadIconImageForDisplayIdentifier:self.applicationIcon.displayIdentifier];
 }
 
-- (void) createImages
+- (UIImage*) icon
 {
-		UIGraphicsBeginImageContext(self.frame.size);
+	if (!self.weatherIcon)
+	{
+		UIGraphicsBeginImageContext(self.bgIcon.size);
 
 		if (self.bgIcon)
 		{
@@ -470,7 +454,7 @@ foundCharacters:(NSString *)string
 //			NSLog(@"WI: Drawing Weather Image");
 			float width = self.weatherImage.size.width * self.imageScale;
 			float height = self.weatherImage.size.height * self.imageScale;
-       	        	CGRect iconRect = CGRectMake((self.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+       	        	CGRect iconRect = CGRectMake((self.applicationIcon.frame.size.width - width) / 2, self.imageMarginTop, width, height);
 		        [self.weatherImage drawInRect:iconRect];
         	}
 
@@ -480,36 +464,9 @@ foundCharacters:(NSString *)string
 
 		self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 		UIGraphicsEndImageContext();
-
-		CGRect darkRect = CGRectMake(0, 0, self.weatherIcon.size.width, self.weatherIcon.size.height);
-		UIGraphicsBeginImageContext(darkRect.size);
-		CGContextRef ctx = UIGraphicsGetCurrentContext();
-		[self.weatherIcon drawAtPoint:darkRect.origin];
-		CGContextSetFillColorWithColor(ctx, [[UIColor blackColor] CGColor]);
-		CGContextSetBlendMode(ctx, kCGBlendModeSourceIn);
-		CGContextFillRect(ctx, darkRect);
-		self.shadow = UIGraphicsGetImageFromCurrentImageContext();
-		UIGraphicsEndImageContext();
-}
-
-- (void) drawRect:(CGRect) rect
-{
-	if (!self.weatherIcon)
-	{
-		[self createImages];
 	}
 
-/*
-	if (self.highlighted)
-	{
-		[self.shadow drawAtPoint:CGPointMake(0, 0)];
-		[self.weatherIcon drawAtPoint:CGPointMake(0, 0) blendMode:kCGBlendModeNormal alpha:0.60];
-	}
-	else
-	{
-		[self.weatherIcon drawAtPoint:CGPointMake(0, 0)];
-	}
-*/
+	return self.weatherIcon;
 }
 
 - (void) dealloc
