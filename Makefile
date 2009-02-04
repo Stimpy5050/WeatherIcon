@@ -64,8 +64,6 @@ package:	$(Target)
 	mkdir -p package/Library/Themes
 	mkdir -p package/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/System/Library/CoreServices/SpringBoard.app
-	cp -a Default*.theme package/Library/Themes
-	cp -a Transparent*.theme package/Library/Themes
 	cp -a Weather\ Icon.theme package/Library/Themes
 	cp -a $(Target) package/Library/MobileSubstrate/DynamicLibraries
 	cp -a *.plist package/Library/MobileSubstrate/DynamicLibraries
