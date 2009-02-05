@@ -1,0 +1,11 @@
+Package: transparentweather
+Name: Transparent Weather Icon Background
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Transparent background images for WeatherIcon
+Homepage: http://david.ashman.com/weathericon
+Depiction: http://david.ashman.com/weathericon
+Maintainer: David Ashman <dashman@gmail.com>
+Author: David Ashman (Stimpy5050) <dashman@gmail.com>
+Sponsor: 
+Section: Themes (WinterBoard)
