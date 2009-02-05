@@ -447,6 +447,10 @@ foundCharacters:(NSString *)string
 
 	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();
+
+	NSArray* views = self.applicationIcon.subviews;
+	for (int i = 0; i < views.count; i++)
+		[[views objectAtIndex:i] setNeedsDisplay];
 }
 
 - (UIImage*) icon
