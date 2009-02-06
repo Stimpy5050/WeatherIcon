@@ -8,6 +8,7 @@
  */
 
 #import <SpringBoard/SBIcon.h>
+#import <SpringBoard/SBIconController.h>
 #import <UIKit/UIKit.h>
 
 @interface WeatherIconModel : NSObject
@@ -34,6 +35,7 @@
 @property(nonatomic) BOOL showFeelsLike;
 @property(nonatomic, retain) NSString* location;
 @property(nonatomic) int refreshInterval;
+@property(nonatomic) BOOL debug;
 
 @property(nonatomic, retain) NSDate* nextRefreshTime;
 @property(nonatomic, retain) NSDate* lastUpdateTime;
@@ -42,11 +44,10 @@
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
 - (id)initWithIcon:(SBIcon*)icon;
-- (void)refresh;
+- (void)refresh:(SBIconController*) controller;
 - (void)_refresh;
-- (void)_refreshInBackground;
-- (void)_initWeatherIcon;
-- (void)_updateWeatherIcon;
+- (void)_refreshInBackground:(SBIconController*) controller;
+- (void)_updateWeatherIcon:(SBIconController*) controller;
 - (UIImage*)icon;
 - (void)dealloc;
 

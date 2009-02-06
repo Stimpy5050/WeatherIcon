@@ -26,7 +26,7 @@
 - (id) wi_initWithApplication:(id) app;
 - (id) wi_initWithWebClip:(id) clip;
 - (void) wi_unscatter:(BOOL) b startTime:(double) time;
-- (UIImage*) wi_getCachedImagedForIcon:(SBIcon*) icon;
+//- (UIImage*) wi_getCachedImagedForIcon:(SBIcon*) icon;
 @end
 
 static NSString* _weatherBundleIdentifier;
@@ -54,11 +54,7 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 //	NSLog(@"WI: Unscattering springboard.");
 
 	// refresh the weather model
-	[_model refresh];
-
-	// now force the icon to refresh
-	SBIconModel* model(MSHookIvar<SBIconModel*>(self, "_iconModel"));
-	[model reloadIconImageForDisplayIdentifier:bundleIdentifier()];
+	[_model refresh:self];
 
 	// do the unscatter
 	[self wi_unscatter:b startTime:time];
@@ -78,22 +74,24 @@ static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SE
 	return self;
 }
 
+/*
 static UIImage* $SBIconModel$getCachedImagedForIcon$(SBIconModel<WeatherIcon> *self, SEL sel, SBIcon* icon) 
 {
 	if ([icon.displayIdentifier isEqualToString:bundleIdentifier()])
 	{
-		NSLog(@"WI: Asking for cached weather icon.");
+//		NSLog(@"WI: Asking for cached weather icon.");
 		return [_model icon];
 	}
 
 	return [self wi_getCachedImagedForIcon:icon];
 }
+*/
 
 static id $SBApplicationIcon$icon(SBApplicationIcon<WeatherIcon> *self, SEL sel) 
 {
 	if ([[self displayIdentifier] isEqualToString:bundleIdentifier()])
 	{
-		NSLog(@"WI: Asking for weather icon.");
+//		NSLog(@"WI: Asking for weather icon.");
 		return [_model icon];
 	}
 
@@ -139,11 +137,11 @@ extern "C" void WeatherIconInitialize() {
 	Class $SBIconController = objc_getClass("SBIconController");
 	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
 	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
-	Class $SBIconModel = objc_getClass("SBIconModel");
+//	Class $SBIconModel = objc_getClass("SBIconModel");
 	
 	// MSHookMessage is what we use to redirect the methods to our own
 	MSHookMessage($SBIconController, @selector(unscatter:startTime:), (IMP) &$SBIconController$unscatter$, "wi_");
-	MSHookMessage($SBIconModel, @selector(getCachedImagedForIcon:), (IMP) &$SBIconModel$getCachedImagedForIcon$, "wi_");
+//	MSHookMessage($SBIconModel, @selector(getCachedImagedForIcon:), (IMP) &$SBIconModel$getCachedImagedForIcon$, "wi_");
 	MSHookMessage($SBBookmarkIcon, @selector(initWithWebClip:), (IMP) &$SBBookmarkIcon$initWithWebClip$, "wi_");
 	MSHookMessage($SBBookmarkIcon, @selector(icon), (IMP) &$SBBookmarkIcon$icon, "wi_clip_");
 	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");

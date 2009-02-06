@@ -10,6 +10,7 @@
 #import "WeatherIconModel.h"
 #import <substrate.h>
 #import <SpringBoard/SBIconModel.h>
+#import <SpringBoard/SBIconController.h>
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SleepProofTimer.h>
 #import <UIKit/UIStringDrawing.h>
@@ -93,7 +94,7 @@ static void initKweatherMapping()
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon;
-@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval;
+@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, debug;
 @synthesize nextRefreshTime, lastUpdateTime;
 
 + (NSMutableDictionary*) preferences
@@ -135,6 +136,15 @@ static void initKweatherMapping()
 		if (NSNumber* interval = [prefs objectForKey:@"RefreshInterval"])
 			self.refreshInterval = ([interval intValue] * 60);
 		NSLog(@"WI: Refresh Interval: %d seconds", self.refreshInterval);
+
+		if (NSNumber* d = [prefs objectForKey:@"Debug"])
+		{
+			self.debug = [d boolValue];
+			NSLog(@"WI: Debug: %d", self.debug);
+		}
+
+		if (self.debug)
+			self.refreshInterval = 1;
 	}
 	else
 	{
@@ -214,11 +224,9 @@ static void initKweatherMapping()
 	self.overrideLocation = false;
 	self.showFeelsLike = false;
 	self.refreshInterval = 900;
+	self.nextRefreshTime = [NSDate date];
 
 	[self _parsePreferences];
-
-	self.nextRefreshTime = [NSDate date];
-	[self _initWeatherIcon];
 
 	return self;
 }
@@ -251,8 +259,8 @@ qualifiedName:(NSString *)qName
 		self.lastUpdateTime = [NSDate date];
 		NSLog(@"WI: Last Update Time: %@", self.lastUpdateTime);
 
-		self.night = false;
-		if (self.sunrise && self.sunset)
+		self.night = (self.debug ? !self.night : false);
+		if (!self.debug && self.sunrise && self.sunset)
 		{
 			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
 			[format setDateFormat:@"HH:mm"];
@@ -291,7 +299,6 @@ qualifiedName:(NSString *)qName
 			int ssm = [[ssa objectAtIndex:1] intValue] + (ssh * 60);
 
 			NSLog(@"WI: Minutes: %d, %d, %d", nm, srm, ssm);
-
 			self.night = (nm < srm || nm > ssm);
 		}
 		NSLog(@"WI: Night? %d", self.night);
@@ -311,19 +318,19 @@ foundCharacters:(NSString *)string
 {   
 }
 
-- (void) refresh
+- (void) refresh:(SBIconController*) controller
 {
 	NSDate* now = [NSDate date];
 //	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
 
 	// are we ready for an update?
-	if ([now compare:self.nextRefreshTime] == NSOrderedAscending)
+	if ([now compare:self.nextRefreshTime] == NSOrderedAscending && !self.debug)
 	{
 //		NSLog(@"WI: No refresh yet.");
 		return;
 	}
 
-	[NSThread detachNewThreadSelector:@selector(_refreshInBackground) toTarget:self withObject:nil];
+	[NSThread detachNewThreadSelector:@selector(_refreshInBackground:) toTarget:self withObject:controller];
 }
 
 - (void) _refresh
@@ -364,20 +371,14 @@ foundCharacters:(NSString *)string
 
 }
 
-- (void) _refreshInBackground
+- (void) _refreshInBackground:(SBIconController*) controller
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	[self _refresh];
 	[pool release];
 
 	// update the weather info
-	[self performSelectorOnMainThread:@selector(_updateWeatherIcon) withObject:nil waitUntilDone:NO];
-}
-
-- (void) _initWeatherIcon
-{
-	[self _refresh];
-	[self _updateWeatherIcon];
+	[self performSelectorOnMainThread:@selector(_updateWeatherIcon:) withObject:controller waitUntilDone:NO];
 }
 
 - (UIImage*) findWeatherImage:(NSBundle*) bundle prefix:(NSString*) prefix code:(NSString*) code suffix:(NSString*) suffix
@@ -426,7 +427,7 @@ foundCharacters:(NSString *)string
 	return nil;
 }
 
-- (void) _updateWeatherIcon
+- (void) _updateWeatherIcon:(SBIconController*) controller
 {
 	UIImage* bgIcon = [self findWeatherImage:YES];
 	UIGraphicsBeginImageContext(bgIcon.size);
@@ -448,7 +449,18 @@ foundCharacters:(NSString *)string
 	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();
 
-	NSArray* views = self.applicationIcon.subviews;
+	if (controller)
+	{
+	        // now force the icon to refresh
+	        SBIconModel* model(MSHookIvar<SBIconModel*>(controller, "_iconModel"));
+	        [model reloadIconImageForDisplayIdentifier:self.applicationIcon.displayIdentifier];
+
+		// get the SBIconController and refresh the contentView
+		[controller.contentView setNeedsDisplay];
+	}
+
+	// refresh all of the subviews to get the reflection right
+	NSArray* views = [self.applicationIcon subviews];
 	for (int i = 0; i < views.count; i++)
 		[[views objectAtIndex:i] setNeedsDisplay];
 }
