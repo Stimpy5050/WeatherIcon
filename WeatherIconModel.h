@@ -13,8 +13,6 @@
 
 @interface WeatherIconModel : NSObject
 
-@property(nonatomic, retain) SBIcon* applicationIcon;
-
 @property(nonatomic, retain) NSString* temp;
 @property(nonatomic, retain) NSString* windChill;
 @property(nonatomic, retain) NSString* tempStyle;
@@ -35,6 +33,7 @@
 @property(nonatomic) BOOL showFeelsLike;
 @property(nonatomic, retain) NSString* location;
 @property(nonatomic) int refreshInterval;
+@property(nonatomic, retain) NSString* bundleIdentifier;
 @property(nonatomic) BOOL debug;
 
 @property(nonatomic, retain) NSDate* nextRefreshTime;
@@ -43,7 +42,8 @@
 + (NSMutableDictionary*) preferences;
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
-- (id)initWithIcon:(SBIcon*)icon;
+- (id)init;
+- (BOOL)isWeatherIcon:(SBIcon*) icon;
 - (void)refresh:(SBIconController*) controller;
 - (void)_refresh;
 - (void)_refreshInBackground:(SBIconController*) controller;

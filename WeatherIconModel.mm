@@ -90,11 +90,10 @@ static void initKweatherMapping()
 
 @implementation WeatherIconModel
 
-@synthesize applicationIcon;
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon;
-@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, debug;
+@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug;
 @synthesize nextRefreshTime, lastUpdateTime;
 
 + (NSMutableDictionary*) preferences
@@ -132,6 +131,10 @@ static void initKweatherMapping()
 
 		NSLog(@"WI: Location: %@", self.location);
 		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
+
+		if (NSString* id = [prefs objectForKey:@"WeatherBundleIdentifier"])
+			self.bundleIdentifier = [NSString stringWithString:id];
+		NSLog(@"WI: Weather Bundle Identifier: %@", self.bundleIdentifier);
 
 		if (NSNumber* interval = [prefs objectForKey:@"RefreshInterval"])
 			self.refreshInterval = ([interval intValue] * 60);
@@ -211,12 +214,11 @@ static void initKweatherMapping()
 	}
 }
 
-- (id) initWithIcon:(SBIcon*)icon
+- (id) init
 {
-	self.applicationIcon = icon;
 	self.temp = @"?";
 	self.code = @"3200";
-	self.tempStyle = [NSString stringWithFormat:defaultTempStyle, (int)icon.frame.size.width];
+	self.tempStyle = defaultTempStyle;
 	self.tempStyleNight = self.tempStyle;
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
@@ -316,6 +318,11 @@ qualifiedName:(NSString *)qName
 - (void)parser:(NSXMLParser *)parser
 foundCharacters:(NSString *)string
 {   
+}
+
+- (BOOL) isWeatherIcon:(SBIcon*) icon
+{
+	return [icon.displayIdentifier isEqualToString:self.bundleIdentifier];
 }
 
 - (void) refresh:(SBIconController*) controller
@@ -439,12 +446,13 @@ foundCharacters:(NSString *)string
 	UIImage* weatherImage = [self findWeatherImage:NO];
 	float width = weatherImage.size.width * self.imageScale;
 	float height = weatherImage.size.height * self.imageScale;
-        CGRect iconRect = CGRectMake((self.applicationIcon.frame.size.width - width) / 2, self.imageMarginTop, width, height);
+        CGRect iconRect = CGRectMake((bgIcon.size.width - width) / 2, self.imageMarginTop, width, height);
 	[weatherImage drawInRect:iconRect];
 
 //	NSLog(@"WI: Drawing Temperature");
 	NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
-       	[t drawAtPoint:CGPointMake(0, 0) withStyle:(self.night ? self.tempStyleNight : self.tempStyle)];
+	NSString* style = [NSString stringWithFormat:(self.night ? self.tempStyleNight : self.tempStyle), (int)bgIcon.size.width];
+       	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
 	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();
@@ -453,16 +461,20 @@ foundCharacters:(NSString *)string
 	{
 	        // now force the icon to refresh
 	        SBIconModel* model(MSHookIvar<SBIconModel*>(controller, "_iconModel"));
-	        [model reloadIconImageForDisplayIdentifier:self.applicationIcon.displayIdentifier];
+	        [model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
 
 		// get the SBIconController and refresh the contentView
 		[controller.contentView setNeedsDisplay];
-	}
 
-	// refresh all of the subviews to get the reflection right
-	NSArray* views = [self.applicationIcon subviews];
-	for (int i = 0; i < views.count; i++)
-		[[views objectAtIndex:i] setNeedsDisplay];
+		// refresh all of the subviews to get the reflection right
+		SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier];
+		if (applicationIcon)
+		{
+			NSArray* views = [applicationIcon subviews];
+			for (int i = 0; i < views.count; i++)
+				[[views objectAtIndex:i] setNeedsDisplay];
+		}
+	}
 }
 
 - (UIImage*) icon
@@ -472,7 +484,6 @@ foundCharacters:(NSString *)string
 
 - (void) dealloc
 {
-	[self.applicationIcon release];
 	[self.temp release];
 	[self.tempStyle release];
 	[self.code release];
