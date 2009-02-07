@@ -21,10 +21,14 @@
 #import <UIKit/UIKit.h>
  
 @protocol WeatherIcon
-- (id) wi_icon;
-- (id) wi_clip_icon;
+- (id) wi_initWithApplication:(id) app;
+- (id) wi_initWithWebClip:(id) clip;
 - (void) wi_unscatter:(BOOL) b startTime:(double) time;
 @end
+
+static Class $WIInstalledApplicationIcon;
+static Class $WIApplicationIcon;
+static Class $WIBookmarkIcon;
 
 static WeatherIconModel* _model;
 
@@ -40,41 +44,68 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 	[self wi_unscatter:b startTime:time];
 }
 
-static id $SBApplicationIcon$icon(SBApplicationIcon<WeatherIcon> *self, SEL sel) 
+static id weatherIcon(SBIcon *self, SEL sel) 
 {
-	if ([_model isWeatherIcon:self])
-	{
-//		NSLog(@"WI: Asking for weather icon.");
-		return [_model icon];
-	}
-
-	return [self wi_icon];
+//	NSLog(@"WI: Calling icon method.");
+	return [_model icon];
 }
 
-static id $SBBookmarkIcon$icon(SBBookmarkIcon<WeatherIcon> *self, SEL sel) 
+static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon> *self, SEL sel, id app) 
 {
+	self = [self wi_initWithApplication:app];
+
 	if ([_model isWeatherIcon:self])
 	{
-		NSLog(@"WI: Asking for weather icon.");
-		return [_model icon];
+		NSLog(@"WI: Replacing icon method for %@.", self.displayIdentifier);
+		if ([self class] == objc_getClass("SBInstalledApplicationIcon"))
+			object_setClass(self, $WIInstalledApplicationIcon);
+		else
+			object_setClass(self, $WIApplicationIcon);
 	}
 
-	return [self wi_clip_icon];
+	return self;
+}
+
+static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SEL sel, id clip) 
+{
+	self = [self wi_initWithWebClip:clip];
+
+	if ([_model isWeatherIcon:self])
+	{
+		NSLog(@"WI: Replacing icon method for %@.", self.displayIdentifier);
+		object_setClass(self, $WIBookmarkIcon);
+	}
+
+	return self;
 }
 
 extern "C" void WeatherIconInitialize() {
 	if (objc_getClass("SpringBoard") == nil)
 		return;
 
-	// Get the SBIcon class
+	$WIApplicationIcon = objc_allocateClassPair(objc_getClass("SBApplicationIcon"), "WIApplicationIcon", 0);
+	class_replaceMethod($WIApplicationIcon, @selector(icon), (IMP)&weatherIcon, "@@:");
+	objc_registerClassPair($WIApplicationIcon);
+
+	$WIInstalledApplicationIcon = objc_allocateClassPair(objc_getClass("SBInstalledApplicationIcon"), "WIInstalledApplicationIcon", 0);
+	class_replaceMethod($WIInstalledApplicationIcon, @selector(icon), (IMP)&weatherIcon, "@@:");
+	objc_registerClassPair($WIInstalledApplicationIcon);
+
+	$WIBookmarkIcon = objc_allocateClassPair(objc_getClass("SBBookmarkIcon"), "WIBookmarkIcon", 0);
+	class_replaceMethod($WIBookmarkIcon, @selector(icon), (IMP)&weatherIcon, "@@:");
+	objc_registerClassPair($WIBookmarkIcon);
+
 	Class $SBIconController = objc_getClass("SBIconController");
 	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
 	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
+	Class $SBInstalledApplicationIcon = objc_getClass("SBInstalledApplicationIcon");
 	
 	// MSHookMessage is what we use to redirect the methods to our own
 	MSHookMessage($SBIconController, @selector(unscatter:startTime:), (IMP) &$SBIconController$unscatter$, "wi_");
-	MSHookMessage($SBBookmarkIcon, @selector(icon), (IMP) &$SBBookmarkIcon$icon, "wi_clip_");
-	MSHookMessage($SBApplicationIcon, @selector(icon), (IMP) &$SBApplicationIcon$icon, "wi_");
+	//MSHookMessage($SBBookmarkIcon, @selector(icon), (IMP) &$SBBookmarkIcon$icon, "wi_clip_");
+	//MSHookMessage($SBApplicationIcon, @selector(icon), (IMP) &$SBApplicationIcon$icon, "wi_");
+	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");
+	MSHookMessage($SBBookmarkIcon, @selector(initWithWebClip:), (IMP) &$SBBookmarkIcon$initWithWebClip$, "wi_");
 	
 	NSLog(@"WI: Init weather model.");
 	_model = [[WeatherIconModel alloc] init];
