@@ -437,21 +437,27 @@ foundCharacters:(NSString *)string
 - (void) _updateWeatherIcon:(SBIconController*) controller
 {
 	UIImage* bgIcon = [self findWeatherImage:YES];
-	UIGraphicsBeginImageContext(bgIcon.size);
-
-//	NSLog(@"WI: Drawing Background");
-	[bgIcon drawAtPoint:CGPointMake(0, 0)];	
-
-//	NSLog(@"WI: Drawing Weather Image");
 	UIImage* weatherImage = [self findWeatherImage:NO];
-	float width = weatherImage.size.width * self.imageScale;
-	float height = weatherImage.size.height * self.imageScale;
-        CGRect iconRect = CGRectMake((bgIcon.size.width - width) / 2, self.imageMarginTop, width, height);
-	[weatherImage drawInRect:iconRect];
+	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
+
+	UIGraphicsBeginImageContext(size);
+
+	if (bgIcon)
+	{
+		[bgIcon drawAtPoint:CGPointMake(0, 0)];	
+	}
+
+	if (weatherImage)
+	{
+		float width = weatherImage.size.width * self.imageScale;
+		float height = weatherImage.size.height * self.imageScale;
+	        CGRect iconRect = CGRectMake((size.width - width) / 2, self.imageMarginTop, width, height);
+		[weatherImage drawInRect:iconRect];
+	}
 
 //	NSLog(@"WI: Drawing Temperature");
 	NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
-	NSString* style = [NSString stringWithFormat:(self.night ? self.tempStyleNight : self.tempStyle), (int)bgIcon.size.width];
+	NSString* style = [NSString stringWithFormat:(self.night ? self.tempStyleNight : self.tempStyle), (int)size.width];
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
 	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
