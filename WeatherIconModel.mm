@@ -162,7 +162,10 @@ static void initKweatherMapping()
 	        NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 		[prefs writeToFile:prefsPath atomically:YES];
 	}
+}
 
+- (void) _loadTheme
+{
 	NSBundle* bundle = [NSBundle mainBundle];
 	NSString* themePrefs = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
 	if (themePrefs)
@@ -170,13 +173,16 @@ static void initKweatherMapping()
 		NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:themePrefs];
 		if (dict)
 		{
-			NSLog(@"Loading theme prefs: %@", themePrefs);
+			NSLog(@"WI: Loading theme prefs: %@", themePrefs);
 
 			if (NSString* type = [dict objectForKey:@"Type"])
 			{
 				self.type = [NSString stringWithString:type];
 				initKweatherMapping();
 			}
+	
+			// reset the temp style
+			self.tempStyle = defaultTempStyle;
 
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
 				self.tempStyle = [self.tempStyle stringByAppendingString:style];
@@ -436,6 +442,9 @@ foundCharacters:(NSString *)string
 
 - (void) _updateWeatherIcon:(SBIconController*) controller
 {
+	// parse the theme settings
+	[self _loadTheme];
+
 	UIImage* bgIcon = [self findWeatherImage:YES];
 	UIImage* weatherImage = [self findWeatherImage:NO];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));

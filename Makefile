@@ -37,7 +37,7 @@ CFLAGS= -O2 -dynamiclib \
 
 Objects= WeatherIconModel.o WeatherIcon.o
 
-Target=weathericon.dylib
+Target=WeatherIcon.dylib
 
 all:	$(Target)
 
