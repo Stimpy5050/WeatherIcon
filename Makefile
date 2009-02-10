@@ -1,11 +1,10 @@
 Compiler=g++
 
-LDFLAGS=	-lobjc \
+LDFLAGS=	-lobjc -O2 -g0 \
 				-framework Foundation \
 				-framework UIKit \
 				-framework CoreFoundation \
 				-framework CoreGraphics \
-				-framework CoreLocation \
 				-framework GraphicsServices \
 				-multiply_defined suppress \
 				-L/usr/lib \
@@ -24,7 +23,7 @@ LDFLAGS=	-lobjc \
 				-fobjc-call-cxx-cdtors
 
 CFLAGS= -O2 -dynamiclib \
-  -fsigned-char -g -fobjc-exceptions \
+  -fsigned-char -g0 -fobjc-exceptions \
   -Wall -Wundeclared-selector -Wreturn-type \
   -Wredundant-decls \
   -Wchar-subscripts \

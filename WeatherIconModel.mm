@@ -91,9 +91,10 @@ static void initKweatherMapping()
 @implementation WeatherIconModel
 
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
+@synthesize latitude, longitude, localWeatherTime;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon;
-@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug;
+@synthesize isCelsius, useLocalTime, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug;
 @synthesize nextRefreshTime, lastUpdateTime;
 
 + (NSMutableDictionary*) preferences
@@ -131,6 +132,10 @@ static void initKweatherMapping()
 
 		NSLog(@"WI: Location: %@", self.location);
 		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
+
+		if (NSNumber* v = [prefs objectForKey:@"UseLocalTime"])
+			self.useLocalTime = [v boolValue];
+		NSLog(@"WI: Use Local Time: %d", self.useLocalTime);
 
 		if (NSString* id = [prefs objectForKey:@"WeatherBundleIdentifier"])
 			self.bundleIdentifier = [NSString stringWithString:id];
@@ -229,6 +234,7 @@ static void initKweatherMapping()
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
+	self.useLocalTime = false;
 	self.overrideLocation = false;
 	self.showFeelsLike = false;
 	self.refreshInterval = 900;
@@ -252,6 +258,18 @@ qualifiedName:(NSString *)qName
 		NSLog(@"WI: Sunrise: %@", self.sunrise);
 		NSLog(@"WI: Sunset: %@", self.sunset);
 	}
+	else if ([elementName isEqualToString:@"geo:lat"])
+	{
+		parserContent = [[NSMutableString alloc] init];
+	}
+	else if ([elementName isEqualToString:@"geo:long"])
+	{
+		parserContent = [[NSMutableString alloc] init];
+	}
+	else if ([elementName isEqualToString:@"localtime"])
+	{
+		parserContent = [[NSMutableString alloc] init];
+	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
 		self.windChill = [NSString stringWithString:[attributeDict objectForKey:@"chill"]];
@@ -267,49 +285,13 @@ qualifiedName:(NSString *)qName
 		self.lastUpdateTime = [NSDate date];
 		NSLog(@"WI: Last Update Time: %@", self.lastUpdateTime);
 
-		self.night = (self.debug ? !self.night : false);
-		if (!self.debug && self.sunrise && self.sunset)
-		{
-			NSDateFormatter* format = [[[NSDateFormatter alloc] init] autorelease];
-			[format setDateFormat:@"HH:mm"];
-			NSString* now = [format stringFromDate:self.lastUpdateTime];
-			NSLog(@"WI: Update Time: %@", now);
-
-			//AM/PM
-			NSString* srAM = [self.sunrise substringFromIndex:self.sunrise.length - 2];
-			NSString* ssAM = [self.sunset substringFromIndex:self.sunset.length - 2];
-			
-			// Raw time	
-			NSString* rsr = [self.sunrise substringToIndex:self.sunrise.length - 3];
-			NSString* rss = [self.sunset substringToIndex:self.sunset.length - 3];
-
-			// parts
-			NSArray* na = [now componentsSeparatedByString:@":"];
-			NSArray* sra = [rsr componentsSeparatedByString:@":"];
-			NSArray* ssa = [rss componentsSeparatedByString:@":"];
-
-			// check the hour
-			int nh = [[na objectAtIndex:0] intValue];
-			int srh = [[sra objectAtIndex:0] intValue];
-			int ssh = [[ssa objectAtIndex:0] intValue];
-
-			// account for AM/PM
-			if ([srAM isEqualToString:@"pm"])
-				srh += 12;
-
-			if ([ssAM isEqualToString:@"pm"])
-				ssh += 12;
-
-			NSLog(@"WI: Hours: %d, %d, %d", nh, srh, ssh);
-
-			int nm = [[na objectAtIndex:1] intValue] + (nh * 60);
-			int srm = [[sra objectAtIndex:1] intValue] + (srh * 60);
-			int ssm = [[ssa objectAtIndex:1] intValue] + (ssh * 60);
-
-			NSLog(@"WI: Minutes: %d, %d, %d", nm, srm, ssm);
-			self.night = (nm < srm || nm > ssm);
-		}
-		NSLog(@"WI: Night? %d", self.night);
+		
+		NSString* weatherDate = [attributeDict objectForKey:@"date"];
+		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
+		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
+		[df setDateFormat:@"EEE, dd MMM yyyy hh:mm a"];
+		self.localWeatherTime = [df dateFromString:weatherDate];
+		NSLog(@"WI: Local Weather Time: %@", self.localWeatherTime);
 	}
 }
 
@@ -318,12 +300,39 @@ didEndElement:(NSString *)elementName
 namespaceURI:(NSString *)namespaceURI
 qualifiedName:(NSString *)qName
 {
+	if ([elementName isEqualToString:@"geo:lat"])
+	{
+		self.latitude = parserContent;
+		parserContent = nil;
+		NSLog(@"WI: Latitude: %@", self.latitude);
+	}
+	else if ([elementName isEqualToString:@"geo:long"])
+	{
+		self.longitude = parserContent;
+		parserContent = nil;
+		NSLog(@"WI: Longitude: %@", self.longitude);
+	}
+	else if ([elementName isEqualToString:@"localtime"])
+	{
+		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
+		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
+		[df setDateFormat:@"dd MMM yyyy HH:mm:ss"];
+		self.localWeatherTime = [df dateFromString:parserContent];
+		[parserContent release];
+		parserContent = nil;
+		NSLog(@"WI: Local Weather Time: %@", self.localWeatherTime);
+	}
 }
 
 
 - (void)parser:(NSXMLParser *)parser
 foundCharacters:(NSString *)string
 {   
+	if (parserContent)
+	{
+//		NSLog(@"WI: Appending %@ to content.", string);
+		[parserContent appendString:string];
+	}
 }
 
 - (BOOL) isWeatherIcon:(SBIcon*) icon
@@ -365,6 +374,17 @@ foundCharacters:(NSString *)string
 	[parser setDelegate:self];
 	[parser parse];
 	[parser release];
+
+	if (self.useLocalTime)
+	{
+		NSLog(@"WI: Checking local time for %@...", self.location);
+		urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", self.latitude, self.longitude];
+		url = [NSURL URLWithString:urlStr];
+		parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+		[parser setDelegate:self];
+		[parser parse];
+		[parser release];
+	}
 
 //	NSLog(@"WI: Did the update succeed? %@ vs %@", self.lastUpdateTime, self.nextRefreshTime);
 	if (!self.lastUpdateTime || [self.lastUpdateTime compare:self.nextRefreshTime] == NSOrderedAscending)
@@ -442,6 +462,41 @@ foundCharacters:(NSString *)string
 
 - (void) _updateWeatherIcon:(SBIconController*) controller
 {
+	// handle debug case
+	self.night = (self.debug ? !self.night : false);
+	if (!self.debug && self.localWeatherTime && self.sunrise && self.sunset)
+	{
+		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
+		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
+		[df setDateFormat:@"dd MMM yyyy hh:mm a"];
+
+		NSString* date = [df stringFromDate:self.localWeatherTime];
+		NSArray* dateParts = [date componentsSeparatedByString:@" "];
+
+		NSString* sunriseFullDateStr = [NSString stringWithFormat:@"%@ %@ %@ %@",
+			[dateParts objectAtIndex:0],
+			[dateParts objectAtIndex:1],
+			[dateParts objectAtIndex:2],
+			self.sunrise];
+
+		NSString* sunsetFullDateStr = [NSString stringWithFormat:@"%@ %@ %@ %@",
+			[dateParts objectAtIndex:0],
+			[dateParts objectAtIndex:1],
+			[dateParts objectAtIndex:2],
+			self.sunset];
+
+//		NSLog(@"WI: Full Sunrise/Sunset:%@, %@", sunriseFullDateStr, sunsetFullDateStr);
+
+		NSDate* weatherDate = self.localWeatherTime;
+		NSDate* sunriseDate = [df dateFromString:sunriseFullDateStr];
+		NSDate* sunsetDate = [df dateFromString:sunsetFullDateStr];
+		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
+
+		self.night = ([weatherDate compare:sunriseDate] == NSOrderedAscending ||
+				[weatherDate compare:sunsetDate] == NSOrderedDescending);
+	}
+	NSLog(@"WI: Night? %d", self.night);
+
 	// parse the theme settings
 	[self _loadTheme];
 
