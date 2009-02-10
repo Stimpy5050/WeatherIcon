@@ -342,6 +342,9 @@ foundCharacters:(NSString *)string
 
 - (void) refresh:(SBIconController*) controller
 {
+	if (!self.weatherIcon)
+		[self _updateWeatherIcon:controller];
+
 	NSDate* now = [NSDate date];
 //	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
 
