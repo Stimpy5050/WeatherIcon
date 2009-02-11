@@ -21,9 +21,11 @@
 #import <UIKit/UIKit.h>
  
 @protocol WeatherIcon
+- (id) wi_init;
 - (id) wi_initWithApplication:(id) app;
 - (id) wi_initWithWebClip:(id) clip;
 - (void) wi_unscatter:(BOOL) b startTime:(double) time;
+- (void) wi_deactivated;
 @end
 
 static Class $WIInstalledApplicationIcon;
@@ -33,12 +35,19 @@ static Class $WIBookmarkIcon;
 static WeatherIconModel* _model;
 
 
+static id $SBIconController$init(SBIconController<WeatherIcon> *self, SEL sel)
+{
+	self = [self wi_init];
+	[_model setIconController:self];
+	return self;
+}
+
 static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SEL sel, BOOL b, double time) 
 {
 //	NSLog(@"WI: Unscattering springboard.");
 
 	// refresh the weather model
-	[_model refresh:self];
+	[_model refresh];
 
 	// do the unscatter
 	[self wi_unscatter:b startTime:time];
@@ -48,6 +57,20 @@ static id weatherIcon(SBIcon *self, SEL sel)
 {
 //	NSLog(@"WI: Calling icon method.");
 	return [_model icon];
+}
+
+static void $SBApplication$deactivated(SBApplication<WeatherIcon> *self, SEL sel) 
+{
+	if ([self.displayIdentifier isEqualToString:@"com.apple.weather"] ||
+	    [self.displayIdentifier isEqualToString:_model.bundleIdentifier])
+	{
+		[_model setNeedsRefresh];
+
+		// refresh the weather model
+		[_model refresh];
+	}
+
+	[self wi_deactivated];
 }
 
 static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon> *self, SEL sel, id app) 
@@ -98,12 +121,12 @@ extern "C" void WeatherIconInitialize() {
 	Class $SBIconController = objc_getClass("SBIconController");
 	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
 	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
-	Class $SBInstalledApplicationIcon = objc_getClass("SBInstalledApplicationIcon");
+	Class $SBApplication = objc_getClass("SBApplication");
 	
 	// MSHookMessage is what we use to redirect the methods to our own
+	MSHookMessage($SBIconController, @selector(init), (IMP) &$SBIconController$init, "wi_");
 	MSHookMessage($SBIconController, @selector(unscatter:startTime:), (IMP) &$SBIconController$unscatter$, "wi_");
-	//MSHookMessage($SBBookmarkIcon, @selector(icon), (IMP) &$SBBookmarkIcon$icon, "wi_clip_");
-	//MSHookMessage($SBApplicationIcon, @selector(icon), (IMP) &$SBApplicationIcon$icon, "wi_");
+	MSHookMessage($SBApplication, @selector(deactivated), (IMP) &$SBApplication$deactivated, "wi_");
 	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");
 	MSHookMessage($SBBookmarkIcon, @selector(initWithWebClip:), (IMP) &$SBBookmarkIcon$initWithWebClip$, "wi_");
 	

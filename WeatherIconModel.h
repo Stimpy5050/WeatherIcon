@@ -13,6 +13,7 @@
 
 @interface WeatherIconModel : NSObject
 {
+	SBIconController* controller;
 	NSMutableString* parserContent;
 }
 
@@ -50,11 +51,13 @@
 - (void) _parsePreferences;
 - (void) _parseWeatherPreferences;
 - (id)init;
+- (void)setIconController:(SBIconController*) iconController;
 - (BOOL)isWeatherIcon:(SBIcon*) icon;
-- (void)refresh:(SBIconController*) controller;
+- (void)setNeedsRefresh;
+- (void)refresh;
 - (void)_refresh;
-- (void)_refreshInBackground:(SBIconController*) controller;
-- (void)_updateWeatherIcon:(SBIconController*) controller;
+- (void)_refreshInBackground;
+- (void)_updateWeatherIcon;
 - (UIImage*)icon;
 - (void)dealloc;
 

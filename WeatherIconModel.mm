@@ -169,6 +169,12 @@ static void initKweatherMapping()
 	}
 }
 
+- (void) setNeedsRefresh
+{
+	NSLog(@"WI: Marking weather icon for refresh.");
+	self.nextRefreshTime = [NSDate date];
+}
+
 - (void) _loadTheme
 {
 	NSBundle* bundle = [NSBundle mainBundle];
@@ -213,6 +219,7 @@ static void initKweatherMapping()
 
 	if (dict)
 	{
+		NSLog(@"WI: Parsing weather preferences...");
 		self.isCelsius = [[dict objectForKey:@"Celsius"] boolValue];
 
 //		NSNumber* activeCity = [dict objectForKey:@"ActiveCity"];
@@ -223,6 +230,11 @@ static void initKweatherMapping()
 			self.location = [[city objectForKey:@"Zip"] substringToIndex:8];
 		}	
 	}
+}
+
+- (void) setIconController:(SBIconController*) iconController
+{
+	controller = [iconController retain];
 }
 
 - (id) init
@@ -340,10 +352,10 @@ foundCharacters:(NSString *)string
 	return [icon.displayIdentifier isEqualToString:self.bundleIdentifier];
 }
 
-- (void) refresh:(SBIconController*) controller
+- (void) refresh
 {
 	if (!self.weatherIcon)
-		[self _updateWeatherIcon:controller];
+		[self _updateWeatherIcon];
 
 	NSDate* now = [NSDate date];
 //	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
@@ -355,7 +367,7 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
-	[NSThread detachNewThreadSelector:@selector(_refreshInBackground:) toTarget:self withObject:controller];
+	[NSThread detachNewThreadSelector:@selector(_refreshInBackground) toTarget:self withObject:nil];
 }
 
 - (void) _refresh
@@ -407,14 +419,14 @@ foundCharacters:(NSString *)string
 
 }
 
-- (void) _refreshInBackground:(SBIconController*) controller
+- (void) _refreshInBackground
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	[self _refresh];
 	[pool release];
 
 	// update the weather info
-	[self performSelectorOnMainThread:@selector(_updateWeatherIcon:) withObject:controller waitUntilDone:NO];
+	[self performSelectorOnMainThread:@selector(_updateWeatherIcon) withObject:nil waitUntilDone:NO];
 }
 
 - (UIImage*) findWeatherImage:(NSBundle*) bundle prefix:(NSString*) prefix code:(NSString*) code suffix:(NSString*) suffix
@@ -463,8 +475,11 @@ foundCharacters:(NSString *)string
 	return nil;
 }
 
-- (void) _updateWeatherIcon:(SBIconController*) controller
+- (void) _updateWeatherIcon
 {
+	[self _parsePreferences];
+	[self _loadTheme];
+
 	// handle debug case
 	self.night = (self.debug ? !self.night : false);
 	if (!self.debug && self.localWeatherTime && self.sunrise && self.sunset)
@@ -499,9 +514,6 @@ foundCharacters:(NSString *)string
 				[weatherDate compare:sunsetDate] == NSOrderedDescending);
 	}
 	NSLog(@"WI: Night? %d", self.night);
-
-	// parse the theme settings
-	[self _loadTheme];
 
 	UIImage* bgIcon = [self findWeatherImage:YES];
 	UIImage* weatherImage = [self findWeatherImage:NO];
