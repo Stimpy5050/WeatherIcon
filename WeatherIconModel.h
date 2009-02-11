@@ -24,6 +24,7 @@
 @property(nonatomic, retain) NSString* sunset;
 @property(nonatomic, retain) NSString* longitude;
 @property(nonatomic, retain) NSString* latitude;
+@property(nonatomic, retain) NSTimeZone* timeZone;
 @property(nonatomic) BOOL night;
 
 @property(nonatomic, retain) NSString* type;
@@ -35,7 +36,6 @@
 @property(nonatomic, retain) UIImage* weatherIcon;
 
 @property(nonatomic) BOOL isCelsius;
-@property(nonatomic) BOOL useLocalTime;
 @property(nonatomic) BOOL overrideLocation;
 @property(nonatomic) BOOL showFeelsLike;
 @property(nonatomic, retain) NSString* location;
@@ -45,7 +45,6 @@
 
 @property(nonatomic, retain) NSDate* nextRefreshTime;
 @property(nonatomic, retain) NSDate* lastUpdateTime;
-@property(nonatomic, retain) NSDate* localWeatherTime;
 
 + (NSMutableDictionary*) preferences;
 - (void) _parsePreferences;

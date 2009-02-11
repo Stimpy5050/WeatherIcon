@@ -91,10 +91,10 @@ static void initKweatherMapping()
 @implementation WeatherIconModel
 
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
-@synthesize latitude, longitude, localWeatherTime;
+@synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon;
-@synthesize isCelsius, useLocalTime, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug;
+@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug;
 @synthesize nextRefreshTime, lastUpdateTime;
 
 + (NSMutableDictionary*) preferences
@@ -120,7 +120,11 @@ static void initKweatherMapping()
 		if (self.overrideLocation)
 		{
 			if (NSString* loc = [prefs objectForKey:@"Location"])
+			{
+				if (![loc isEqualToString:self.location])
+					self.timeZone = nil;
 				self.location = [NSString stringWithString:loc];
+			}
 
 			if (NSNumber* celsius = [prefs objectForKey:@"Celsius"])
 				self.isCelsius = [celsius boolValue];
@@ -132,10 +136,6 @@ static void initKweatherMapping()
 
 		NSLog(@"WI: Location: %@", self.location);
 		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
-
-		if (NSNumber* v = [prefs objectForKey:@"UseLocalTime"])
-			self.useLocalTime = [v boolValue];
-		NSLog(@"WI: Use Local Time: %d", self.useLocalTime);
 
 		if (NSString* id = [prefs objectForKey:@"WeatherBundleIdentifier"])
 			self.bundleIdentifier = [NSString stringWithString:id];
@@ -227,7 +227,12 @@ static void initKweatherMapping()
 		if (cities.count > 0)
 		{
 			NSDictionary* city = [cities objectAtIndex:0];
-			self.location = [[city objectForKey:@"Zip"] substringToIndex:8];
+			NSString* zip = [[city objectForKey:@"Zip"] substringToIndex:8];
+
+			if (![zip isEqualToString:self.location])
+				self.timeZone = nil;
+
+			self.location = zip;
 		}	
 	}
 }
@@ -246,7 +251,6 @@ static void initKweatherMapping()
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
-	self.useLocalTime = false;
 	self.overrideLocation = false;
 	self.showFeelsLike = false;
 	self.refreshInterval = 900;
@@ -278,7 +282,7 @@ qualifiedName:(NSString *)qName
 	{
 		parserContent = [[NSMutableString alloc] init];
 	}
-	else if ([elementName isEqualToString:@"localtime"])
+	else if ([elementName isEqualToString:@"offset"])
 	{
 		parserContent = [[NSMutableString alloc] init];
 	}
@@ -296,14 +300,6 @@ qualifiedName:(NSString *)qName
 
 		self.lastUpdateTime = [NSDate date];
 		NSLog(@"WI: Last Update Time: %@", self.lastUpdateTime);
-
-		
-		NSString* weatherDate = [attributeDict objectForKey:@"date"];
-		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
-		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
-		[df setDateFormat:@"EEE, dd MMM yyyy hh:mm a"];
-		self.localWeatherTime = [df dateFromString:weatherDate];
-		NSLog(@"WI: Local Weather Time: %@", self.localWeatherTime);
 	}
 }
 
@@ -324,15 +320,11 @@ qualifiedName:(NSString *)qName
 		parserContent = nil;
 		NSLog(@"WI: Longitude: %@", self.longitude);
 	}
-	else if ([elementName isEqualToString:@"localtime"])
+	else if ([elementName isEqualToString:@"offset"])
 	{
-		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
-		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
-		[df setDateFormat:@"dd MMM yyyy HH:mm:ss"];
-		self.localWeatherTime = [df dateFromString:parserContent];
-		[parserContent release];
-		parserContent = nil;
-		NSLog(@"WI: Local Weather Time: %@", self.localWeatherTime);
+		int offset = [parserContent intValue];
+		self.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:(offset * 3600)];
+		NSLog(@"WI: Local time zone: %@", self.timeZone);
 	}
 }
 
@@ -373,8 +365,7 @@ foundCharacters:(NSString *)string
 - (void) _refresh
 {
 	// reparse the preferences
-	if (!self.overrideLocation)
-		[self _parseWeatherPreferences];
+	[self _parsePreferences];
 
 	if (!self.location)
 	{
@@ -390,9 +381,9 @@ foundCharacters:(NSString *)string
 	[parser parse];
 	[parser release];
 
-	if (self.useLocalTime)
+	if (!self.timeZone)
 	{
-		NSLog(@"WI: Checking local time for %@...", self.location);
+		NSLog(@"WI: Refreshing time zone for %@...", self.location);
 		urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", self.latitude, self.longitude];
 		url = [NSURL URLWithString:urlStr];
 		parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
@@ -477,18 +468,19 @@ foundCharacters:(NSString *)string
 
 - (void) _updateWeatherIcon
 {
-	[self _parsePreferences];
 	[self _loadTheme];
 
 	// handle debug case
 	self.night = (self.debug ? !self.night : false);
-	if (!self.debug && self.localWeatherTime && self.sunrise && self.sunset)
+	if (!self.debug && self.sunrise && self.sunset)
 	{
 		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
+		if (self.timeZone)
+			[df setTimeZone:self.timeZone];
 		[df setDateFormat:@"dd MMM yyyy hh:mm a"];
 
-		NSString* date = [df stringFromDate:self.localWeatherTime];
+		NSString* date = [df stringFromDate:self.lastUpdateTime];
 		NSArray* dateParts = [date componentsSeparatedByString:@" "];
 
 		NSString* sunriseFullDateStr = [NSString stringWithFormat:@"%@ %@ %@ %@",
@@ -505,7 +497,7 @@ foundCharacters:(NSString *)string
 
 //		NSLog(@"WI: Full Sunrise/Sunset:%@, %@", sunriseFullDateStr, sunsetFullDateStr);
 
-		NSDate* weatherDate = self.localWeatherTime;
+		NSDate* weatherDate = self.lastUpdateTime;
 		NSDate* sunriseDate = [df dateFromString:sunriseFullDateStr];
 		NSDate* sunsetDate = [df dateFromString:sunsetFullDateStr];
 		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
@@ -569,6 +561,7 @@ foundCharacters:(NSString *)string
 
 - (void) dealloc
 {
+	[controller release];
 	[self.temp release];
 	[self.tempStyle release];
 	[self.code release];
