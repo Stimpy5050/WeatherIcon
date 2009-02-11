@@ -165,6 +165,7 @@ static void initKweatherMapping()
 		[prefs setValue:self.location forKey:@"Location"];
 		[prefs setValue:[NSNumber numberWithBool:self.isCelsius] forKey:@"Celsius"];
 		[prefs setValue:[NSNumber numberWithBool:self.showFeelsLike] forKey:@"ShowFeelsLike"];
+		[prefs setValue:[NSNumber numberWithBool:self.useLocalTime] forKey:@"UseLocalTime"];
 		[prefs setValue:[NSNumber numberWithInt:(int)(self.refreshInterval / 60)] forKey:@"RefreshInterval"];
 		[prefs setValue:@"com.apple.weather" forKey:@"WeatherBundleIdentifier"];
 
@@ -256,7 +257,7 @@ static void initKweatherMapping()
 	self.imageMarginTop = 0;
 	self.isCelsius = false;
 	self.overrideLocation = false;
-	self.useLocalTime = true;
+	self.useLocalTime = false;
 	self.showFeelsLike = false;
 	self.refreshInterval = 900;
 	self.nextRefreshTime = [NSDate date];
