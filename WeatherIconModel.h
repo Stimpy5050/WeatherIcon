@@ -41,10 +41,12 @@
 @property(nonatomic, retain) NSString* location;
 @property(nonatomic) int refreshInterval;
 @property(nonatomic, retain) NSString* bundleIdentifier;
+@property(nonatomic) BOOL useLocalTime;
 @property(nonatomic) BOOL debug;
 
 @property(nonatomic, retain) NSDate* nextRefreshTime;
 @property(nonatomic, retain) NSDate* lastUpdateTime;
+@property(nonatomic, retain) NSDate* localWeatherTime;
 
 + (NSMutableDictionary*) preferences;
 - (void) _parsePreferences;
