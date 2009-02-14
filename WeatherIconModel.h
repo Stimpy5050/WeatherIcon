@@ -9,11 +9,13 @@
 
 #import <SpringBoard/SBIcon.h>
 #import <SpringBoard/SBIconController.h>
+#import <SpringBoard/SBStatusBarIndicatorsView.h>
 #import <UIKit/UIKit.h>
 
 @interface WeatherIconModel : NSObject
 {
 	SBIconController* controller;
+	SBStatusBarIndicatorsView* indicators;
 	NSMutableString* parserContent;
 }
 
@@ -34,6 +36,7 @@
 @property(nonatomic) int imageMarginTop;
 
 @property(nonatomic, retain) UIImage* weatherIcon;
+@property(nonatomic, retain) UIImage* weatherImage;
 
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
@@ -53,12 +56,14 @@
 - (void) _parseWeatherPreferences;
 - (id)init;
 - (void)setIconController:(SBIconController*) iconController;
+- (void)setIndicators:(SBStatusBarIndicatorsView*) ind;
 - (BOOL)isWeatherIcon:(SBIcon*) icon;
 - (void)setNeedsRefresh;
 - (void)refresh;
 - (void)_refresh;
 - (void)_refreshInBackground;
 - (void)_updateWeatherIcon;
+- (UIImage*)findWeatherImage:(BOOL) bg;
 - (UIImage*)icon;
 - (void)dealloc;
 

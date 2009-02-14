@@ -11,6 +11,7 @@
 #import <substrate.h>
 #import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBIconController.h>
+#import <SpringBoard/SBStatusBarIndicatorsView.h>
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SleepProofTimer.h>
 #import <UIKit/UIStringDrawing.h>
@@ -93,7 +94,7 @@ static void initKweatherMapping()
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
-@synthesize weatherIcon;
+@synthesize weatherIcon, weatherImage;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime;
 @synthesize nextRefreshTime, lastUpdateTime, localWeatherTime;
 
@@ -245,6 +246,11 @@ static void initKweatherMapping()
 - (void) setIconController:(SBIconController*) iconController
 {
 	controller = [iconController retain];
+}
+
+- (void) setIndicators:(SBStatusBarIndicatorsView*) ind
+{
+	indicators = [ind retain];
 }
 
 - (id) init
@@ -552,7 +558,15 @@ foundCharacters:(NSString *)string
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
 	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
+	self.weatherImage = weatherImage;
 	UIGraphicsEndImageContext();
+
+	if (indicators)
+	{
+		NSLog(@"WI: Refreshing indicators...");
+		[indicators reloadIndicators];
+		[indicators setNeedsDisplay];
+	}
 
 	if (controller)
 	{
@@ -582,6 +596,7 @@ foundCharacters:(NSString *)string
 - (void) dealloc
 {
 	[controller release];
+	[indicators release];
 	[self.temp release];
 	[self.tempStyle release];
 	[self.code release];

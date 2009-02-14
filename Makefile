@@ -34,7 +34,7 @@ CFLAGS= -O2 -dynamiclib \
   -D_BSD_ARM_SETJMP_H \
   -D_UNISTD_H_
 
-Objects= WeatherIconModel.o WeatherIcon.o
+Objects= WeatherIconModel.o WeatherIndicatorView.o WeatherIcon.o
 
 Target=WeatherIcon.dylib
 
