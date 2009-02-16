@@ -4,8 +4,6 @@
 @interface WeatherIndicatorView : UIView
 {
 	WeatherIconModel* _model;
-	UIImage* _image;
-	NSString* _temp;
 }
 
 - (id) initWithModel:(WeatherIconModel*) model;

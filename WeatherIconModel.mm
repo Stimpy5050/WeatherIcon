@@ -8,15 +8,24 @@
  */
 
 #import "WeatherIconModel.h"
+#import "WeatherIndicatorView.h"
 #import <substrate.h>
+#import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBIconController.h>
+#import <SpringBoard/SBStatusBar.h>
+#import <SpringBoard/SBStatusBarContentsView.h>
 #import <SpringBoard/SBStatusBarIndicatorsView.h>
+#import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SleepProofTimer.h>
 #import <UIKit/UIStringDrawing.h>
 #import <UIKit/UIKit.h>
 #import <Foundation/NSObjCRuntime.h>
+
+static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
+static Class $SBIconController = objc_getClass("SBIconController");
 
 static NSString* defaultTempStyle(@""
 	"font-family: Helvetica; "
@@ -94,7 +103,7 @@ static void initKweatherMapping()
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
-@synthesize weatherIcon, weatherImage;
+@synthesize weatherIcon, weatherImage, statusBarImage;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime;
 @synthesize nextRefreshTime, lastUpdateTime, localWeatherTime;
 
@@ -241,16 +250,6 @@ static void initKweatherMapping()
 			self.location = zip;
 		}	
 	}
-}
-
-- (void) setIconController:(SBIconController*) iconController
-{
-	controller = [iconController retain];
-}
-
-- (void) setIndicators:(SBStatusBarIndicatorsView*) ind
-{
-	indicators = [ind retain];
 }
 
 - (id) init
@@ -460,13 +459,25 @@ foundCharacters:(NSString *)string
 	return nil;
 }
 
-- (UIImage*) findWeatherImage:(BOOL) background
+- (UIImage*) findWeatherImage:(int) type
 {
 	NSString* blank = @"";
-	NSString* prefix = (background ? @"weatherbg" : @"weather");
+	NSString* prefix = nil;
+	switch (type)
+	{
+		case 1:
+			prefix = @"weatherbg";
+			break;
+		case 2:
+			prefix = @"weatherstatus";
+			break;
+		default:
+			prefix = @"weather";
+	}
+
 	NSString* code = self.code;
 
-	if (!background && [self.type isEqualToString:@"kweather"])
+	if (type == 0 && [self.type isEqualToString:@"kweather"])
 	{
 		code = [kweatherMapping objectForKey:self.code];
 		NSLog(@"WI: Mapping %@ to %@", self.code, code);
@@ -489,6 +500,7 @@ foundCharacters:(NSString *)string
 	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:blank])
 		return img;
 
+	NSLog(@"WI: No image found for code %@ with type %d", code, type);
 	return nil;
 }
 
@@ -533,8 +545,8 @@ foundCharacters:(NSString *)string
 	}
 	NSLog(@"WI: Night? %d", self.night);
 
-	UIImage* bgIcon = [self findWeatherImage:YES];
-	UIImage* weatherImage = [self findWeatherImage:NO];
+	UIImage* bgIcon = [self findWeatherImage:1];
+	UIImage* weatherImage = [self findWeatherImage:0];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
 
 	UIGraphicsBeginImageContext(size);
@@ -559,23 +571,32 @@ foundCharacters:(NSString *)string
 
 	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
 	self.weatherImage = weatherImage;
+
+	// save the status bar image
+	self.statusBarImage = [self findWeatherImage:2];
+	if (!self.statusBarImage)
+		self.statusBarImage = weatherImage;
+
 	UIGraphicsEndImageContext();
 
-	if (indicators)
+	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
+	if (statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicators...");
-		[indicators reloadIndicators];
-		[indicators setNeedsDisplay];
+		[statusBarController addStatusBarItem:@"Weather"];
+		[statusBarController removeStatusBarItem:@"Weather"];
 	}
 
-	if (controller)
+	SBIconController* iconController = [$SBIconController sharedInstance];
+	if (iconController)
 	{
+		NSLog(@"WI: Refreshing icon...");
 	        // now force the icon to refresh
-	        SBIconModel* model(MSHookIvar<SBIconModel*>(controller, "_iconModel"));
+	        SBIconModel* model(MSHookIvar<SBIconModel*>(iconController, "_iconModel"));
 	        [model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
 
 		// get the SBIconController and refresh the contentView
-		[controller.contentView setNeedsDisplay];
+		[iconController.contentView setNeedsDisplay];
 
 		// refresh all of the subviews to get the reflection right
 		SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier];
@@ -595,8 +616,6 @@ foundCharacters:(NSString *)string
 
 - (void) dealloc
 {
-	[controller release];
-	[indicators release];
 	[self.temp release];
 	[self.tempStyle release];
 	[self.code release];
