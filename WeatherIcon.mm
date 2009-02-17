@@ -74,19 +74,31 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 	{
 		WeatherIndicatorView* weatherView = [[WeatherIndicatorView alloc] initWithModel:_model];
 
-		CGRect lastFrame = CGRectMake(0, 0, 0, 0);
 		NSArray* views = [self subviews];
 		if (views.count > 0)
 		{
 			// if there are already indicators, move the weather view
 			UIView* last = [views objectAtIndex:views.count - 1];
-			lastFrame = last.frame;
+			weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
+		}
+		else
+		{
+			weatherView.frame = CGRectMake(6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
 		}
 
-		weatherView.frame = CGRectMake(lastFrame.origin.x + lastFrame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
 		[self addSubview:weatherView];
 
 		self.frame = CGRectMake(self.frame.origin.x - weatherView.frame.size.width - 10, self.frame.origin.y, self.frame.size.width + weatherView.frame.size.width + 4, self.frame.size.height);
+
+/*
+		NSLog(@"WI: Indicator view: %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
+		views = [self subviews];
+		for (int i = 0; i < views.count; i++)
+		{
+			UIView* view = [views objectAtIndex:i];
+			NSLog(@"WI: Indicator %d bounds: %f, %f, %f, %f", i, view.frame.origin.x, view.frame.origin.y, view.frame.size.width, view.frame.size.height);
+		}
+*/
 	}
 }
 
