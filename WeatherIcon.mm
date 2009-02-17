@@ -74,18 +74,19 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 	{
 		WeatherIndicatorView* weatherView = [[WeatherIndicatorView alloc] initWithModel:_model];
 
-		int shift = -6;
+		CGRect lastFrame = CGRectMake(0, 0, 0, 0);
 		NSArray* views = [self subviews];
 		if (views.count > 0)
 		{
 			// if there are already indicators, move the weather view
 			UIView* last = [views objectAtIndex:views.count - 1];
-			weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
-			shift = 0;
+			lastFrame = last.frame;
 		}
+
+		weatherView.frame = CGRectMake(lastFrame.origin.x + lastFrame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
 		[self addSubview:weatherView];
 
-		self.frame = CGRectMake(self.frame.origin.x - weatherView.frame.size.width - 10 - shift, self.frame.origin.y, self.frame.size.width + weatherView.frame.size.width + 4 + shift, self.frame.size.height);
+		self.frame = CGRectMake(self.frame.origin.x - weatherView.frame.size.width - 10, self.frame.origin.y, self.frame.size.width + weatherView.frame.size.width + 4, self.frame.size.height);
 	}
 }
 
