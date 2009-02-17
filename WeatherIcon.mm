@@ -32,7 +32,7 @@
 - (void) wi_unscatter:(BOOL) b startTime:(double) time;
 - (void) wi_deactivated;
 - (void) wi_reloadIndicators;
-- (void) wi_updateDesktopImage:(UIImage*) image;
+- (void) wi_updateInterface;
 @end
 
 static Class $WIInstalledApplicationIcon;
@@ -41,12 +41,12 @@ static Class $WIBookmarkIcon;
 
 static WeatherIconModel* _model;
 
-static void $SBAwayView$updateDesktopImage$(SBIconController<WeatherIcon> *self, SEL sel, UIImage* image) 
+static void $SBAwayView$updateInterface(SBIconController<WeatherIcon> *self, SEL sel)
 {
+	[self wi_updateInterface];
+
 	// refresh the weather model
 	[_model refresh];
-
-	[self wi_updateDesktopImage:image];
 }
 
 static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SEL sel, BOOL b, double time) 
@@ -65,14 +65,6 @@ static id weatherIcon(SBIcon *self, SEL sel)
 //	NSLog(@"WI: Calling icon method.");
 	return [_model icon];
 }
-
-/*
-static void $SBStatusBarIndicatorsView$setMode$(SBStatusBarIndicatorsView<WeatherIcon> *self, SEL sel, int mode) 
-{
-	NSLog(@"WI: Setting SB mode to %d", mode);
-	[self wi_setMode:mode];
-}
-*/
 
 static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsView<WeatherIcon> *self, SEL sel) 
 {
@@ -167,7 +159,7 @@ extern "C" void WeatherIconInitialize() {
 	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");
 	MSHookMessage($SBBookmarkIcon, @selector(initWithWebClip:), (IMP) &$SBBookmarkIcon$initWithWebClip$, "wi_");
 	MSHookMessage($SBStatusBarIndicatorsView, @selector(reloadIndicators), (IMP) &$SBStatusBarIndicatorsView$reloadIndicators, "wi_");
-	MSHookMessage($SBAwayView, @selector(updateDesktopImage:), (IMP) &$SBAwayView$updateDesktopImage$, "wi_");
+	MSHookMessage($SBAwayView, @selector(updateInterface), (IMP) &$SBAwayView$updateInterface, "wi_");
 	
 	NSLog(@"WI: Init weather model.");
 	_model = [[WeatherIconModel alloc] init];

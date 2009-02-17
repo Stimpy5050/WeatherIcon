@@ -39,68 +39,9 @@ static NSString* defaultTempStyle(@""
 	"text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 0px; "
 "");
 
-static NSMutableDictionary* kweatherMapping;
-
-static void initKweatherMapping()
-{
-	if (kweatherMapping)
-		return;
-
-	kweatherMapping = [[NSMutableDictionary alloc] initWithCapacity:50];
-	[kweatherMapping setValue:@"tstorm3" forKey:@"0"];
-	[kweatherMapping setValue:@"tstorm3" forKey:@"1"];
-	[kweatherMapping setValue:@"tstorm3" forKey:@"2"];
-	[kweatherMapping setValue:@"tstorm3" forKey:@"3"];
-	[kweatherMapping setValue:@"tstorm2" forKey:@"4"];
-	[kweatherMapping setValue:@"sleet" forKey:@"5"];
-	[kweatherMapping setValue:@"sleet" forKey:@"6"];
-	[kweatherMapping setValue:@"sleet" forKey:@"7"];
-	[kweatherMapping setValue:@"hail" forKey:@"8"];
-	[kweatherMapping setValue:@"light_rain" forKey:@"9"];
-	[kweatherMapping setValue:@"hail" forKey:@"10"];
-	[kweatherMapping setValue:@"shower2" forKey:@"11"];
-	[kweatherMapping setValue:@"shower2" forKey:@"12"];
-	[kweatherMapping setValue:@"snow1" forKey:@"13"];
-	[kweatherMapping setValue:@"snow2" forKey:@"14"];
-	[kweatherMapping setValue:@"snow3" forKey:@"15"];
-	[kweatherMapping setValue:@"snow4" forKey:@"16"];
-	[kweatherMapping setValue:@"hail" forKey:@"17"];
-	[kweatherMapping setValue:@"sleet" forKey:@"18"];
-	[kweatherMapping setValue:@"mist" forKey:@"19"];
-	[kweatherMapping setValue:@"fog" forKey:@"20"];
-	[kweatherMapping setValue:@"mist" forKey:@"21"];
-	[kweatherMapping setValue:@"fog" forKey:@"22"];
-	[kweatherMapping setValue:@"sunny" forKey:@"23"];
-	[kweatherMapping setValue:@"fog" forKey:@"24"];
-	[kweatherMapping setValue:@"cloudy5" forKey:@"25"];
-	[kweatherMapping setValue:@"cloudy5" forKey:@"26"];
-	[kweatherMapping setValue:@"cloudy4" forKey:@"27"];
-	[kweatherMapping setValue:@"cloudy4" forKey:@"28"];
-	[kweatherMapping setValue:@"cloudy2" forKey:@"29"];
-	[kweatherMapping setValue:@"cloudy2" forKey:@"30"];
-	[kweatherMapping setValue:@"sunny" forKey:@"31"];
-	[kweatherMapping setValue:@"sunny" forKey:@"32"];
-	[kweatherMapping setValue:@"cloudy1" forKey:@"33"];
-	[kweatherMapping setValue:@"cloudy1" forKey:@"34"];
-	[kweatherMapping setValue:@"hail" forKey:@"35"];
-	[kweatherMapping setValue:@"sunny" forKey:@"36"];
-	[kweatherMapping setValue:@"tstorm1" forKey:@"37"];
-	[kweatherMapping setValue:@"tstorm2" forKey:@"38"];
-	[kweatherMapping setValue:@"tstorm2" forKey:@"39"];
-	[kweatherMapping setValue:@"shower1" forKey:@"40"];
-	[kweatherMapping setValue:@"snow5" forKey:@"41"];
-	[kweatherMapping setValue:@"snow3" forKey:@"42"];
-	[kweatherMapping setValue:@"snow5" forKey:@"43"];
-	[kweatherMapping setValue:@"cloudy2" forKey:@"44"];
-	[kweatherMapping setValue:@"tstorm2" forKey:@"45"];
-	[kweatherMapping setValue:@"snow3" forKey:@"46"];
-	[kweatherMapping setValue:@"tstorm1" forKey:@"47"];
-	[kweatherMapping setValue:@"dunno" forKey:@"3200"];
-}
-
 @implementation WeatherIconModel
 
-@synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, type;
+@synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, mappings;
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon, weatherImage, statusBarImage;
@@ -211,12 +152,6 @@ static void initKweatherMapping()
 		{
 			NSLog(@"WI: Loading theme prefs: %@", themePrefs);
 
-			if (NSString* type = [dict objectForKey:@"Type"])
-			{
-				self.type = [NSString stringWithString:type];
-				initKweatherMapping();
-			}
-	
 			// reset the temp style
 			self.tempStyle = defaultTempStyle;
 
@@ -233,6 +168,9 @@ static void initKweatherMapping()
 
 			if (NSNumber* top = [dict objectForKey:@"ImageMarginTop"])
 				self.imageMarginTop = [top intValue];
+
+			// get the mappings for the theme
+			self.mappings = [dict objectForKey:@"Mappings"];
 		}
 	}	
 }
@@ -462,62 +400,66 @@ foundCharacters:(NSString *)string
 	[self performSelectorOnMainThread:@selector(_updateWeatherIcon) withObject:nil waitUntilDone:NO];
 }
 
-- (UIImage*) findWeatherImage:(NSBundle*) bundle prefix:(NSString*) prefix code:(NSString*) code suffix:(NSString*) suffix
+- (NSString*) mapImage:(NSString*) prefix
 {
-	NSString* name = [[prefix stringByAppendingString:code] stringByAppendingString:suffix];
+	// no mappings
+	if (!self.mappings)
+		return nil;
+
+	NSString* suffix = (self.night ? @"_night" : @"_day");	
+	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
+		return mapped;
+
+	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
+		return mapped;
+
+	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
+		return mapped;
+
+	if (NSString* mapped = [self.mappings objectForKey:prefix])
+		return mapped;
+
+	return nil;
+}
+
+- (UIImage*) findImage:(NSBundle*) bundle name:(NSString*) name
+{
 	NSString* path = [bundle pathForResource:name ofType:@"png"];
 	UIImage* image = (path ? [UIImage imageWithContentsOfFile:path] : nil);
 	if (image)
 	{
-		NSLog(@"WI: Found %@ Image: %@", prefix, path);
+		NSLog(@"WI: Found %@ Image: %@", name, path);
 		return image;
 	}
 
 	return nil;
 }
 
-- (UIImage*) findWeatherImage:(int) type
+- (UIImage*) findWeatherImage:(NSString*) prefix
 {
-	NSString* blank = @"";
-	NSString* prefix = nil;
-	switch (type)
-	{
-		case 1:
-			prefix = @"weatherbg";
-			break;
-		case 2:
-			prefix = @"weatherstatus";
-			break;
-		default:
-			prefix = @"weather";
-	}
-
-	NSString* code = self.code;
-
-	if (type == 0 && [self.type isEqualToString:@"kweather"])
-	{
-		code = [kweatherMapping objectForKey:self.code];
-		NSLog(@"WI: Mapping %@ to %@", self.code, code);
-		prefix = blank;
-	}
-
-	NSLog(@"WI: Find image for %@", code);
-        NSBundle* bundle = [NSBundle mainBundle];
 	NSString* suffix = (self.night ? @"_night" : @"_day");	
 
-	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:code suffix:suffix])
+	if (NSString* mapped = [self mapImage:prefix])
+	{
+		NSLog(@"Mapped %@%@%@ to %@", prefix, self.code, suffix, mapped);
+		prefix = mapped;
+	}
+
+	NSLog(@"WI: Find image for %@%@%@", prefix, self.code, suffix);
+        NSBundle* bundle = [NSBundle mainBundle];
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
 		return img;
 
-	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:suffix])
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
 		return img;
 
-	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:code suffix:blank])
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
 		return img;
 
-	if (UIImage* img = [self findWeatherImage:bundle prefix:prefix code:blank suffix:blank])
+	if (UIImage* img = [self findImage:bundle name:prefix])
 		return img;
 
-	NSLog(@"WI: No image found for code %@ with type %d", code, type);
+	NSLog(@"WI: No image found for %@%@%@", prefix, self.code, suffix);
 	return nil;
 }
 
@@ -562,8 +504,8 @@ foundCharacters:(NSString *)string
 	}
 	NSLog(@"WI: Night? %d", self.night);
 
-	UIImage* bgIcon = [self findWeatherImage:1];
-	UIImage* weatherImage = [self findWeatherImage:0];
+	UIImage* bgIcon = [self findWeatherImage:@"weatherbg"];
+	UIImage* weatherImage = [self findWeatherImage:@"weather"];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
 
 	UIGraphicsBeginImageContext(size);
@@ -590,7 +532,7 @@ foundCharacters:(NSString *)string
 	self.weatherImage = weatherImage;
 
 	// save the status bar image
-	self.statusBarImage = [self findWeatherImage:2];
+	self.statusBarImage = [self findWeatherImage:@"weatherstatus"];
 	if (!self.statusBarImage)
 		self.statusBarImage = weatherImage;
 

@@ -27,9 +27,9 @@
 @property(nonatomic, retain) NSTimeZone* timeZone;
 @property(nonatomic) BOOL night;
 
-@property(nonatomic, retain) NSString* type;
 @property(nonatomic, retain) NSString* tempStyle;
 @property(nonatomic, retain) NSString* tempStyleNight;
+@property(nonatomic, retain) NSDictionary* mappings;
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
 
