@@ -35,6 +35,7 @@
 - (void) wi_updateInterface;
 @end
 
+static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $WIInstalledApplicationIcon;
 static Class $WIApplicationIcon;
 static Class $WIBookmarkIcon;
@@ -81,17 +82,15 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 			UIView* last = [views objectAtIndex:views.count - 1];
 			weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
 		}
-		else
-		{
-			weatherView.frame = CGRectMake(6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
-		}
 
+//		NSLog(@"WI: Indicator view (before adding weather): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
 		[self addSubview:weatherView];
 
-		self.frame = CGRectMake(self.frame.origin.x - weatherView.frame.size.width - 10, self.frame.origin.y, self.frame.size.width + weatherView.frame.size.width + 4, self.frame.size.height);
+//		NSLog(@"WI: Indicator view (before moving): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
+		self.frame = CGRectMake(0, 0, weatherView.frame.origin.x + weatherView.frame.size.width, 20);
 
 /*
-		NSLog(@"WI: Indicator view: %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
+		NSLog(@"WI: Indicator view (after moving): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
 		views = [self subviews];
 		for (int i = 0; i < views.count; i++)
 		{

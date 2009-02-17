@@ -542,8 +542,8 @@ foundCharacters:(NSString *)string
 	if (statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicators...");
-		[statusBarController removeStatusBarItem:@"Weather"];
-		[statusBarController addStatusBarItem:@"Weather"];
+		[statusBarController removeStatusBarItem:@"WeatherIcon"];
+		[statusBarController addStatusBarItem:@"WeatherIcon"];
 	}
 
 	SBIconController* iconController = [$SBIconController sharedInstance];
