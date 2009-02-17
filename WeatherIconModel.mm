@@ -104,7 +104,7 @@ static void initKweatherMapping()
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon, weatherImage, statusBarImage;
-@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime;
+@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime, showStatusBarImage, showStatusBarTemp;
 @synthesize nextRefreshTime, lastUpdateTime, localWeatherTime;
 
 + (NSMutableDictionary*) preferences
@@ -151,6 +151,14 @@ static void initKweatherMapping()
 			self.useLocalTime = [v boolValue];
 		NSLog(@"WI: Use Local Time: %d", self.useLocalTime);
 
+		if (NSNumber* v = [prefs objectForKey:@"ShowStatusBarImage"])
+			self.showStatusBarImage = [v boolValue];
+		NSLog(@"WI: Show Status Bar Image: %d", self.showStatusBarImage);
+
+		if (NSNumber* v = [prefs objectForKey:@"ShowStatusBarTemp"])
+			self.showStatusBarTemp = [v boolValue];
+		NSLog(@"WI: Show Status Bar Temp: %d", self.showStatusBarTemp);
+
 		if (NSString* id = [prefs objectForKey:@"WeatherBundleIdentifier"])
 			self.bundleIdentifier = [NSString stringWithString:id];
 		NSLog(@"WI: Weather Bundle Identifier: %@", self.bundleIdentifier);
@@ -175,6 +183,8 @@ static void initKweatherMapping()
 		[prefs setValue:self.location forKey:@"Location"];
 		[prefs setValue:[NSNumber numberWithBool:self.isCelsius] forKey:@"Celsius"];
 		[prefs setValue:[NSNumber numberWithBool:self.showFeelsLike] forKey:@"ShowFeelsLike"];
+		[prefs setValue:[NSNumber numberWithBool:self.showStatusBarImage] forKey:@"ShowStatusBarImage"];
+		[prefs setValue:[NSNumber numberWithBool:self.showStatusBarTemp] forKey:@"ShowStatusBarTemp"];
 		[prefs setValue:[NSNumber numberWithBool:self.useLocalTime] forKey:@"UseLocalTime"];
 		[prefs setValue:[NSNumber numberWithInt:(int)(self.refreshInterval / 60)] forKey:@"RefreshInterval"];
 		[prefs setValue:@"com.apple.weather" forKey:@"WeatherBundleIdentifier"];
@@ -264,6 +274,8 @@ static void initKweatherMapping()
 	self.overrideLocation = false;
 	self.useLocalTime = false;
 	self.showFeelsLike = false;
+	self.showStatusBarImage = false;
+	self.showStatusBarTemp = false;
 	self.refreshInterval = 900;
 	self.nextRefreshTime = [NSDate date];
 
@@ -362,6 +374,11 @@ foundCharacters:(NSString *)string
 //		NSLog(@"WI: Appending %@ to content.", string);
 		[parserContent appendString:string];
 	}
+}
+
+- (BOOL) showStatusBarWeather
+{
+	return (self.showStatusBarTemp || self.showStatusBarImage);
 }
 
 - (BOOL) isWeatherIcon:(SBIcon*) icon

@@ -40,6 +40,8 @@
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
 @property(nonatomic) BOOL showFeelsLike;
+@property(nonatomic) BOOL showStatusBarImage;
+@property(nonatomic) BOOL showStatusBarTemp;
 @property(nonatomic, retain) NSString* location;
 @property(nonatomic) int refreshInterval;
 @property(nonatomic, retain) NSString* bundleIdentifier;
@@ -60,6 +62,7 @@
 - (void)_refresh;
 - (void)_refreshInBackground;
 - (void)_updateWeatherIcon;
+- (BOOL) showStatusBarWeather;
 - (UIImage*)icon;
 - (void)dealloc;
 

@@ -78,18 +78,21 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 {
 	[self wi_reloadIndicators];
 
-	WeatherIndicatorView* weatherView = [[WeatherIndicatorView alloc] initWithModel:_model];
-
-	NSArray* views = [self subviews];
-	if (views.count > 0)
+	if (_model.showStatusBarWeather)
 	{
-		// if there are already indicators, move the weather view
-		UIView* last = [views objectAtIndex:views.count - 1];
-		weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
-	}
-	[self addSubview:weatherView];
+		WeatherIndicatorView* weatherView = [[WeatherIndicatorView alloc] initWithModel:_model];
 
-	self.frame = CGRectMake(self.frame.origin.x - weatherView.frame.size.width - 10, self.frame.origin.y, self.frame.size.width + weatherView.frame.size.width + 4, self.frame.size.height);
+		NSArray* views = [self subviews];
+		if (views.count > 0)
+		{
+			// if there are already indicators, move the weather view
+			UIView* last = [views objectAtIndex:views.count - 1];
+			weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
+		}
+		[self addSubview:weatherView];
+
+		self.frame = CGRectMake(self.frame.origin.x - weatherView.frame.size.width - 10, self.frame.origin.y, self.frame.size.width + weatherView.frame.size.width + 4, self.frame.size.height);
+	}
 }
 
 static void $SBApplication$deactivated(SBApplication<WeatherIcon> *self, SEL sel) 

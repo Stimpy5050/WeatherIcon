@@ -34,7 +34,8 @@ CFLAGS= -O2 -dynamiclib \
   -D_BSD_ARM_SETJMP_H \
   -D_UNISTD_H_
 
-Objects= WeatherIconModel.o WeatherIndicatorView.o WeatherIcon.o
+Objects=WeatherIconModel.o WeatherIndicatorView.o WeatherIcon.o
+Themes=Katra\ Weather\ Icon.theme
 
 Target=WeatherIcon.dylib
 
@@ -58,16 +59,24 @@ clean:
 		rm -f *.o $(Target)
 		rm -rf package
 
-package:	$(Target)
-	mkdir -p package/DEBIAN
-	mkdir -p package/Library/Themes
-	mkdir -p package/Library/MobileSubstrate/DynamicLibraries
-	mkdir -p package/System/Library/CoreServices/SpringBoard.app
-	cp -a Weather\ Icon.theme package/Library/Themes
-	cp -a $(Target) package/Library/MobileSubstrate/DynamicLibraries
-	cp -a *.plist package/Library/MobileSubstrate/DynamicLibraries
-	cp -a *.png package/System/Library/CoreServices/SpringBoard.app
-	cp -a control package/DEBIAN
-	find package -name .svn -print0 | xargs -0 rm -rf
-	find package/Library/Themes/ -name control -print0 | xargs -0 rm -rf
-	dpkg-deb -b package weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
+%.theme:	package/%.theme
+	pkg=`grep ^Package: "$1"/control | cut -d ' ' -f 2`
+	mkdir -p package/$@/DEBIAN
+	mkdir -p package/$@/Library/Themes
+	cp -a "$1" package/$@/Library/Themes
+	cp -a "$1"/control package/$@/DEBIAN
+	rm package/$@/Library/Themes/"$1"/control
+	find package/$@ -name .svn -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/$@ $(shell grep ^Package: "$1"/control | cut -d ' ' -f 2)_$(shell grep ^Version: "$1"/control | cut -d ' ' -f 2)_iphoneos-arm.deb
+
+
+package:	$(Target) $(Themes)
+	mkdir -p package/weathericon/DEBIAN
+	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
+	cp -a $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp -a *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp -a *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
+	cp -a control package/weathericon/DEBIAN
+	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/weathericon weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
