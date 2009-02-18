@@ -41,7 +41,7 @@ static NSString* defaultTempStyle(@""
 
 @implementation WeatherIconModel
 
-@synthesize temp, windChill, code, tempStyle, tempStyleNight, imageScale, imageMarginTop, mappings;
+@synthesize temp, windChill, code, tempStyle, tempStyleNight, statusBarImageScale, imageScale, imageMarginTop, mappings;
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon, weatherImage, statusBarImage;
@@ -163,6 +163,9 @@ static NSString* defaultTempStyle(@""
 			else
 				self.tempStyleNight = self.tempStyle;
 
+			if (NSNumber* scale = [dict objectForKey:@"StatusBarImageScale"])
+				self.statusBarImageScale = [scale floatValue];
+
 			if (NSNumber* scale = [dict objectForKey:@"ImageScale"])
 				self.imageScale = [scale floatValue];
 
@@ -206,6 +209,7 @@ static NSString* defaultTempStyle(@""
 	self.code = @"3200";
 	self.tempStyle = defaultTempStyle;
 	self.tempStyleNight = self.tempStyle;
+	self.statusBarImageScale = 1.0;
 	self.imageScale = 1.0;
 	self.imageMarginTop = 0;
 	self.isCelsius = false;

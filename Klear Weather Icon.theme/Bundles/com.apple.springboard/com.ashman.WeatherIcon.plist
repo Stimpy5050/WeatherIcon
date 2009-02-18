@@ -8,6 +8,8 @@
 	<integer>3</integer>
 	<key>ImageScale</key>
 	<real>0.25</real>
+	<key>StatusBarImageScale</key>
+	<real>0.125</real>
 	<key>Mappings</key>
 	<dict>
 		<key>weather0</key>

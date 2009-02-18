@@ -32,6 +32,7 @@
 @property(nonatomic, retain) NSDictionary* mappings;
 @property(nonatomic) float imageScale;
 @property(nonatomic) int imageMarginTop;
+@property(nonatomic) float statusBarImageScale;
 
 @property(nonatomic, retain) UIImage* weatherIcon;
 @property(nonatomic, retain) UIImage* weatherImage;

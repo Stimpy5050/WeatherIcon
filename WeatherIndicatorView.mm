@@ -18,7 +18,7 @@
 	CGSize imageSize = CGSizeMake(0, 0);
 	if (_model.showStatusBarImage && _model.statusBarImage)
 	{	
-		imageSize = CGSizeMake(16, 16);
+		imageSize = CGSizeMake(16, 20);
 	}
 
 	self = [super initWithFrame:CGRectMake(0, 0, tempSize.width + imageSize.width, 20)];
@@ -46,10 +46,15 @@
 		[temp drawAtPoint:CGPointMake(0, 1) withFont:font];
 	}
 
-	if (_model.showStatusBarImage)
+	if (_model.showStatusBarImage && _model.statusBarImage)
 	{
-		UIImage* image = [_model statusBarImage];
-		[image drawInRect:CGRectMake(tempSize.width, 1, 16, 16)];
+		UIImage* image = _model.statusBarImage;
+		float width = image.size.width * _model.statusBarImageScale;
+		float height = image.size.height * _model.statusBarImageScale;
+		CGRect rect = CGRectMake(tempSize.width + ((16 - width) / 2), ((18 - height) / 2), width, height);
+//		NSLog(@"WI: Status Bar Image Original Size: %f,%f", image.size.width, image.size.height);
+//		NSLog(@"WI: Status Bar Image Rect: %f,%f,%f,%f", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+		[image drawInRect:rect];
 	}
 }
 
