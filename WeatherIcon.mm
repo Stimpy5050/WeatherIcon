@@ -87,7 +87,7 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 		[self addSubview:weatherView];
 
 //		NSLog(@"WI: Indicator view (before moving): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
-		self.frame = CGRectMake(0, 0, weatherView.frame.origin.x + weatherView.frame.size.width - 1, 20);
+		self.frame = CGRectMake(0, 0, weatherView.frame.origin.x + weatherView.frame.size.width, 20);
 
 /*
 		NSLog(@"WI: Indicator view (after moving): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
@@ -119,7 +119,7 @@ static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon>
 {
 	self = [self wi_initWithApplication:app];
 
-	if (_model.showWeatherIcon && [_model isWeatherIcon:self])
+	if ([_model isWeatherIcon:self])
 	{
 		NSLog(@"WI: Replacing icon method for %@.", self.displayIdentifier);
 		if ([self class] == objc_getClass("SBInstalledApplicationIcon"))
@@ -135,7 +135,7 @@ static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SE
 {
 	self = [self wi_initWithWebClip:clip];
 
-	if (_model.showWeatherIcon && [_model isWeatherIcon:self])
+	if ([_model isWeatherIcon:self])
 	{
 		NSLog(@"WI: Replacing icon method for %@.", self.displayIdentifier);
 		object_setClass(self, $WIBookmarkIcon);

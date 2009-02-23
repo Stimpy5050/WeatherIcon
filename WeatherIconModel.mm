@@ -177,6 +177,18 @@ static NSString* defaultTempStyle(@""
 			if (NSNumber* top = [dict objectForKey:@"ImageMarginTop"])
 				self.imageMarginTop = [top intValue];
 
+			if (NSNumber* v = [dict objectForKey:@"ShowWeatherIcon"])
+				self.showWeatherIcon = [v boolValue];
+			NSLog(@"WI: Show Weather Icon: %d", self.showWeatherIcon);
+	
+			if (NSNumber* v = [dict objectForKey:@"ShowStatusBarImage"])
+				self.showStatusBarImage = [v boolValue];
+			NSLog(@"WI: Show Status Bar Image: %d", self.showStatusBarImage);
+	
+			if (NSNumber* v = [dict objectForKey:@"ShowStatusBarTemp"])
+				self.showStatusBarTemp = [v boolValue];
+			NSLog(@"WI: Show Status Bar Temp: %d", self.showStatusBarTemp);
+	
 			// get the mappings for the theme
 			self.mappings = [dict objectForKey:@"Mappings"];
 		}
@@ -331,7 +343,14 @@ foundCharacters:(NSString *)string
 
 - (BOOL) isWeatherIcon:(SBIcon*) icon
 {
-	return [icon.displayIdentifier isEqualToString:self.bundleIdentifier];
+	if ([icon.displayIdentifier isEqualToString:self.bundleIdentifier])
+	{
+		// make sure to reload the theme here
+		[self _loadTheme];
+		return self.showWeatherIcon;
+	}
+
+	return false;
 }
 
 - (void) refresh
