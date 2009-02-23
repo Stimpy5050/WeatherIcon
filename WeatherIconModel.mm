@@ -45,7 +45,7 @@ static NSString* defaultTempStyle(@""
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
 @synthesize weatherIcon, weatherImage, statusBarImage;
-@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime, showStatusBarImage, showStatusBarTemp;
+@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime, showStatusBarImage, showStatusBarTemp, showWeatherIcon;
 @synthesize nextRefreshTime, lastUpdateTime, localWeatherTime;
 
 + (NSMutableDictionary*) preferences
@@ -92,6 +92,10 @@ static NSString* defaultTempStyle(@""
 			self.useLocalTime = [v boolValue];
 		NSLog(@"WI: Use Local Time: %d", self.useLocalTime);
 
+		if (NSNumber* v = [prefs objectForKey:@"ShowWeatherIcon"])
+			self.showWeatherIcon = [v boolValue];
+		NSLog(@"WI: Show Weather Icon: %d", self.showWeatherIcon);
+
 		if (NSNumber* v = [prefs objectForKey:@"ShowStatusBarImage"])
 			self.showStatusBarImage = [v boolValue];
 		NSLog(@"WI: Show Status Bar Image: %d", self.showStatusBarImage);
@@ -124,6 +128,7 @@ static NSString* defaultTempStyle(@""
 		[prefs setValue:self.location forKey:@"Location"];
 		[prefs setValue:[NSNumber numberWithBool:self.isCelsius] forKey:@"Celsius"];
 		[prefs setValue:[NSNumber numberWithBool:self.showFeelsLike] forKey:@"ShowFeelsLike"];
+		[prefs setValue:[NSNumber numberWithBool:self.showWeatherIcon] forKey:@"ShowWeatherIcon"];
 		[prefs setValue:[NSNumber numberWithBool:self.showStatusBarImage] forKey:@"ShowStatusBarImage"];
 		[prefs setValue:[NSNumber numberWithBool:self.showStatusBarTemp] forKey:@"ShowStatusBarTemp"];
 		[prefs setValue:[NSNumber numberWithBool:self.useLocalTime] forKey:@"UseLocalTime"];
@@ -216,6 +221,7 @@ static NSString* defaultTempStyle(@""
 	self.overrideLocation = false;
 	self.useLocalTime = false;
 	self.showFeelsLike = false;
+	self.showWeatherIcon = true;
 	self.showStatusBarImage = false;
 	self.showStatusBarTemp = false;
 	self.refreshInterval = 900;
@@ -333,6 +339,9 @@ foundCharacters:(NSString *)string
 	if (!self.weatherIcon)
 		[self _updateWeatherIcon];
 
+	if (!self.showWeatherIcon && !self.showStatusBarWeather)
+		return;
+
 	NSDate* now = [NSDate date];
 //	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
 
@@ -414,10 +423,10 @@ foundCharacters:(NSString *)string
 	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
 		return mapped;
 
-	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
+	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
 		return mapped;
 
-	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
+	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
 		return mapped;
 
 	if (NSString* mapped = [self.mappings objectForKey:prefix])
@@ -454,10 +463,10 @@ foundCharacters:(NSString *)string
 	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
 		return img;
 
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
 		return img;
 
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
 		return img;
 
 	if (UIImage* img = [self findImage:bundle name:prefix])
@@ -543,7 +552,7 @@ foundCharacters:(NSString *)string
 	UIGraphicsEndImageContext();
 
 	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
-	if (statusBarController)
+	if (self.showStatusBarWeather && statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicators...");
 		[statusBarController removeStatusBarItem:@"WeatherIcon"];

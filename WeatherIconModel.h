@@ -41,6 +41,7 @@
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
 @property(nonatomic) BOOL showFeelsLike;
+@property(nonatomic) BOOL showWeatherIcon;
 @property(nonatomic) BOOL showStatusBarImage;
 @property(nonatomic) BOOL showStatusBarTemp;
 @property(nonatomic, retain) NSString* location;
