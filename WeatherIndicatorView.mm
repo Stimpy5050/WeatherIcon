@@ -1,3 +1,4 @@
+#include "math.h"
 #import "WeatherIndicatorView.h"
 #import <UIKit/UIKit.h>
 
@@ -19,7 +20,7 @@
 	if (_model.showStatusBarImage && _model.statusBarImage)
 	{	
 		UIImage* image = _model.statusBarImage;
-		float width = image.size.width * _model.statusBarImageScale;
+		float width = ceil(image.size.width * _model.statusBarImageScale);
 		imageSize = CGSizeMake(width, 20);
 	}
 

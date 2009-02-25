@@ -15,6 +15,11 @@
 @interface WeatherIconModel : NSObject
 {
 	NSMutableString* parserContent;
+	BOOL themeLoaded;
+	BOOL prefsLoaded;
+	BOOL weatherPrefsLoaded;
+	UIImageView* statusBarIndicatorMode0;
+	UIImageView* statusBarIndicatorMode1;
 }
 
 @property(nonatomic, retain) NSString* temp;
@@ -36,7 +41,6 @@
 
 @property(nonatomic, retain) UIImage* weatherIcon;
 @property(nonatomic, retain) UIImage* weatherImage;
-@property(nonatomic, retain) UIImage* statusBarImage;
 
 @property(nonatomic) BOOL isCelsius;
 @property(nonatomic) BOOL overrideLocation;
@@ -66,6 +70,7 @@
 - (void)_updateWeatherIcon;
 - (BOOL) showStatusBarWeather;
 - (UIImage*)icon;
+- (UIImageView*)statusBarIndicator:(int) mode;
 - (void)dealloc;
 
 @end

@@ -1,0 +1,9 @@
+Package: noweathericon
+Name: No Weather Icon
+Version: 1.1
+Architecture: iphoneos-arm
+Description: Turns off WeatherIcon, including status bar indicators.  
+Maintainer: David Ashman <dashman@gmail.com>
+Author: David Ashman (Stimpy5050) <dashman@gmail.com>
+Sponsor: 
+Section: Themes (WinterBoard)

@@ -9,7 +9,6 @@
 
 #include <substrate.h>
 #import "WeatherIconModel.h"
-#import "WeatherIndicatorView.h"
 #import <SpringBoard/SBIcon.h>
 #import <SpringBoard/SBIconList.h>
 #import <SpringBoard/SBIconController.h>
@@ -73,7 +72,11 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 
 	if (_model.showStatusBarWeather)
 	{
-		WeatherIndicatorView* weatherView = [[WeatherIndicatorView alloc] initWithModel:_model];
+		int mode = [self effectiveModeForImages];
+		UIImageView* weatherView = [_model statusBarIndicator:mode];
+
+		if (!weatherView)
+			return;
 
 		NSArray* views = [self subviews];
 		if (views.count > 0)

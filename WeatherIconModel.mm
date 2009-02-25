@@ -44,7 +44,7 @@ static NSString* defaultTempStyle(@""
 @synthesize temp, windChill, code, tempStyle, tempStyleNight, statusBarImageScale, imageScale, imageMarginTop, mappings;
 @synthesize latitude, longitude, timeZone;
 @synthesize sunset, sunrise, night;
-@synthesize weatherIcon, weatherImage, statusBarImage;
+@synthesize weatherIcon, weatherImage;
 @synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime, showStatusBarImage, showStatusBarTemp, showWeatherIcon;
 @synthesize nextRefreshTime, lastUpdateTime, localWeatherTime;
 
@@ -57,6 +57,9 @@ static NSString* defaultTempStyle(@""
 
 - (void) _parsePreferences
 {
+	if (prefsLoaded)
+		return;
+
 	NSMutableDictionary* prefs = [WeatherIconModel preferences];
 	if (prefs)
 	{
@@ -138,6 +141,8 @@ static NSString* defaultTempStyle(@""
 	        NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 		[prefs writeToFile:prefsPath atomically:YES];
 	}
+
+	prefsLoaded = true;
 }
 
 - (void) setNeedsRefresh
@@ -148,6 +153,9 @@ static NSString* defaultTempStyle(@""
 
 - (void) _loadTheme
 {
+	if (themeLoaded)
+		return;
+
 	NSBundle* bundle = [NSBundle mainBundle];
 	NSString* themePrefs = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
 	if (themePrefs)
@@ -193,10 +201,15 @@ static NSString* defaultTempStyle(@""
 			self.mappings = [dict objectForKey:@"Mappings"];
 		}
 	}	
+
+	themeLoaded = true;
 }
 
 - (void) _parseWeatherPreferences
 {
+	if (weatherPrefsLoaded)
+		return;
+
 	NSString* prefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
 	NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
 
@@ -218,6 +231,8 @@ static NSString* defaultTempStyle(@""
 			self.location = zip;
 		}	
 	}
+
+	weatherPrefsLoaded = true;
 }
 
 - (id) init
@@ -376,6 +391,10 @@ foundCharacters:(NSString *)string
 
 - (void) _refresh
 {
+	themeLoaded = false;
+	prefsLoaded = false;
+	weatherPrefsLoaded = false;
+	
 	// reparse the preferences
 	[self _parsePreferences];
 
@@ -495,6 +514,45 @@ foundCharacters:(NSString *)string
 	return nil;
 }
 
+- (UIImageView*) _createIndicator:(int) mode temp:(NSString*) temp image:(UIImage*) image
+{
+	UIFont* font = [UIFont boldSystemFontOfSize:13];
+        CGSize tempSize = [temp sizeWithFont:font];
+        CGSize sbSize = CGSizeMake(0, 20);
+
+        if (self.showStatusBarTemp)
+                sbSize.width += tempSize.width;
+
+        if (self.showStatusBarImage && image)
+                sbSize.width += ceil(image.size.width * self.statusBarImageScale);
+
+        UIGraphicsBeginImageContext(sbSize);
+
+        if (self.showStatusBarTemp)
+        {
+                CGContextRef ctx = UIGraphicsGetCurrentContext();
+		NSLog(@"WI: Creating indicator for mode %d", mode);
+                float f = (mode == 0 ? 0.2 : 1);
+                CGContextSetRGBFillColor(ctx, f, f, f, 1);
+                [temp drawAtPoint:CGPointMake(0, 1) withFont:font];
+        }
+
+        if (self.showStatusBarImage && image)
+        {
+        	float width = image.size.width * self.statusBarImageScale;
+                float height = image.size.height * self.statusBarImageScale;
+                CGRect rect = CGRectMake(tempSize.width, ((18 - height) / 2), width, height);
+                [image drawInRect:rect];
+        }
+
+	UIImage* indicator = UIGraphicsGetImageFromCurrentImageContext();
+	UIImageView* view = [[[UIImageView alloc] initWithImage:indicator] retain];
+
+        UIGraphicsEndImageContext();
+
+	return view;
+}
+
 - (void) _updateWeatherIcon
 {
 	[self _loadTheme];
@@ -564,11 +622,22 @@ foundCharacters:(NSString *)string
 	self.weatherImage = weatherImage;
 
 	// save the status bar image
-	self.statusBarImage = [self findWeatherImage:@"weatherstatus"];
-	if (!self.statusBarImage)
-		self.statusBarImage = weatherImage;
+	UIImage* statusBarImage = [self findWeatherImage:@"weatherstatus"];
+	if (!statusBarImage)
+		statusBarImage = weatherImage;
 
 	UIGraphicsEndImageContext();
+
+
+	// now the status bar image
+	if (self.showStatusBarWeather)
+	{
+		[statusBarIndicatorMode0 release];
+		statusBarIndicatorMode0 = [self _createIndicator:0 temp:t image:statusBarImage];
+
+		[statusBarIndicatorMode1 release];
+		statusBarIndicatorMode1 = [self _createIndicator:1 temp:t image:statusBarImage];
+	}
 
 	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
 	if (self.showStatusBarWeather && statusBarController)
@@ -605,6 +674,11 @@ foundCharacters:(NSString *)string
 	return self.weatherIcon;
 }
 
+- (UIImageView*) statusBarIndicator:(int)mode
+{
+	return (mode == 0 ? statusBarIndicatorMode0 : statusBarIndicatorMode1);
+}
+
 - (void) dealloc
 {
 	[self.temp release];
@@ -613,6 +687,8 @@ foundCharacters:(NSString *)string
 	[self.location release];
 	[self.lastUpdateTime release];
 	[self.nextRefreshTime release];
+	[statusBarIndicatorMode0 release];
+	[statusBarIndicatorMode1 release];
 	[super dealloc];
 }
 @end
