@@ -34,7 +34,6 @@
 - (void) wi_updateInterface;
 @end
 
-static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $WIInstalledApplicationIcon;
 static Class $WIApplicationIcon;
 static Class $WIBookmarkIcon;
@@ -70,14 +69,12 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 {
 	[self wi_reloadIndicators];
 
-	if (_model.showStatusBarWeather)
+	int mode = [self effectiveModeForImages];
+	UIImage* indicator = [_model statusBarIndicator:mode];
+
+	if (indicator)
 	{
-		int mode = [self effectiveModeForImages];
-		UIImageView* weatherView = [_model statusBarIndicator:mode];
-
-		if (!weatherView)
-			return;
-
+		UIImageView* weatherView = [[UIImageView alloc] initWithImage:indicator];
 		NSArray* views = [self subviews];
 		if (views.count > 0)
 		{
@@ -86,33 +83,21 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 			weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
 		}
 
-//		NSLog(@"WI: Indicator view (before adding weather): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
 		[self addSubview:weatherView];
-
-//		NSLog(@"WI: Indicator view (before moving): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
 		self.frame = CGRectMake(0, 0, weatherView.frame.origin.x + weatherView.frame.size.width, 20);
 
-/*
-		NSLog(@"WI: Indicator view (after moving): %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height);
-		views = [self subviews];
-		for (int i = 0; i < views.count; i++)
-		{
-			UIView* view = [views objectAtIndex:i];
-			NSLog(@"WI: Indicator %d bounds: %f, %f, %f, %f", i, view.frame.origin.x, view.frame.origin.y, view.frame.size.width, view.frame.size.height);
-		}
-*/
+//		NSLog(@"WI: weatherView: %f, %f, %f, %f", weatherView.frame.origin.x, weatherView.frame.origin.y, weatherView.frame.size.width, weatherView.frame.size.height); 
+//		NSLog(@"WI: indicators: %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height); 
 	}
 }
 
 static void $SBApplication$deactivated(SBApplication<WeatherIcon> *self, SEL sel) 
 {
 	if ([self.displayIdentifier isEqualToString:@"com.apple.weather"] ||
-	    [self.displayIdentifier isEqualToString:_model.bundleIdentifier])
+	    [_model isWeatherIcon:self.displayIdentifier])
 	{
-		[_model setNeedsRefresh];
-
 		// refresh the weather model
-		[_model refresh];
+		[_model refreshNow];
 	}
 
 	[self wi_deactivated];
@@ -122,9 +107,9 @@ static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon>
 {
 	self = [self wi_initWithApplication:app];
 
-	if ([_model isWeatherIcon:self])
+	if ([_model isWeatherIcon:self.displayIdentifier])
 	{
-		NSLog(@"WI: Replacing icon method for %@.", self.displayIdentifier);
+		NSLog(@"WI: Replacing icon for %@.", self.displayIdentifier);
 		if ([self class] == objc_getClass("SBInstalledApplicationIcon"))
 			object_setClass(self, $WIInstalledApplicationIcon);
 		else
@@ -138,9 +123,9 @@ static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SE
 {
 	self = [self wi_initWithWebClip:clip];
 
-	if ([_model isWeatherIcon:self])
+	if ([_model isWeatherIcon:self.displayIdentifier])
 	{
-		NSLog(@"WI: Replacing icon method for %@.", self.displayIdentifier);
+		NSLog(@"WI: Replacing icon for %@.", self.displayIdentifier);
 		object_setClass(self, $WIBookmarkIcon);
 	}
 

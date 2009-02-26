@@ -15,62 +15,62 @@
 @interface WeatherIconModel : NSObject
 {
 	NSMutableString* parserContent;
+	BOOL refreshing;
 	BOOL themeLoaded;
 	BOOL prefsLoaded;
 	BOOL weatherPrefsLoaded;
-	UIImageView* statusBarIndicatorMode0;
-	UIImageView* statusBarIndicatorMode1;
+
+	// image caches
+	UIImage* statusBarIndicatorMode0;
+	UIImage* statusBarIndicatorMode1;
+	UIImage* weatherIcon;
+
+	// current temp info
+	NSString* temp;
+	NSString* windChill;
+	NSString* code;
+	NSString* sunrise;
+	NSString* sunset;
+	NSString* longitude;
+	NSString* latitude;
+	NSTimeZone* timeZone;
+	BOOL night;
+
+	// refresh date info
+	NSDate* nextRefreshTime;
+	NSDate* lastUpdateTime;
+	NSDate* localWeatherTime;
+
+	// theme info
+	NSString* tempStyle;
+	NSString* tempStyleNight;
+	NSDictionary* mappings;
+	float imageScale;
+	int imageMarginTop;
+	float statusBarImageScale;
+
+	// user preferences
+	BOOL isCelsius;
+	BOOL overrideLocation;
+	BOOL showFeelsLike;
+	BOOL showWeatherIcon;
+	BOOL showStatusBarImage;
+	BOOL showStatusBarTemp;
+	NSString* location;
+	int refreshInterval;
+	NSString* bundleIdentifier;
+	BOOL useLocalTime;
+	BOOL debug;
+
 }
 
-@property(nonatomic, retain) NSString* temp;
-@property(nonatomic, retain) NSString* windChill;
-@property(nonatomic, retain) NSString* code;
-@property(nonatomic, retain) NSString* sunrise;
-@property(nonatomic, retain) NSString* sunset;
-@property(nonatomic, retain) NSString* longitude;
-@property(nonatomic, retain) NSString* latitude;
-@property(nonatomic, retain) NSTimeZone* timeZone;
-@property(nonatomic) BOOL night;
-
-@property(nonatomic, retain) NSString* tempStyle;
-@property(nonatomic, retain) NSString* tempStyleNight;
-@property(nonatomic, retain) NSDictionary* mappings;
-@property(nonatomic) float imageScale;
-@property(nonatomic) int imageMarginTop;
-@property(nonatomic) float statusBarImageScale;
-
-@property(nonatomic, retain) UIImage* weatherIcon;
-@property(nonatomic, retain) UIImage* weatherImage;
-
-@property(nonatomic) BOOL isCelsius;
-@property(nonatomic) BOOL overrideLocation;
-@property(nonatomic) BOOL showFeelsLike;
-@property(nonatomic) BOOL showWeatherIcon;
-@property(nonatomic) BOOL showStatusBarImage;
-@property(nonatomic) BOOL showStatusBarTemp;
-@property(nonatomic, retain) NSString* location;
-@property(nonatomic) int refreshInterval;
-@property(nonatomic, retain) NSString* bundleIdentifier;
-@property(nonatomic) BOOL useLocalTime;
-@property(nonatomic) BOOL debug;
-
-@property(nonatomic, retain) NSDate* nextRefreshTime;
-@property(nonatomic, retain) NSDate* lastUpdateTime;
-@property(nonatomic, retain) NSDate* localWeatherTime;
-
-+ (NSMutableDictionary*) preferences;
-- (void) _parsePreferences;
-- (void) _parseWeatherPreferences;
 - (id)init;
-- (BOOL)isWeatherIcon:(SBIcon*) icon;
-- (void)setNeedsRefresh;
+- (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
 - (void)refresh;
-- (void)_refresh;
-- (void)_refreshInBackground;
-- (void)_updateWeatherIcon;
-- (BOOL) showStatusBarWeather;
+- (void)refreshNow;
+- (BOOL)showStatusBarWeather;
 - (UIImage*)icon;
-- (UIImageView*)statusBarIndicator:(int) mode;
+- (UIImage*)statusBarIndicator:(int) mode;
 - (void)dealloc;
 
 @end

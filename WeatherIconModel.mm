@@ -8,7 +8,6 @@
  */
 
 #import "WeatherIconModel.h"
-#import "WeatherIndicatorView.h"
 #import <substrate.h>
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
@@ -27,6 +26,7 @@
 static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $SBIconController = objc_getClass("SBIconController");
 
+static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 static NSString* defaultTempStyle(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
@@ -41,117 +41,148 @@ static NSString* defaultTempStyle(@""
 
 @implementation WeatherIconModel
 
-@synthesize temp, windChill, code, tempStyle, tempStyleNight, statusBarImageScale, imageScale, imageMarginTop, mappings;
-@synthesize latitude, longitude, timeZone;
-@synthesize sunset, sunrise, night;
-@synthesize weatherIcon, weatherImage;
-@synthesize isCelsius, overrideLocation, showFeelsLike, location, refreshInterval, bundleIdentifier, debug, useLocalTime, showStatusBarImage, showStatusBarTemp, showWeatherIcon;
-@synthesize nextRefreshTime, lastUpdateTime, localWeatherTime;
-
-+ (NSMutableDictionary*) preferences
+- (NSString*) bundleIdentifier
 {
-	NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
-	return [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
+	return bundleIdentifier;
 }
 
+- (BOOL) needsRefresh
+{
+        NSDate* now = [NSDate date];
 
-- (void) _parsePreferences
+        // are we ready for an update?
+        if ([now compare:nextRefreshTime] == NSOrderedAscending)
+                return false;
+
+	return !refreshing;
+}
+
+- (void) parseWeatherPreferences
+{
+	if (weatherPrefsLoaded)
+		return;
+
+	NSString* weatherPrefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
+	NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:weatherPrefsPath];
+
+	if (dict)
+	{
+		NSLog(@"WI: Parsing weather preferences...");
+		isCelsius = [[dict objectForKey:@"Celsius"] boolValue];
+
+//		NSNumber* activeCity = [dict objectForKey:@"ActiveCity"];
+		NSArray* cities = [dict objectForKey:@"Cities"];
+		if (cities.count > 0)
+		{
+			NSDictionary* city = [cities objectAtIndex:0];
+			NSString* zip = [[city objectForKey:@"Zip"] substringToIndex:8];
+
+			if (![zip isEqualToString:location])
+				timeZone = nil;
+
+			[location release];
+			location = [zip retain];
+		}	
+	}
+
+	weatherPrefsLoaded = true;
+}
+
+- (void) parsePreferences
 {
 	if (prefsLoaded)
 		return;
 
-	NSMutableDictionary* prefs = [WeatherIconModel preferences];
+	NSMutableDictionary* prefs = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 	if (prefs)
 	{
 		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
-			self.overrideLocation = [ol boolValue];
-		NSLog(@"WI: Override Location: %d", self.overrideLocation);
+			overrideLocation = [ol boolValue];
+		NSLog(@"WI: Override Location: %d", overrideLocation);
 
 		if (NSNumber* chill = [prefs objectForKey:@"ShowFeelsLike"])
-			self.showFeelsLike = [chill boolValue];
-		NSLog(@"WI: Show Feels Like: %d", self.showFeelsLike);
+			showFeelsLike = [chill boolValue];
+		NSLog(@"WI: Show Feels Like: %d", showFeelsLike);
 
-		if (self.overrideLocation)
+		if (overrideLocation)
 		{
 			if (NSString* loc = [prefs objectForKey:@"Location"])
 			{
-				if (![loc isEqualToString:self.location])
-					self.timeZone = nil;
-				self.location = [NSString stringWithString:loc];
+				if (![loc isEqualToString:location])
+				{
+					[timeZone release];
+					timeZone = nil;
+				}
+
+				[location release];
+				location = [[NSString stringWithString:loc] retain];
 			}
 
 			if (NSNumber* celsius = [prefs objectForKey:@"Celsius"])
-				self.isCelsius = [celsius boolValue];
+				isCelsius = [celsius boolValue];
 		}
 		else
 		{
-			[self _parseWeatherPreferences];
+			[self parseWeatherPreferences];
 		}
 
-		NSLog(@"WI: Location: %@", self.location);
-		NSLog(@"WI: Celsius: %@", (self.isCelsius ? @"YES" : @"NO"));
+		NSLog(@"WI: Location: %@", location);
+		NSLog(@"WI: Celsius: %d", isCelsius);
 
 		if (NSNumber* v = [prefs objectForKey:@"UseLocalTime"])
-			self.useLocalTime = [v boolValue];
-		NSLog(@"WI: Use Local Time: %d", self.useLocalTime);
+			useLocalTime = [v boolValue];
+		NSLog(@"WI: Use Local Time: %d", useLocalTime);
 
 		if (NSNumber* v = [prefs objectForKey:@"ShowWeatherIcon"])
-			self.showWeatherIcon = [v boolValue];
-		NSLog(@"WI: Show Weather Icon: %d", self.showWeatherIcon);
+			showWeatherIcon = [v boolValue];
+		NSLog(@"WI: Show Weather Icon: %d", showWeatherIcon);
 
 		if (NSNumber* v = [prefs objectForKey:@"ShowStatusBarImage"])
-			self.showStatusBarImage = [v boolValue];
-		NSLog(@"WI: Show Status Bar Image: %d", self.showStatusBarImage);
+			showStatusBarImage = [v boolValue];
+		NSLog(@"WI: Show Status Bar Image: %d", showStatusBarImage);
 
 		if (NSNumber* v = [prefs objectForKey:@"ShowStatusBarTemp"])
-			self.showStatusBarTemp = [v boolValue];
-		NSLog(@"WI: Show Status Bar Temp: %d", self.showStatusBarTemp);
+			showStatusBarTemp = [v boolValue];
+		NSLog(@"WI: Show Status Bar Temp: %d", showStatusBarTemp);
 
 		if (NSString* id = [prefs objectForKey:@"WeatherBundleIdentifier"])
-			self.bundleIdentifier = [NSString stringWithString:id];
-		NSLog(@"WI: Weather Bundle Identifier: %@", self.bundleIdentifier);
+		{
+			[bundleIdentifier release];
+			bundleIdentifier = [id retain];
+		}
+		NSLog(@"WI: Weather Bundle Identifier: %@", bundleIdentifier);
 
 		if (NSNumber* interval = [prefs objectForKey:@"RefreshInterval"])
-			self.refreshInterval = ([interval intValue] * 60);
-		NSLog(@"WI: Refresh Interval: %d seconds", self.refreshInterval);
+			refreshInterval = ([interval intValue] * 60);
+		NSLog(@"WI: Refresh Interval: %d seconds", refreshInterval);
 
 		if (NSNumber* d = [prefs objectForKey:@"Debug"])
 		{
-			self.debug = [d boolValue];
-			NSLog(@"WI: Debug: %d", self.debug);
+			debug = [d boolValue];
+			NSLog(@"WI: Debug: %d", debug);
 		}
-
-		if (self.debug)
-			self.refreshInterval = 1;
 	}
 	else
 	{
-		prefs = [NSMutableDictionary dictionaryWithCapacity:4];
-		[prefs setValue:[NSNumber numberWithBool:self.overrideLocation] forKey:@"OverrideLocation"];
-		[prefs setValue:self.location forKey:@"Location"];
-		[prefs setValue:[NSNumber numberWithBool:self.isCelsius] forKey:@"Celsius"];
-		[prefs setValue:[NSNumber numberWithBool:self.showFeelsLike] forKey:@"ShowFeelsLike"];
-		[prefs setValue:[NSNumber numberWithBool:self.showWeatherIcon] forKey:@"ShowWeatherIcon"];
-		[prefs setValue:[NSNumber numberWithBool:self.showStatusBarImage] forKey:@"ShowStatusBarImage"];
-		[prefs setValue:[NSNumber numberWithBool:self.showStatusBarTemp] forKey:@"ShowStatusBarTemp"];
-		[prefs setValue:[NSNumber numberWithBool:self.useLocalTime] forKey:@"UseLocalTime"];
-		[prefs setValue:[NSNumber numberWithInt:(int)(self.refreshInterval / 60)] forKey:@"RefreshInterval"];
+		prefs = [NSMutableDictionary dictionaryWithCapacity:10];
+		[prefs setValue:[NSNumber numberWithBool:overrideLocation] forKey:@"OverrideLocation"];
+		[prefs setValue:location forKey:@"Location"];
+		[prefs setValue:[NSNumber numberWithBool:isCelsius] forKey:@"Celsius"];
+		[prefs setValue:[NSNumber numberWithBool:showFeelsLike] forKey:@"ShowFeelsLike"];
+		[prefs setValue:[NSNumber numberWithBool:showWeatherIcon] forKey:@"ShowWeatherIcon"];
+		[prefs setValue:[NSNumber numberWithBool:showStatusBarImage] forKey:@"ShowStatusBarImage"];
+		[prefs setValue:[NSNumber numberWithBool:showStatusBarTemp] forKey:@"ShowStatusBarTemp"];
+		[prefs setValue:[NSNumber numberWithBool:useLocalTime] forKey:@"UseLocalTime"];
+		[prefs setValue:[NSNumber numberWithInt:(int)(refreshInterval / 60)] forKey:@"RefreshInterval"];
 		[prefs setValue:@"com.apple.weather" forKey:@"WeatherBundleIdentifier"];
 
-	        NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 		[prefs writeToFile:prefsPath atomically:YES];
 	}
 
 	prefsLoaded = true;
 }
 
-- (void) setNeedsRefresh
-{
-	NSLog(@"WI: Marking weather icon for refresh.");
-	self.nextRefreshTime = [NSDate date];
-}
-
-- (void) _loadTheme
+- (void) loadTheme
 {
 	if (themeLoaded)
 		return;
@@ -166,95 +197,69 @@ static NSString* defaultTempStyle(@""
 			NSLog(@"WI: Loading theme prefs: %@", themePrefs);
 
 			// reset the temp style
-			self.tempStyle = defaultTempStyle;
-
+			[tempStyle release];
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
-				self.tempStyle = [self.tempStyle stringByAppendingString:style];
-
-			if (NSString* nstyle = [dict objectForKey:@"TempStyleNight"])
-			        self.tempStyleNight = [self.tempStyle stringByAppendingString:nstyle];
+				tempStyle = [[defaultTempStyle stringByAppendingString:style] retain];
 			else
-				self.tempStyleNight = self.tempStyle;
+				tempStyle = [defaultTempStyle retain];
+
+			[tempStyleNight release];
+			if (NSString* nstyle = [dict objectForKey:@"TempStyleNight"])
+			        tempStyleNight = [[tempStyle stringByAppendingString:nstyle] retain];
+			else
+				tempStyleNight = [tempStyle retain];
 
 			if (NSNumber* scale = [dict objectForKey:@"StatusBarImageScale"])
-				self.statusBarImageScale = [scale floatValue];
+				statusBarImageScale = [scale floatValue];
 
 			if (NSNumber* scale = [dict objectForKey:@"ImageScale"])
-				self.imageScale = [scale floatValue];
+				imageScale = [scale floatValue];
 
 			if (NSNumber* top = [dict objectForKey:@"ImageMarginTop"])
-				self.imageMarginTop = [top intValue];
+				imageMarginTop = [top intValue];
 
 			if (NSNumber* v = [dict objectForKey:@"ShowWeatherIcon"])
-				self.showWeatherIcon = [v boolValue];
-			NSLog(@"WI: Show Weather Icon: %d", self.showWeatherIcon);
+				showWeatherIcon = [v boolValue];
+			NSLog(@"WI: Show Weather Icon: %d", showWeatherIcon);
 	
 			if (NSNumber* v = [dict objectForKey:@"ShowStatusBarImage"])
-				self.showStatusBarImage = [v boolValue];
-			NSLog(@"WI: Show Status Bar Image: %d", self.showStatusBarImage);
+				showStatusBarImage = [v boolValue];
+			NSLog(@"WI: Show Status Bar Image: %d", showStatusBarImage);
 	
 			if (NSNumber* v = [dict objectForKey:@"ShowStatusBarTemp"])
-				self.showStatusBarTemp = [v boolValue];
-			NSLog(@"WI: Show Status Bar Temp: %d", self.showStatusBarTemp);
+				showStatusBarTemp = [v boolValue];
+			NSLog(@"WI: Show Status Bar Temp: %d", showStatusBarTemp);
 	
 			// get the mappings for the theme
-			self.mappings = [dict objectForKey:@"Mappings"];
+			[mappings release];
+			mappings = [[dict objectForKey:@"Mappings"] retain];
 		}
 	}	
 
 	themeLoaded = true;
 }
 
-- (void) _parseWeatherPreferences
-{
-	if (weatherPrefsLoaded)
-		return;
-
-	NSString* prefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
-	NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
-
-	if (dict)
-	{
-		NSLog(@"WI: Parsing weather preferences...");
-		self.isCelsius = [[dict objectForKey:@"Celsius"] boolValue];
-
-//		NSNumber* activeCity = [dict objectForKey:@"ActiveCity"];
-		NSArray* cities = [dict objectForKey:@"Cities"];
-		if (cities.count > 0)
-		{
-			NSDictionary* city = [cities objectAtIndex:0];
-			NSString* zip = [[city objectForKey:@"Zip"] substringToIndex:8];
-
-			if (![zip isEqualToString:self.location])
-				self.timeZone = nil;
-
-			self.location = zip;
-		}	
-	}
-
-	weatherPrefsLoaded = true;
-}
-
 - (id) init
 {
-	self.temp = @"?";
-	self.code = @"3200";
-	self.tempStyle = defaultTempStyle;
-	self.tempStyleNight = self.tempStyle;
-	self.statusBarImageScale = 1.0;
-	self.imageScale = 1.0;
-	self.imageMarginTop = 0;
-	self.isCelsius = false;
-	self.overrideLocation = false;
-	self.useLocalTime = false;
-	self.showFeelsLike = false;
-	self.showWeatherIcon = true;
-	self.showStatusBarImage = false;
-	self.showStatusBarTemp = false;
-	self.refreshInterval = 900;
-	self.nextRefreshTime = [NSDate date];
+	temp = [@"?" retain];
+	code = [@"3200" retain];
+	tempStyle = [defaultTempStyle retain];
+	tempStyleNight = [tempStyle retain];
+	statusBarImageScale = 1.0;
+	imageScale = 1.0;
+	imageMarginTop = 0;
+	isCelsius = false;
+	overrideLocation = false;
+	useLocalTime = false;
+	showFeelsLike = false;
+	showWeatherIcon = true;
+	showStatusBarImage = false;
+	showStatusBarTemp = false;
+	refreshInterval = 900;
+	nextRefreshTime = [[NSDate date] retain];
+	refreshing = false;
 
-	[self _parsePreferences];
+	[self parsePreferences];
 
 	return self;
 }
@@ -267,10 +272,14 @@ qualifiedName:(NSString *)qName
 {
 	if ([elementName isEqualToString:@"yweather:astronomy"])
 	{
-		self.sunrise = [NSString stringWithString:[attributeDict objectForKey:@"sunrise"]];
-		self.sunset = [NSString stringWithString:[attributeDict objectForKey:@"sunset"]];
-		NSLog(@"WI: Sunrise: %@", self.sunrise);
-		NSLog(@"WI: Sunset: %@", self.sunset);
+		[sunrise release];
+		[sunset release];
+
+		sunrise = [[attributeDict objectForKey:@"sunrise"] retain];
+		sunset = [[attributeDict objectForKey:@"sunset"] retain];
+
+		NSLog(@"WI: Sunrise: %@", sunrise);
+		NSLog(@"WI: Sunset: %@", sunset);
 	}
 	else if ([elementName isEqualToString:@"geo:lat"])
 	{
@@ -286,22 +295,28 @@ qualifiedName:(NSString *)qName
 	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
-		self.windChill = [NSString stringWithString:[attributeDict objectForKey:@"chill"]];
-		NSLog(@"WI: Wind Chill: %@", self.windChill);
+		[windChill release];
+		windChill = [[attributeDict objectForKey:@"chill"] retain];
+		NSLog(@"WI: Wind Chill: %@", windChill);
 	}
 	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
-		self.temp = [NSString stringWithString:[attributeDict objectForKey:@"temp"]];
-		NSLog(@"WI: Temp: %@", self.temp);
-		self.code = [NSString stringWithString:[attributeDict objectForKey:@"code"]];
-		NSLog(@"WI: Code: %@", self.code);
+		[temp release];
+		temp = [[attributeDict objectForKey:@"temp"] retain];
+		NSLog(@"WI: Temp: %@", temp);
 
-		self.lastUpdateTime = [NSDate date];
-		NSLog(@"WI: Last Update Time: %@", self.lastUpdateTime);
+		[code release];
+		code = [[attributeDict objectForKey:@"code"] retain];
+		NSLog(@"WI: Code: %@", code);
 
-		if (self.useLocalTime)
+		[lastUpdateTime release];
+		lastUpdateTime = [[NSDate date] retain];
+		NSLog(@"WI: Last Update Time: %@", lastUpdateTime);
+
+		[localWeatherTime release];
+		if (useLocalTime)
 		{
-			self.localWeatherTime = self.lastUpdateTime;
+			localWeatherTime = [lastUpdateTime retain];
 		}
 		else
 		{
@@ -309,9 +324,9 @@ qualifiedName:(NSString *)qName
 			NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 			[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
 			[df setDateFormat:@"EEE, dd MMM yyyy hh:mm a"];
-			self.localWeatherTime = [df dateFromString:weatherDate];
+			localWeatherTime = [[df dateFromString:weatherDate] retain];
 		}
-		NSLog(@"WI: Local Weather Time: %@", self.localWeatherTime);
+		NSLog(@"WI: Local Weather Time: %@", localWeatherTime);
 	}
 }
 
@@ -322,21 +337,22 @@ qualifiedName:(NSString *)qName
 {
 	if ([elementName isEqualToString:@"geo:lat"])
 	{
-		self.latitude = parserContent;
-		parserContent = nil;
-		NSLog(@"WI: Latitude: %@", self.latitude);
+		[latitude release];
+		latitude = [parserContent retain];
+		NSLog(@"WI: Latitude: %@", latitude);
 	}
 	else if ([elementName isEqualToString:@"geo:long"])
 	{
-		self.longitude = parserContent;
-		parserContent = nil;
-		NSLog(@"WI: Longitude: %@", self.longitude);
+		[longitude release];
+		longitude = [parserContent retain];
+		NSLog(@"WI: Longitude: %@", longitude);
 	}
 	else if ([elementName isEqualToString:@"offset"])
 	{
 		int offset = [parserContent intValue];
-		self.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:(offset * 3600)];
-		NSLog(@"WI: Local time zone: %@", self.timeZone);
+		[timeZone release];
+		timeZone = [[NSTimeZone timeZoneForSecondsFromGMT:(offset * 3600)] retain];
+		NSLog(@"WI: Local time zone: %@", timeZone);
 	}
 }
 
@@ -351,123 +367,35 @@ foundCharacters:(NSString *)string
 	}
 }
 
-- (BOOL) showStatusBarWeather
+- (BOOL) isWeatherIcon:(NSString*) displayIdentifier
 {
-	return (self.showStatusBarTemp || self.showStatusBarImage);
-}
-
-- (BOOL) isWeatherIcon:(SBIcon*) icon
-{
-	if ([icon.displayIdentifier isEqualToString:self.bundleIdentifier])
+	if ([displayIdentifier isEqualToString:bundleIdentifier])
 	{
 		// make sure to reload the theme here
-		[self _loadTheme];
-		return self.showWeatherIcon;
+		[self loadTheme];
+		return showWeatherIcon;
 	}
 
 	return false;
 }
 
-- (void) refresh
-{
-	if (!self.weatherIcon)
-		[self _updateWeatherIcon];
-
-	if (!self.showWeatherIcon && !self.showStatusBarWeather)
-		return;
-
-	NSDate* now = [NSDate date];
-//	NSLog(@"WI: Checking refresh dates: %@ vs %@", now, self.nextRefreshTime);
-
-	// are we ready for an update?
-	if ([now compare:self.nextRefreshTime] == NSOrderedAscending && !self.debug)
-	{
-//		NSLog(@"WI: No refresh yet.");
-		return;
-	}
-
-	[NSThread detachNewThreadSelector:@selector(_refreshInBackground) toTarget:self withObject:nil];
-}
-
-- (void) _refresh
-{
-	themeLoaded = false;
-	prefsLoaded = false;
-	weatherPrefsLoaded = false;
-	
-	// reparse the preferences
-	[self _parsePreferences];
-
-	if (!self.location)
-	{
-		NSLog(@"WI: No location set.");
-		return;
-	}
-
-	NSLog(@"WI: Refreshing weather for %@...", self.location);
-	NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
-	NSURL* url = [NSURL URLWithString:urlStr];
-	NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
-	[parser setDelegate:self];
-	[parser parse];
-	[parser release];
-
-	if (self.useLocalTime && !self.timeZone)
-	{
-		NSLog(@"WI: Refreshing time zone for %@...", self.location);
-		urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", self.latitude, self.longitude];
-		url = [NSURL URLWithString:urlStr];
-		parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
-		[parser setDelegate:self];
-		[parser parse];
-		[parser release];
-	}
-
-//	NSLog(@"WI: Did the update succeed? %@ vs %@", self.lastUpdateTime, self.nextRefreshTime);
-	if (!self.lastUpdateTime || [self.lastUpdateTime compare:self.nextRefreshTime] == NSOrderedAscending)
-	{
-		NSLog(@"WI: Update failed.");
-		return;
-	}
-
-	if (!self.temp)
-		self.temp = @"?";
-
-	if (!self.code)
-		self.code = @"3200";
-
-	self.nextRefreshTime = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
-	NSLog(@"WI: Next refresh time: %@", self.nextRefreshTime);
-
-}
-
-- (void) _refreshInBackground
-{
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	[self _refresh];
-	[pool release];
-
-	// update the weather info
-	[self performSelectorOnMainThread:@selector(_updateWeatherIcon) withObject:nil waitUntilDone:NO];
-}
-
 - (NSString*) mapImage:(NSString*) prefix
 {
 	// no mappings
-	if (!self.mappings)
+	if (!mappings)
 		return nil;
 
-	NSString* suffix = (self.night ? @"_night" : @"_day");	
-	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
+	NSString* suffix = (night ? @"_night" : @"_day");	
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
 		return mapped;
 
-	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, code]])
 		return mapped;
 
-	if (NSString* mapped = [self.mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
 		return mapped;
 
-	if (NSString* mapped = [self.mappings objectForKey:prefix])
+	if (NSString* mapped = [mappings objectForKey:prefix])
 		return mapped;
 
 	return nil;
@@ -488,20 +416,20 @@ foundCharacters:(NSString *)string
 
 - (UIImage*) findWeatherImage:(NSString*) prefix
 {
-	NSString* suffix = (self.night ? @"_night" : @"_day");	
+	NSString* suffix = (night ? @"_night" : @"_day");	
 
 	if (NSString* mapped = [self mapImage:prefix])
 	{
-		NSLog(@"Mapped %@%@%@ to %@", prefix, self.code, suffix, mapped);
+		NSLog(@"Mapped %@%@%@ to %@", prefix, code, suffix, mapped);
 		prefix = mapped;
 	}
 
-	NSLog(@"WI: Find image for %@%@%@", prefix, self.code, suffix);
+	NSLog(@"WI: Find image for %@%@%@", prefix, code, suffix);
         NSBundle* bundle = [NSBundle mainBundle];
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
 		return img;
 
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
+	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, code]])
 		return img;
 
 	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
@@ -510,90 +438,95 @@ foundCharacters:(NSString *)string
 	if (UIImage* img = [self findImage:bundle name:prefix])
 		return img;
 
-	NSLog(@"WI: No image found for %@%@%@", prefix, self.code, suffix);
+	NSLog(@"WI: No image found for %@%@%@", prefix, code, suffix);
 	return nil;
 }
 
-- (UIImageView*) _createIndicator:(int) mode temp:(NSString*) temp image:(UIImage*) image
+- (void) updateNightSetting
 {
-	UIFont* font = [UIFont boldSystemFontOfSize:13];
-        CGSize tempSize = [temp sizeWithFont:font];
-        CGSize sbSize = CGSizeMake(0, 20);
-
-        if (self.showStatusBarTemp)
-                sbSize.width += tempSize.width;
-
-        if (self.showStatusBarImage && image)
-                sbSize.width += ceil(image.size.width * self.statusBarImageScale);
-
-        UIGraphicsBeginImageContext(sbSize);
-
-        if (self.showStatusBarTemp)
-        {
-                CGContextRef ctx = UIGraphicsGetCurrentContext();
-		NSLog(@"WI: Creating indicator for mode %d", mode);
-                float f = (mode == 0 ? 0.2 : 1);
-                CGContextSetRGBFillColor(ctx, f, f, f, 1);
-                [temp drawAtPoint:CGPointMake(0, 1) withFont:font];
-        }
-
-        if (self.showStatusBarImage && image)
-        {
-        	float width = image.size.width * self.statusBarImageScale;
-                float height = image.size.height * self.statusBarImageScale;
-                CGRect rect = CGRectMake(tempSize.width, ((18 - height) / 2), width, height);
-                [image drawInRect:rect];
-        }
-
-	UIImage* indicator = UIGraphicsGetImageFromCurrentImageContext();
-	UIImageView* view = [[[UIImageView alloc] initWithImage:indicator] retain];
-
-        UIGraphicsEndImageContext();
-
-	return view;
-}
-
-- (void) _updateWeatherIcon
-{
-	[self _loadTheme];
-
-	// handle debug case
-	self.night = (self.debug ? !self.night : false);
-	if (!self.debug && self.localWeatherTime && self.sunrise && self.sunset)
+	night = false;
+	if (localWeatherTime && sunrise && sunset)
 	{
 		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
-		if (self.timeZone)
-			[df setTimeZone:self.timeZone];
+		if (timeZone)
+			[df setTimeZone:timeZone];
 		[df setDateFormat:@"dd MMM yyyy hh:mm a"];
 
-		NSString* date = [df stringFromDate:self.localWeatherTime];
+		NSString* date = [df stringFromDate:localWeatherTime];
 		NSArray* dateParts = [date componentsSeparatedByString:@" "];
 
 		NSString* sunriseFullDateStr = [NSString stringWithFormat:@"%@ %@ %@ %@",
 			[dateParts objectAtIndex:0],
 			[dateParts objectAtIndex:1],
 			[dateParts objectAtIndex:2],
-			self.sunrise];
+			sunrise];
 
 		NSString* sunsetFullDateStr = [NSString stringWithFormat:@"%@ %@ %@ %@",
 			[dateParts objectAtIndex:0],
 			[dateParts objectAtIndex:1],
 			[dateParts objectAtIndex:2],
-			self.sunset];
+			sunset];
 
-//		NSLog(@"WI: Full Sunrise/Sunset:%@, %@", sunriseFullDateStr, sunsetFullDateStr);
-
-		NSDate* weatherDate = self.localWeatherTime;
+		NSDate* weatherDate = localWeatherTime;
 		NSDate* sunriseDate = [df dateFromString:sunriseFullDateStr];
 		NSDate* sunsetDate = [df dateFromString:sunsetFullDateStr];
 		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
 
-		self.night = ([weatherDate compare:sunriseDate] == NSOrderedAscending ||
+		night = ([weatherDate compare:sunriseDate] == NSOrderedAscending ||
 				[weatherDate compare:sunsetDate] == NSOrderedDescending);
 	}
-	NSLog(@"WI: Night? %d", self.night);
+	NSLog(@"WI: Night? %d", night);
+}
 
+- (UIImage*) createIndicator:(int) mode
+{
+	NSString* t =[(showFeelsLike ? windChill : temp) stringByAppendingString: @"\u00B0"];
+
+	UIImage* image = [self findWeatherImage:@"weatherstatus"];
+	// save the status bar image
+	if (!image)
+		image = [self findWeatherImage:@"weather"];
+
+	UIFont* font = [UIFont boldSystemFontOfSize:13];
+        CGSize tempSize = [t sizeWithFont:font];
+        CGSize sbSize = CGSizeMake(0, 20);
+
+        if (showStatusBarTemp)
+                sbSize.width += tempSize.width;
+
+        if (showStatusBarImage && image)
+                sbSize.width += ceil(image.size.width * statusBarImageScale);
+
+        UIGraphicsBeginImageContext(sbSize);
+
+        if (showStatusBarTemp)
+        {
+                CGContextRef ctx = UIGraphicsGetCurrentContext();
+		NSLog(@"WI: Creating indicator for mode %d", mode);
+                float f = (mode == 0 ? 0.2 : 1);
+                CGContextSetRGBFillColor(ctx, f, f, f, 1);
+                [t drawAtPoint:CGPointMake(0, 1) withFont:font];
+        }
+
+        if (showStatusBarImage && image)
+        {
+        	float width = image.size.width * statusBarImageScale;
+                float height = image.size.height * statusBarImageScale;
+                CGRect rect = CGRectMake(tempSize.width, ((18 - height) / 2), width, height);
+                [image drawInRect:rect];
+        }
+
+	NSLog(@"WI: Creating new weather indicator");
+	UIImage* indicator = UIGraphicsGetImageFromCurrentImageContext();
+
+        UIGraphicsEndImageContext();
+
+	return indicator;
+}
+
+- (void) updateIcon
+{
 	UIImage* bgIcon = [self findWeatherImage:@"weatherbg"];
 	UIImage* weatherImage = [self findWeatherImage:@"weather"];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
@@ -607,88 +540,211 @@ foundCharacters:(NSString *)string
 
 	if (weatherImage)
 	{
-		float width = weatherImage.size.width * self.imageScale;
-		float height = weatherImage.size.height * self.imageScale;
-	        CGRect iconRect = CGRectMake((size.width - width) / 2, self.imageMarginTop, width, height);
+		float width = weatherImage.size.width * imageScale;
+		float height = weatherImage.size.height * imageScale;
+	        CGRect iconRect = CGRectMake((size.width - width) / 2, imageMarginTop, width, height);
 		[weatherImage drawInRect:iconRect];
 	}
 
-//	NSLog(@"WI: Drawing Temperature");
-	NSString* t =[(self.showFeelsLike ? self.windChill : self.temp) stringByAppendingString: @"\u00B0"];
-	NSString* style = [NSString stringWithFormat:(self.night ? self.tempStyleNight : self.tempStyle), (int)size.width];
+	NSString* t =[(showFeelsLike ? windChill : temp) stringByAppendingString: @"\u00B0"];
+	NSString* style = [NSString stringWithFormat:(night ? tempStyleNight : tempStyle), (int)size.width];
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
-	self.weatherIcon = UIGraphicsGetImageFromCurrentImageContext();
-	self.weatherImage = weatherImage;
-
-	// save the status bar image
-	UIImage* statusBarImage = [self findWeatherImage:@"weatherstatus"];
-	if (!statusBarImage)
-		statusBarImage = weatherImage;
+	NSLog(@"WI: Creating new weather icon");
+	[weatherIcon release];
+	NSLog(@"WI: Old weather icon released");
+	weatherIcon = [UIGraphicsGetImageFromCurrentImageContext() retain];
+	NSLog(@"WI: Created new weather icon");
 
 	UIGraphicsEndImageContext();
 
-
-	// now the status bar image
-	if (self.showStatusBarWeather)
-	{
-		[statusBarIndicatorMode0 release];
-		statusBarIndicatorMode0 = [self _createIndicator:0 temp:t image:statusBarImage];
-
-		[statusBarIndicatorMode1 release];
-		statusBarIndicatorMode1 = [self _createIndicator:1 temp:t image:statusBarImage];
-	}
-
-	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
-	if (self.showStatusBarWeather && statusBarController)
-	{
-		NSLog(@"WI: Refreshing indicators...");
-		[statusBarController removeStatusBarItem:@"WeatherIcon"];
-		[statusBarController addStatusBarItem:@"WeatherIcon"];
-	}
-
+	NSLog(@"WI: Finding icon controller");
 	SBIconController* iconController = [$SBIconController sharedInstance];
 	if (iconController)
 	{
 		NSLog(@"WI: Refreshing icon...");
 	        // now force the icon to refresh
 	        SBIconModel* model(MSHookIvar<SBIconModel*>(iconController, "_iconModel"));
-	        [model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
+	        [model reloadIconImageForDisplayIdentifier:bundleIdentifier];
 
 		// get the SBIconController and refresh the contentView
 		[iconController.contentView setNeedsDisplay];
 
 		// refresh all of the subviews to get the reflection right
-		SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier];
+		SBIcon* applicationIcon = [model iconForDisplayIdentifier:bundleIdentifier];
 		if (applicationIcon)
 		{
 			NSArray* views = [applicationIcon subviews];
 			for (int i = 0; i < views.count; i++)
 				[[views objectAtIndex:i] setNeedsDisplay];
 		}
+		NSLog(@"WI: Done refreshing icon...");
 	}
+}
+
+- (void) updateIndicator
+{
+	NSLog(@"WI: Creating mode 0 indicator...");
+	[statusBarIndicatorMode0 release];
+	statusBarIndicatorMode0 = [[self createIndicator:0] retain];
+
+	NSLog(@"WI: Creating mode 1 indicator...");
+	[statusBarIndicatorMode1 release];
+	statusBarIndicatorMode1 = [[self createIndicator:1] retain];
+
+	NSLog(@"WI: Locating indicator controller...");
+	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
+	if (statusBarController)
+	{
+		NSLog(@"WI: Refreshing indicator...");
+		[statusBarController removeStatusBarItem:@"WeatherIcon"];
+		[statusBarController addStatusBarItem:@"WeatherIcon"];
+		NSLog(@"WI: Done refreshing indicator...");
+	}
+}
+
+- (void) updateWeatherIcon
+{
+	[self loadTheme];
+	[self updateNightSetting];
+
+	if (showWeatherIcon)
+		[self updateIcon];
+
+	// now the status bar image
+	if (self.showStatusBarWeather)
+	{
+		[self updateIndicator];
+	}
+}
+
+- (void) _refresh
+{
+	themeLoaded = false;
+	prefsLoaded = false;
+	weatherPrefsLoaded = false;
+	
+	// reparse the preferences
+	[self parsePreferences];
+
+	if (!location)
+	{
+		NSLog(@"WI: No location set.");
+		return;
+	}
+
+	NSLog(@"WI: Refreshing weather for %@...", location);
+	NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", location, (isCelsius ? @"c" : @"f")];
+	NSURL* url = [NSURL URLWithString:urlStr];
+	NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+	[parser setDelegate:self];
+	[parser parse];
+	[parser release];
+
+	if (useLocalTime && !timeZone)
+	{
+		NSLog(@"WI: Refreshing time zone for %@...", location);
+		urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", latitude, longitude];
+		url = [NSURL URLWithString:urlStr];
+		parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+		[parser setDelegate:self];
+		[parser parse];
+		[parser release];
+	}
+
+//	NSLog(@"WI: Did the update succeed? %@ vs %@", lastUpdateTime, nextRefreshTime);
+	if (!lastUpdateTime || [lastUpdateTime compare:nextRefreshTime] == NSOrderedAscending)
+	{
+		NSLog(@"WI: Update failed.");
+	}
+
+	if (!temp)
+		temp = [@"?" retain];
+
+	if (!code)
+		code = [@"3200" retain];
+
+	[nextRefreshTime release];
+	nextRefreshTime = [[NSDate dateWithTimeIntervalSinceNow:refreshInterval] retain];
+
+	NSLog(@"WI: Next refresh time: %@", nextRefreshTime);
+}
+
+- (void) refreshInBackground
+{
+	// mark as refreshing
+	refreshing = true;
+
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	[self _refresh];
+	[pool release];
+
+	// update the weather info
+	[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
+
+	refreshing = false;
+}
+
+- (void) refreshNow
+{
+	[nextRefreshTime release];
+	nextRefreshTime = [[NSDate date] retain];
+
+	[self refresh];
+}
+
+- (void) refresh
+{
+	if (!weatherIcon)
+		[self updateWeatherIcon];
+
+	if (!showWeatherIcon && !self.showStatusBarWeather)
+		return;
+
+	if (![self needsRefresh])
+		return;
+
+	[NSThread detachNewThreadSelector:@selector(refreshInBackground) toTarget:self withObject:nil];
 }
 
 - (UIImage*) icon
 {
-	return self.weatherIcon;
+	return weatherIcon;
 }
 
-- (UIImageView*) statusBarIndicator:(int)mode
+- (BOOL) showStatusBarWeather
+{
+	return (showStatusBarTemp || showStatusBarImage);
+}
+
+- (UIImage*) statusBarIndicator:(int)mode
 {
 	return (mode == 0 ? statusBarIndicatorMode0 : statusBarIndicatorMode1);
 }
 
 - (void) dealloc
 {
-	[self.temp release];
-	[self.tempStyle release];
-	[self.code release];
-	[self.location release];
-	[self.lastUpdateTime release];
-	[self.nextRefreshTime release];
+	[location release];
+	[bundleIdentifier release];
+	[lastUpdateTime release];
+	[nextRefreshTime release];
+
+	[temp release];
+	[windChill release];
+	[code release];
+	[sunrise release];
+	[sunset release];
+	[latitude release];
+	[longitude release];
+	[timeZone release];
+	[weatherIcon release];
 	[statusBarIndicatorMode0 release];
 	[statusBarIndicatorMode1 release];
+
+	[tempStyle release];
+	[tempStyleNight release];
+
 	[super dealloc];
 }
+
 @end
