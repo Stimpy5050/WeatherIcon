@@ -503,7 +503,6 @@ foundCharacters:(NSString *)string
         if (showStatusBarTemp)
         {
                 CGContextRef ctx = UIGraphicsGetCurrentContext();
-		NSLog(@"WI: Creating indicator for mode %d", mode);
                 float f = (mode == 0 ? 0.2 : 1);
                 CGContextSetRGBFillColor(ctx, f, f, f, 1);
                 [t drawAtPoint:CGPointMake(0, 1) withFont:font];
@@ -517,7 +516,6 @@ foundCharacters:(NSString *)string
                 [image drawInRect:rect];
         }
 
-	NSLog(@"WI: Creating new weather indicator");
 	UIImage* indicator = UIGraphicsGetImageFromCurrentImageContext();
 
         UIGraphicsEndImageContext();
@@ -550,15 +548,11 @@ foundCharacters:(NSString *)string
 	NSString* style = [NSString stringWithFormat:(night ? tempStyleNight : tempStyle), (int)size.width];
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
-	NSLog(@"WI: Creating new weather icon");
 	[weatherIcon release];
-	NSLog(@"WI: Old weather icon released");
 	weatherIcon = [UIGraphicsGetImageFromCurrentImageContext() retain];
-	NSLog(@"WI: Created new weather icon");
 
 	UIGraphicsEndImageContext();
 
-	NSLog(@"WI: Finding icon controller");
 	SBIconController* iconController = [$SBIconController sharedInstance];
 	if (iconController)
 	{
@@ -578,28 +572,23 @@ foundCharacters:(NSString *)string
 			for (int i = 0; i < views.count; i++)
 				[[views objectAtIndex:i] setNeedsDisplay];
 		}
-		NSLog(@"WI: Done refreshing icon...");
 	}
 }
 
 - (void) updateIndicator
 {
-	NSLog(@"WI: Creating mode 0 indicator...");
 	[statusBarIndicatorMode0 release];
 	statusBarIndicatorMode0 = [[self createIndicator:0] retain];
 
-	NSLog(@"WI: Creating mode 1 indicator...");
 	[statusBarIndicatorMode1 release];
 	statusBarIndicatorMode1 = [[self createIndicator:1] retain];
 
-	NSLog(@"WI: Locating indicator controller...");
 	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
 	if (statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicator...");
 		[statusBarController removeStatusBarItem:@"WeatherIcon"];
 		[statusBarController addStatusBarItem:@"WeatherIcon"];
-		NSLog(@"WI: Done refreshing indicator...");
 	}
 }
 
