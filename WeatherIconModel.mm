@@ -38,6 +38,8 @@ static NSString* defaultTempStyle(@""
 	"text-align: center; "
 	"text-shadow: rgba(0, 0, 0, 0.2) 1px 1px 0px; "
 "");
+static NSString* defaultTemp = @"?";
+static NSString* defaultCode = @"3200";
 
 @implementation WeatherIconModel
 
@@ -55,6 +57,27 @@ static NSString* defaultTempStyle(@""
                 return false;
 
 	return !refreshing;
+}
+
+- (void) releaseTempInfo
+{
+	[temp release];
+	[code release];
+	[sunrise release];
+	[sunset release];
+	[latitude release];
+	[longitude release];
+	[timeZone release];
+	[localWeatherTime release];
+
+	temp = nil;
+	code = nil;
+	sunrise = nil;
+	sunset = nil;
+	latitude = nil;
+	longitude = nil;
+	timeZone = nil;
+	localWeatherTime = nil;
 }
 
 - (void) parseWeatherPreferences
@@ -78,7 +101,10 @@ static NSString* defaultTempStyle(@""
 			NSString* zip = [[city objectForKey:@"Zip"] substringToIndex:8];
 
 			if (![zip isEqualToString:location])
+			{
+				[timeZone release];
 				timeZone = nil;
+			}
 
 			[location release];
 			location = [zip retain];
@@ -241,8 +267,6 @@ static NSString* defaultTempStyle(@""
 
 - (id) init
 {
-	temp = [@"?" retain];
-	code = [@"3200" retain];
 	tempStyle = [defaultTempStyle retain];
 	tempStyleNight = [tempStyle retain];
 	statusBarImageScale = 1.0;
@@ -256,6 +280,9 @@ static NSString* defaultTempStyle(@""
 	showStatusBarImage = false;
 	showStatusBarTemp = false;
 	refreshInterval = 900;
+
+	temp = [defaultTemp retain];
+	code = [defaultCode retain];
 	nextRefreshTime = [[NSDate date] retain];
 	refreshing = false;
 
@@ -293,17 +320,20 @@ qualifiedName:(NSString *)qName
 	{
 		parserContent = [[NSMutableString alloc] init];
 	}
-	else if ([elementName isEqualToString:@"yweather:wind"])
+	else if (showFeelsLike && [elementName isEqualToString:@"yweather:wind"])
 	{
-		[windChill release];
-		windChill = [[attributeDict objectForKey:@"chill"] retain];
-		NSLog(@"WI: Wind Chill: %@", windChill);
+		[temp release];
+		temp = [[attributeDict objectForKey:@"chill"] retain];
+		NSLog(@"WI: Temp: %@", temp);
 	}
 	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
-		[temp release];
-		temp = [[attributeDict objectForKey:@"temp"] retain];
-		NSLog(@"WI: Temp: %@", temp);
+		if (!showFeelsLike)
+		{
+			[temp release];
+			temp = [[attributeDict objectForKey:@"temp"] retain];
+			NSLog(@"WI: Temp: %@", temp);
+		}
 
 		[code release];
 		code = [[attributeDict objectForKey:@"code"] retain];
@@ -335,13 +365,13 @@ didEndElement:(NSString *)elementName
 namespaceURI:(NSString *)namespaceURI
 qualifiedName:(NSString *)qName
 {
-	if ([elementName isEqualToString:@"geo:lat"])
+	if (useLocalTime && [elementName isEqualToString:@"geo:lat"])
 	{
 		[latitude release];
 		latitude = [parserContent retain];
 		NSLog(@"WI: Latitude: %@", latitude);
 	}
-	else if ([elementName isEqualToString:@"geo:long"])
+	else if (useLocalTime && [elementName isEqualToString:@"geo:long"])
 	{
 		[longitude release];
 		longitude = [parserContent retain];
@@ -481,7 +511,7 @@ foundCharacters:(NSString *)string
 
 - (UIImage*) createIndicator:(int) mode
 {
-	NSString* t =[(showFeelsLike ? windChill : temp) stringByAppendingString: @"\u00B0"];
+	NSString* t =[temp stringByAppendingString: @"\u00B0"];
 
 	UIImage* image = [self findWeatherImage:@"weatherstatus"];
 	// save the status bar image
@@ -544,7 +574,7 @@ foundCharacters:(NSString *)string
 		[weatherImage drawInRect:iconRect];
 	}
 
-	NSString* t =[(showFeelsLike ? windChill : temp) stringByAppendingString: @"\u00B0"];
+	NSString* t =[temp stringByAppendingString: @"\u00B0"];
 	NSString* style = [NSString stringWithFormat:(night ? tempStyleNight : tempStyle), (int)size.width];
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
@@ -605,6 +635,10 @@ foundCharacters:(NSString *)string
 	{
 		[self updateIndicator];
 	}
+
+	[self releaseTempInfo];
+	temp = [defaultTemp retain];
+	code = [defaultCode retain];
 }
 
 - (void) _refresh
@@ -630,7 +664,10 @@ foundCharacters:(NSString *)string
 	[parser parse];
 	[parser release];
 
-	if (useLocalTime && !timeZone)
+	if (debug)
+		NSLog(@"WI: Done refreshing weather.");
+
+	if (useLocalTime && !timeZone && longitude && latitude)
 	{
 		NSLog(@"WI: Refreshing time zone for %@...", location);
 		urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", latitude, longitude];
@@ -641,17 +678,13 @@ foundCharacters:(NSString *)string
 		[parser release];
 	}
 
-//	NSLog(@"WI: Did the update succeed? %@ vs %@", lastUpdateTime, nextRefreshTime);
+	if (debug)
+		NSLog(@"WI: Done refreshing timezone.");
+
 	if (!lastUpdateTime || [lastUpdateTime compare:nextRefreshTime] == NSOrderedAscending)
 	{
 		NSLog(@"WI: Update failed.");
 	}
-
-	if (!temp)
-		temp = [@"?" retain];
-
-	if (!code)
-		code = [@"3200" retain];
 
 	[nextRefreshTime release];
 	nextRefreshTime = [[NSDate dateWithTimeIntervalSinceNow:refreshInterval] retain];
@@ -713,19 +746,13 @@ foundCharacters:(NSString *)string
 
 - (void) dealloc
 {
+	[self releaseTempInfo];
+
 	[location release];
 	[bundleIdentifier release];
 	[lastUpdateTime release];
 	[nextRefreshTime release];
 
-	[temp release];
-	[windChill release];
-	[code release];
-	[sunrise release];
-	[sunset release];
-	[latitude release];
-	[longitude release];
-	[timeZone release];
 	[weatherIcon release];
 	[statusBarIndicatorMode0 release];
 	[statusBarIndicatorMode1 release];

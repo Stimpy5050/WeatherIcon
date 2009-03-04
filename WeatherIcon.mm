@@ -12,6 +12,7 @@
 #import <SpringBoard/SBIcon.h>
 #import <SpringBoard/SBIconList.h>
 #import <SpringBoard/SBIconController.h>
+#import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBStatusBarContentsView.h>
 #import <SpringBoard/SBStatusBarContentView.h>
@@ -40,18 +41,26 @@ static Class $WIBookmarkIcon;
 
 static WeatherIconModel* _model;
 
-static void $SBAwayView$updateInterface(SBIconController<WeatherIcon> *self, SEL sel)
+static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 {
 	[self wi_updateInterface];
 
 	// refresh the weather model
-	[_model refresh];
+	BOOL refresh = !self.dimmed;
+	if (!refresh)
+	{
+		// check AC
+		Class cls = objc_getClass("SBUIController");
+		SBUIController* sbui = [cls sharedInstance];
+		refresh = [sbui isOnAC];
+	}
+
+	if (refresh)
+		[_model refresh];
 }
 
 static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SEL sel, BOOL b, double time) 
 {
-//	NSLog(@"WI: Unscattering springboard.");
-
 	// refresh the weather model
 	[_model refresh];
 

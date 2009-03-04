@@ -27,19 +27,18 @@
 
 	// current temp info
 	NSString* temp;
-	NSString* windChill;
 	NSString* code;
 	NSString* sunrise;
 	NSString* sunset;
 	NSString* longitude;
 	NSString* latitude;
 	NSTimeZone* timeZone;
+	NSDate* localWeatherTime;
 	BOOL night;
 
 	// refresh date info
 	NSDate* nextRefreshTime;
 	NSDate* lastUpdateTime;
-	NSDate* localWeatherTime;
 
 	// theme info
 	NSString* tempStyle;
