@@ -38,6 +38,7 @@
 static Class $WIInstalledApplicationIcon;
 static Class $WIApplicationIcon;
 static Class $WIBookmarkIcon;
+static Class $WINSBundle;
 
 static WeatherIconModel* _model;
 
