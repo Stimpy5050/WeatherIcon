@@ -54,29 +54,43 @@ static NSString* defaultCode = @"3200";
 
         // are we ready for an update?
         if ([now compare:nextRefreshTime] == NSOrderedAscending)
+	{
+		if (debug)
+			NSLog(@"WI:Debug: %@ is before %@", now, nextRefreshTime);
                 return false;
+	}
+
+	if (debug)
+		NSLog(@"WI:Debug: Are we already refreshing? %d", refreshing);
 
 	return !refreshing;
 }
 
 - (void) releaseTempInfo
 {
+/*
 	[temp release];
-	[code release];
-	[sunrise release];
-	[sunset release];
-	[latitude release];
-	[longitude release];
-	[timeZone release];
-	[localWeatherTime release];
-
 	temp = nil;
+
+	[code release];
 	code = nil;
+*/
+	[sunrise release];
 	sunrise = nil;
+
+	[sunset release];
 	sunset = nil;
+
+	[latitude release];
 	latitude = nil;
+
+	[longitude release];
 	longitude = nil;
+
+	[timeZone release];
 	timeZone = nil;
+
+	[localWeatherTime release];
 	localWeatherTime = nil;
 }
 
@@ -437,7 +451,9 @@ foundCharacters:(NSString *)string
 	UIImage* image = (path ? [UIImage imageWithContentsOfFile:path] : nil);
 	if (image)
 	{
-		NSLog(@"WI: Found %@ Image: %@", name, path);
+		if (debug)
+			NSLog(@"WI:Debug: Found %@ Image: %@", name, path);
+
 		return image;
 	}
 
@@ -450,11 +466,14 @@ foundCharacters:(NSString *)string
 
 	if (NSString* mapped = [self mapImage:prefix])
 	{
-		NSLog(@"Mapped %@%@%@ to %@", prefix, code, suffix, mapped);
+		if (debug)
+			NSLog(@"WI:Debug: Mapped %@%@%@ to %@", prefix, code, suffix, mapped);
 		prefix = mapped;
 	}
 
-	NSLog(@"WI: Find image for %@%@%@", prefix, code, suffix);
+	if (debug)
+		NSLog(@"WI:Debug: Find image for %@%@%@", prefix, code, suffix);
+
         NSBundle* bundle = [NSBundle mainBundle];
 	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
 		return img;
@@ -468,7 +487,9 @@ foundCharacters:(NSString *)string
 	if (UIImage* img = [self findImage:bundle name:prefix])
 		return img;
 
-	NSLog(@"WI: No image found for %@%@%@", prefix, code, suffix);
+	if (debug)
+		NSLog(@"WI:Debug: No image found for %@%@%@", prefix, code, suffix);
+
 	return nil;
 }
 
@@ -627,21 +648,25 @@ foundCharacters:(NSString *)string
 	[self loadTheme];
 	[self updateNightSetting];
 
+	if (debug)
+		NSLog(@"WI:Debug: Updating with temp: %@, code: %@, night: %d", temp, code, night);
+
 	if (showWeatherIcon)
 		[self updateIcon];
 
 	// now the status bar image
 	if (self.showStatusBarWeather)
-	{
 		[self updateIndicator];
-	}
 
+	// release the temp data to save memory
 	[self releaseTempInfo];
+/*
 	temp = [defaultTemp retain];
 	code = [defaultCode retain];
+*/
 }
 
-- (void) _refresh
+- (BOOL) _refresh
 {
 	themeLoaded = false;
 	prefsLoaded = false;
@@ -653,7 +678,7 @@ foundCharacters:(NSString *)string
 	if (!location)
 	{
 		NSLog(@"WI: No location set.");
-		return;
+		return false;
 	}
 
 	NSLog(@"WI: Refreshing weather for %@...", location);
@@ -665,7 +690,7 @@ foundCharacters:(NSString *)string
 	[parser release];
 
 	if (debug)
-		NSLog(@"WI: Done refreshing weather.");
+		NSLog(@"WI:Debug: Done refreshing weather.");
 
 	if (useLocalTime && !timeZone && longitude && latitude)
 	{
@@ -679,17 +704,19 @@ foundCharacters:(NSString *)string
 	}
 
 	if (debug)
-		NSLog(@"WI: Done refreshing timezone.");
+		NSLog(@"WI:Debug: Done refreshing timezone.");
 
 	if (!lastUpdateTime || [lastUpdateTime compare:nextRefreshTime] == NSOrderedAscending)
 	{
 		NSLog(@"WI: Update failed.");
+		return false;
 	}
 
 	[nextRefreshTime release];
 	nextRefreshTime = [[NSDate dateWithTimeIntervalSinceNow:refreshInterval] retain];
 
 	NSLog(@"WI: Next refresh time: %@", nextRefreshTime);
+	return true;
 }
 
 - (void) refreshInBackground
@@ -697,14 +724,20 @@ foundCharacters:(NSString *)string
 	// mark as refreshing
 	refreshing = true;
 
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	[self _refresh];
-	[pool release];
+	@try
+	{
+		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+		BOOL success = [self _refresh];
+		[pool release];
 
-	// update the weather info
-	[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
-
-	refreshing = false;
+		// update the weather info
+		if (success)
+			[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
+	}
+	@finally
+	{
+		refreshing = false;
+	}
 }
 
 - (void) refreshNow
@@ -723,10 +756,10 @@ foundCharacters:(NSString *)string
 	if (!showWeatherIcon && !self.showStatusBarWeather)
 		return;
 
-	if (![self needsRefresh])
-		return;
-
-	[NSThread detachNewThreadSelector:@selector(refreshInBackground) toTarget:self withObject:nil];
+	if ([self needsRefresh])
+		[NSThread detachNewThreadSelector:@selector(refreshInBackground) toTarget:self withObject:nil];
+	else
+		 if (debug) NSLog(@"WI:Debug: No need to refresh.");
 }
 
 - (UIImage*) icon
@@ -747,6 +780,9 @@ foundCharacters:(NSString *)string
 - (void) dealloc
 {
 	[self releaseTempInfo];
+
+	[temp release];
+	[code release];
 
 	[location release];
 	[bundleIdentifier release];
