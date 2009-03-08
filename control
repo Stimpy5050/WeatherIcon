@@ -1,6 +1,6 @@
 Package: com.ashman.weathericon
 Name: WeatherIcon
-Version: 1.9.2
+Version: 2.0.0
 Architecture: iphoneos-arm
 Description: Puts live weather information on top of the weather icon.
 Homepage: http://david.ashman.com/weathericon
@@ -9,4 +9,4 @@ Maintainer: David Ashman <dashman@gmail.com>
 Author: David Ashman (Stimpy5050) <dashman@gmail.com>
 Sponsor: 
 Section: Tweaks
-Pre-Depends: mobilesubstrate
+Pre-Depends: mobilesubstrate, preferenceloader

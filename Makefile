@@ -44,6 +44,7 @@ install: 	$(Target)
 		rm -f /Library/MobileSubstrate/DynamicLibraries/$(Target)
 		cp $(Target) /Library/MobileSubstrate/DynamicLibraries/
 		cp *.plist /Library/MobileSubstrate/DynamicLibraries/
+		cp -a Preferences/* /Library/PreferenceLoader/Preferences
 		restart
 
 $(Target):	$(Objects)
@@ -60,9 +61,11 @@ clean:
 package:	$(Target)
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp -a $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp -a *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp -a Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -a *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp -a control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf

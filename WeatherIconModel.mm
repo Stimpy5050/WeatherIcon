@@ -540,19 +540,25 @@ foundCharacters:(NSString *)string
 		image = [self findWeatherImage:@"weather"];
 
 	UIFont* font = [UIFont boldSystemFontOfSize:13];
-        CGSize tempSize = [t sizeWithFont:font];
+	CGSize tempSize = CGSizeMake(0, 20);
         CGSize sbSize = CGSizeMake(0, 20);
 
         if (showStatusBarTemp)
+	{
+	        tempSize = [t sizeWithFont:font];
                 sbSize.width += tempSize.width;
+	}
 
         if (showStatusBarImage && image)
                 sbSize.width += ceil(image.size.width * statusBarImageScale);
+
+	if (debug) NSLog(@"WI:Debug: Status Bar Size: %f, %f", sbSize.width, sbSize.height);
 
         UIGraphicsBeginImageContext(sbSize);
 
         if (showStatusBarTemp)
         {
+		if (debug) NSLog(@"WI:Debug: Drawing temp on status bar");
                 CGContextRef ctx = UIGraphicsGetCurrentContext();
                 float f = (mode == 0 ? 0.2 : 1);
                 CGContextSetRGBFillColor(ctx, f, f, f, 1);
@@ -561,6 +567,7 @@ foundCharacters:(NSString *)string
 
         if (showStatusBarImage && image)
         {
+		if (debug) NSLog(@"WI:Debug: Drawing image on status bar");
         	float width = image.size.width * statusBarImageScale;
                 float height = image.size.height * statusBarImageScale;
                 CGRect rect = CGRectMake(tempSize.width, ((18 - height) / 2), width, height);

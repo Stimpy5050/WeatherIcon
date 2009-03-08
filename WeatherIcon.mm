@@ -103,6 +103,7 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 static void $SBApplication$deactivated(SBApplication<WeatherIcon> *self, SEL sel) 
 {
 	if ([self.displayIdentifier isEqualToString:@"com.apple.weather"] ||
+	    [self.displayIdentifier isEqualToString:@"com.apple.Preferences"] ||
 	    [_model isWeatherIcon:self.displayIdentifier])
 	{
 		// refresh the weather model
