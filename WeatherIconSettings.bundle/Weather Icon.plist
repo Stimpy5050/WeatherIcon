@@ -2,20 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>entry</key>
-        <dict>
-                <key>bundle</key>
-                <string>WeatherIconSettings</string>
-                <key>cell</key>
-                <string>PSLinkCell</string>
-                <key>icon</key>
-                <string>WeatherIcon-small.png</string>
-		<key>isController</key>
-		<true/>
-                <key>label</key>
-                <string>Weather Icon</string>
-        </dict>
-<!--
 	<key>items</key>
 	<array>
 		<dict>
@@ -254,9 +240,22 @@
 				<false/>
 			</array>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>	
+			<key>action</key>
+			<string>donate:</string>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>Donate via PayPal</string>
+		</dict>
+
+	
 	</array>
 	<key>title</key>
 	<string>Weather Icon</string>
--->
 </dict>
 </plist>
