@@ -194,6 +194,9 @@ static WeatherIconController* instance = nil;
 	NSMutableDictionary* prefs = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 	if (prefs)
 	{
+		[currentPrefs release];
+		currentPrefs = [prefs retain];
+
 		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
 			overrideLocation = [ol boolValue];
 		NSLog(@"WI: Override Location: %d", overrideLocation);
@@ -842,6 +845,17 @@ foundCharacters:(NSString *)string
 	return (showStatusBarTemp || showStatusBarImage);
 }
 
+- (void) checkPreferences
+{
+	if (debug) NSLog(@"WI:Debug: Checking preferences");
+	NSDictionary* prefs = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
+	if (currentPrefs && prefs && ![prefs isEqualToDictionary:currentPrefs])
+	{
+		if (debug) NSLog(@"WI:Debug: Preferences changed.");
+		[self refreshNow];
+	}
+}
+
 - (UIImage*) statusBarIndicator:(int)mode
 {
 	return (mode == 0 ? statusBarIndicatorMode0 : statusBarIndicatorMode1);
@@ -865,6 +879,8 @@ foundCharacters:(NSString *)string
 
 	[tempStyle release];
 	[tempStyleNight release];
+
+	[currentPrefs release];
 
 	[super dealloc];
 }

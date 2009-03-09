@@ -6,7 +6,6 @@
 }
 
 -(NSArray*) specifiers;
--(void)setNeedsRefresh:(id) value specifier:(id) specifier;
 -(void)donate:(id) param;
 
 @end

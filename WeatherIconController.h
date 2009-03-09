@@ -49,6 +49,7 @@
 	float statusBarImageScale;
 
 	// user preferences
+	NSDictionary* currentPrefs;
 	BOOL isCelsius;
 	BOOL overrideLocation;
 	BOOL showFeelsLike;
@@ -66,6 +67,7 @@
 + (id)sharedInstance;
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
+- (void)checkPreferences;
 - (void)setNeedsRefresh;
 - (void)refresh;
 - (void)refreshNow;
