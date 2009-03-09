@@ -135,7 +135,7 @@
 			<key>cell</key>
 			<string>PSTitleValueCell</string>
 			<key>label</key>
-			<string>Use feels like or real temperature.</string>
+			<string>Feels Like uses the wind chill temperature instead of the true temperature.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -199,7 +199,7 @@
 			<key>cell</key>
 			<string>PSTitleValueCell</string>
 			<key>label</key>
-			<string>Use phone's time (true) or the weather feed's time (false) for determining night/day.</string>
+			<string>Local Time uses the time local to the weather location for determining night/day instead of the Yahoo! weather feed.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -225,14 +225,16 @@
 				<string>WeatherBug</string>
 				<string>AccuWeather.com</string>
 				<string>Fizz Weather</string>
+				<string>WeatherEye</string>
 			</array>
 			<key>validValues</key>
 			<array>
 				<string>com.apple.weather</string>
 				<string>com.weather.TWC</string>
-				<string>com.weatherbug</string>
-				<string>com.accuweather</string>
+				<string>com.aws.weatherbug.pro</string>
+				<string>com.yourcompany.TestWithCustomTabs</string>
 				<string>fizzsoftware.com.fizzweather</string>
+				<string>com.theweathernetwork.weathereye</string>
 			</array>
 		</dict>
 		<dict>
@@ -245,23 +247,7 @@
 			<key>cell</key>
 			<string>PSTitleValueCell</string>
 			<key>label</key>
-			<string>Type in any application identifier to add the Live Weather on...</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTitleValueCell</string>
-			<key>label</key>
-			<string>Copyright © 2009, David Ashman.</string>
+			<string>Changing the application requires a respring.</string>
 		</dict>
 	</array>
 	<key>title</key>
