@@ -38,6 +38,10 @@
 				<string>Fizz Weather</string>
 				<string>WeatherEye</string>
 				<string>MyWeather</string>
+				<string>Oz Weather</string>
+				<string>Pocket Weather</string>
+				<string>Weather Pro</string>
+				<string>WeatherNZ</string>
 			</array>
 			<key>validValues</key>
 			<array>
@@ -48,6 +52,10 @@
 				<string>fizzsoftware.com.fizzweather</string>
 				<string>com.theweathernetwork.weathereye</string>
 				<string>com.MyWeather.MyWeather</string>
+				<string>com.ajnaware.ozweather</string>
+				<string>com.russellivanovic.pocketweather</string>
+				<string>de.meteogroup.WeatherPro</string>
+				<string>nz.co.orsome.weatherNZ</string>
 			</array>
 		</dict>
 		<dict>
