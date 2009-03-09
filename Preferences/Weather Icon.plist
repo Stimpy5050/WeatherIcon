@@ -27,6 +27,54 @@
 		</dict>
 		<dict>
 			<key>cell</key>
+			<string>PSLinkListCell</string>
+			<key>default</key>
+			<string>com.apple.weather</string>
+			<key>defaults</key>
+			<string>com.ashman.WeatherIcon</string>
+			<key>detail</key>
+			<string>PSListItemsController</string>
+			<key>key</key>
+			<string>WeatherBundleIdentifier</string>
+			<key>label</key>
+			<string>Application</string>
+			<key>validTitles</key>
+			<array>
+				<string>iPhone Weather</string>
+				<string>The Weather Channel</string>
+				<string>WeatherBug</string>
+				<string>AccuWeather.com</string>
+				<string>Fizz Weather</string>
+				<string>WeatherEye</string>
+			</array>
+			<key>validValues</key>
+			<array>
+				<string>com.apple.weather</string>
+				<string>com.weather.TWC</string>
+				<string>com.aws.weatherbug.pro</string>
+				<string>com.yourcompany.TestWithCustomTabs</string>
+				<string>fizzsoftware.com.fizzweather</string>
+				<string>com.theweathernetwork.weathereye</string>
+			</array>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>isStaticText</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>label</key>
+			<string>Changing the application the icon is applied to requires a respring.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>default</key>
 			<integer>0</integer>
@@ -135,7 +183,7 @@
 			<key>cell</key>
 			<string>PSTitleValueCell</string>
 			<key>label</key>
-			<string>Feels Like uses the wind chill temperature instead of the true temperature.</string>
+			<string>Feels Like shows the wind chill temperature instead of the true temperature.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -160,10 +208,11 @@
 				<string>5 Minutes</string>
 				<string>10 Minutes</string>
 				<string>15 Minutes</string>
-				<string>20 Minutes</string>
-				<string>25 Minutes</string>
 				<string>30 Minutes</string>
 				<string>1 Hour</string>
+				<string>2 Hours</string>
+				<string>4 Hours</string>
+				<string>6 Hours</string>
 			</array>
 			<key>validValues</key>
 			<array>
@@ -171,10 +220,11 @@
 				<integer>5</integer>
 				<integer>10</integer>
 				<integer>15</integer>
-				<integer>20</integer>
-				<integer>25</integer>
 				<integer>30</integer>
 				<integer>60</integer>
+				<integer>120</integer>
+				<integer>240</integer>
+				<integer>360</integer>
 			</array>
 		</dict>
 		<dict>
@@ -204,50 +254,6 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSLinkListCell</string>
-			<key>default</key>
-			<string>com.apple.weather</string>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>detail</key>
-			<string>PSListItemsController</string>
-			<key>key</key>
-			<string>WeatherBundleIdentifier</string>
-			<key>label</key>
-			<string>Application</string>
-			<key>validTitles</key>
-			<array>
-				<string>iPhone Weather</string>
-				<string>The Weather Channel</string>
-				<string>WeatherBug</string>
-				<string>AccuWeather.com</string>
-				<string>Fizz Weather</string>
-				<string>WeatherEye</string>
-			</array>
-			<key>validValues</key>
-			<array>
-				<string>com.apple.weather</string>
-				<string>com.weather.TWC</string>
-				<string>com.aws.weatherbug.pro</string>
-				<string>com.yourcompany.TestWithCustomTabs</string>
-				<string>fizzsoftware.com.fizzweather</string>
-				<string>com.theweathernetwork.weathereye</string>
-			</array>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTitleValueCell</string>
-			<key>label</key>
-			<string>Changing the application requires a respring.</string>
 		</dict>
 	</array>
 	<key>title</key>
