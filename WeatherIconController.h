@@ -12,7 +12,7 @@
 #import <SpringBoard/SBStatusBarController.h>
 #import <UIKit/UIKit.h>
 
-@interface WeatherIconModel : NSObject
+@interface WeatherIconController : NSObject
 {
 	NSMutableString* parserContent;
 	BOOL refreshing;
@@ -63,8 +63,10 @@
 
 }
 
++ (id)sharedInstance;
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
+- (void)setNeedsRefresh;
 - (void)refresh;
 - (void)refreshNow;
 - (BOOL)showStatusBarWeather;

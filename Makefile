@@ -50,11 +50,11 @@ install: 	$(Target) WeatherIconSettings
 		restart
 
 WeatherIconSettings: WeatherIconSettings.mm
-		$(Compiler) -g0 -O2 -Wall -o $@ $(filter %.mm,$^) -bundle -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework Foundation -framework CoreFoundation -framework UIKit -lobjc -I/var/include -multiply_defined suppress
+		$(Compiler) -Winline -Wswitch -Wshadow -g0 -O2 -Wall -bundle -L/usr/lib -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework Foundation -framework CoreFoundation -framework UIKit -lobjc -I/var/include -multiply_defined suppress -fobjc-call-cxx-cdtors -fobjc-exceptions -ObjC++ -o $@ $(filter %.mm,$^)
 		ldid -S WeatherIconSettings
 
-$(Target):	WeatherIconModel.o WeatherIcon.o
-		$(Compiler) $(LDFLAGS) -o $@ $^
+$(Target):	WeatherIconController.o WeatherIcon.o
+		$(Compiler) $(CFLAGS) $(LDFLAGS) -o $@ $^
 		ldid -S $(Target)
 
 %.o:	%.mm

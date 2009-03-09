@@ -7,7 +7,7 @@
  *
  */
 
-#import "WeatherIconModel.h"
+#import "WeatherIconController.h"
 #import <substrate.h>
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
@@ -41,7 +41,65 @@ static NSString* defaultTempStyle(@""
 static NSString* defaultTemp = @"?";
 static NSString* defaultCode = @"3200";
 
-@implementation WeatherIconModel
+static WeatherIconController* instance = nil;
+
+@implementation WeatherIconController
+
++ (WeatherIconController*) sharedInstance
+{
+	@synchronized(self)
+	{
+		if (instance == nil)
+		{
+			NSLog(@"WI:Debug: Creating controller instance");
+			[[self alloc] init];
+		}
+	}
+
+	NSLog(@"WI:Debug: Returning %@", instance);
+	return instance;	
+}
+
++ (id) allocWithZone:(NSZone*) zone
+{
+	@synchronized(self)
+	{
+		if (instance == nil)
+		{
+			NSLog(@"WI:Debug: Allocating new instance.");
+			instance = [super allocWithZone:zone];
+			return instance;
+		}
+	}
+
+	return nil;
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+    return self;
+}
+
+- (id)retain
+{
+    return self;
+}
+
+- (unsigned)retainCount
+
+{
+    return UINT_MAX;  //denotes an object that cannot be released
+}
+
+- (void)release
+{
+    //do nothing
+}
+
+- (id)autorelease
+{
+    return self;
+}
 
 - (NSString*) bundleIdentifier
 {
@@ -747,11 +805,16 @@ foundCharacters:(NSString *)string
 	}
 }
 
-- (void) refreshNow
+- (void) setNeedsRefresh
 {
+	if (debug) NSLog(@"WI:Debug: Marking for refresh.");
 	[nextRefreshTime release];
 	nextRefreshTime = [[NSDate date] retain];
+}
 
+- (void) refreshNow
+{
+	[self setNeedsRefresh];
 	[self refresh];
 }
 

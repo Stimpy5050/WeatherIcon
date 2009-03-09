@@ -8,7 +8,7 @@
  */
 
 #include <substrate.h>
-#import "WeatherIconModel.h"
+#import "WeatherIconController.h"
 #import <SpringBoard/SBIcon.h>
 #import <SpringBoard/SBIconList.h>
 #import <SpringBoard/SBIconController.h>
@@ -24,9 +24,11 @@
 #import <SpringBoard/SBAwayView.h>
 #import <SpringBoard/SBAwayController.h>
 #import <SpringBoard/SBIconModel.h>
+#import <SpringBoard/SpringBoard.h>
 #import <UIKit/UIKit.h>
  
 @protocol WeatherIcon
+- (id) wi_init;
 - (id) wi_initWithApplication:(id) app;
 - (id) wi_initWithWebClip:(id) clip;
 - (void) wi_unscatter:(BOOL) b startTime:(double) time;
@@ -38,8 +40,9 @@
 static Class $WIInstalledApplicationIcon;
 static Class $WIApplicationIcon;
 static Class $WIBookmarkIcon;
+static Class $WISpringBoard;
 
-static WeatherIconModel* _model;
+static WeatherIconController* _controller;
 
 static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 {
@@ -56,13 +59,13 @@ static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 	}
 
 	if (refresh)
-		[_model refresh];
+		[_controller refresh];
 }
 
 static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SEL sel, BOOL b, double time) 
 {
 	// refresh the weather model
-	[_model refresh];
+	[_controller refresh];
 
 	// do the unscatter
 	[self wi_unscatter:b startTime:time];
@@ -71,7 +74,7 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 static id weatherIcon(SBIcon *self, SEL sel) 
 {
 //	NSLog(@"WI: Calling icon method.");
-	return [_model icon];
+	return [_controller icon];
 }
 
 static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsView<WeatherIcon> *self, SEL sel) 
@@ -79,7 +82,7 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 	[self wi_reloadIndicators];
 
 	int mode = [self effectiveModeForImages];
-	UIImage* indicator = [_model statusBarIndicator:mode];
+	UIImage* indicator = [_controller statusBarIndicator:mode];
 
 	if (indicator)
 	{
@@ -103,11 +106,10 @@ static void $SBStatusBarIndicatorsView$reloadIndicators(SBStatusBarIndicatorsVie
 static void $SBApplication$deactivated(SBApplication<WeatherIcon> *self, SEL sel) 
 {
 	if ([self.displayIdentifier isEqualToString:@"com.apple.weather"] ||
-	    [self.displayIdentifier isEqualToString:@"com.apple.Preferences"] ||
-	    [_model isWeatherIcon:self.displayIdentifier])
+	    [_controller isWeatherIcon:self.displayIdentifier])
 	{
 		// refresh the weather model
-		[_model refreshNow];
+		[_controller refreshNow];
 	}
 
 	[self wi_deactivated];
@@ -117,7 +119,7 @@ static id $SBApplicationIcon$initWithApplication$(SBApplicationIcon<WeatherIcon>
 {
 	self = [self wi_initWithApplication:app];
 
-	if ([_model isWeatherIcon:self.displayIdentifier])
+	if ([_controller isWeatherIcon:self.displayIdentifier])
 	{
 		NSLog(@"WI: Replacing icon for %@.", self.displayIdentifier);
 		if ([self class] == objc_getClass("SBInstalledApplicationIcon"))
@@ -133,13 +135,25 @@ static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SE
 {
 	self = [self wi_initWithWebClip:clip];
 
-	if ([_model isWeatherIcon:self.displayIdentifier])
+	if ([_controller isWeatherIcon:self.displayIdentifier])
 	{
 		NSLog(@"WI: Replacing icon for %@.", self.displayIdentifier);
 		object_setClass(self, $WIBookmarkIcon);
 	}
 
 	return self;
+}
+
+static id $SpringBoard$init(SpringBoard<WeatherIcon> *self, SEL sel) 
+{
+	self = [self wi_init];
+	object_setClass(self, $WISpringBoard);
+	return self;
+}
+
+static id weatherIconController(SpringBoard<WeatherIcon>* self, SEL sel)
+{
+	return _controller;
 }
 
 extern "C" void WeatherIconInitialize() {
@@ -158,6 +172,11 @@ extern "C" void WeatherIconInitialize() {
 	class_replaceMethod($WIBookmarkIcon, @selector(icon), (IMP)&weatherIcon, "@@:");
 	objc_registerClassPair($WIBookmarkIcon);
 
+	$WISpringBoard = objc_allocateClassPair(objc_getClass("SpringBoard"), "WISpringBoard", 0);
+	class_addMethod($WISpringBoard, @selector(weatherIconController), (IMP)&weatherIconController, "@@:");
+	objc_registerClassPair($WISpringBoard);
+
+	Class $SpringBoard = objc_getClass("SpringBoard");
 	Class $SBAwayView = objc_getClass("SBAwayView");
 	Class $SBIconController = objc_getClass("SBIconController");
 	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
@@ -166,6 +185,8 @@ extern "C" void WeatherIconInitialize() {
 	Class $SBStatusBarIndicatorsView = objc_getClass("SBStatusBarIndicatorsView");
 	
 	// MSHookMessage is what we use to redirect the methods to our own
+//	MSHookMessage($SpringBoard, @selector(init), (IMP) &$SpringBoard$init, "wi_");
+
 	MSHookMessage($SBIconController, @selector(unscatter:startTime:), (IMP) &$SBIconController$unscatter$, "wi_");
 	MSHookMessage($SBApplication, @selector(deactivated), (IMP) &$SBApplication$deactivated, "wi_");
 	MSHookMessage($SBApplicationIcon, @selector(initWithApplication:), (IMP) &$SBApplicationIcon$initWithApplication$, "wi_");
@@ -173,6 +194,6 @@ extern "C" void WeatherIconInitialize() {
 	MSHookMessage($SBStatusBarIndicatorsView, @selector(reloadIndicators), (IMP) &$SBStatusBarIndicatorsView$reloadIndicators, "wi_");
 	MSHookMessage($SBAwayView, @selector(updateInterface), (IMP) &$SBAwayView$updateInterface, "wi_");
 	
-	NSLog(@"WI: Init weather model.");
-	_model = [[WeatherIconModel alloc] init];
+	NSLog(@"WI: Init weather controller.");
+	_controller = [WeatherIconController sharedInstance];
 }

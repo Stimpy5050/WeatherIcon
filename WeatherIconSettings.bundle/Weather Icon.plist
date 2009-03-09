@@ -37,6 +37,7 @@
 				<string>AccuWeather.com</string>
 				<string>Fizz Weather</string>
 				<string>WeatherEye</string>
+				<string>MyWeather</string>
 			</array>
 			<key>validValues</key>
 			<array>
@@ -46,6 +47,7 @@
 				<string>com.yourcompany.TestWithCustomTabs</string>
 				<string>fizzsoftware.com.fizzweather</string>
 				<string>com.theweathernetwork.weathereye</string>
+				<string>com.MyWeather.MyWeather</string>
 			</array>
 		</dict>
 		<dict>
@@ -145,6 +147,8 @@
 			<string>ShowFeelsLike</string>
 			<key>label</key>
 			<string>Feels Like</string>
+			<key>set</key>
+			<string>setNeedsRefresh:specifier:</string>
 		</dict>
 		<dict>
 			<key>cell</key>
