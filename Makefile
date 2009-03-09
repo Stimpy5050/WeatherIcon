@@ -34,8 +34,8 @@ CFLAGS= -O2 -dynamiclib \
   -D_BSD_ARM_SETJMP_H \
   -D_UNISTD_H_
 
-Objects=WeatherIconModel.o WeatherIcon.o
 Target=WeatherIcon.dylib
+Settings=WeatherIconSettings
 
 all:	$(Target)
 
@@ -47,7 +47,11 @@ install: 	$(Target)
 		cp -a Preferences/* /Library/PreferenceLoader/Preferences
 		restart
 
-$(Target):	$(Objects)
+WeatherIconSettings: WeatherIconSettings.mm
+		$(Compiler) -g0 -O2 -Wall -o $@ $(filter %.mm,$^) -bundle -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework Foundation -framework CoreFoundation -lobjc -I/var/include -multiply_defined suppress
+		ldid -S WeatherIconSettings
+
+$(Target):	WeatherIconModel.o WeatherIcon.o
 		$(Compiler) $(LDFLAGS) -o $@ $^
 		ldid -S $(Target)
 
