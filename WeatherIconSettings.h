@@ -5,11 +5,12 @@
 {
 	PSSpecifier* location;
 	PSSpecifier* unit;
+	PSSpecifier* customBundleIdentifier;
 }
 
 -(NSArray*) specifiers;
 -(void)donate:(id) param;
 -(void)showOverride:(id) value specifier:(id) specifier;
--(void)viewDidBecomeVisible;
+-(void)customBundleIdentifier:(id) value specifier:(id) specifier;
 
 @end

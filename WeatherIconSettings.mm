@@ -7,11 +7,22 @@
 
 @implementation WeatherIconSettings
 
-- (void) dealloc
+- (BOOL)popControllerWithAnimation:(BOOL)animation
 {
 	[location release];
 	[unit release];
-	[super dealloc];
+	[customBundleIdentifier release];
+	return [super popControllerWithAnimation:animation];
+}
+
+- (void) customBundleIdentifier:(id) value specifier:(id) specifier
+{
+	[self setPreferenceValue:value specifier:specifier];
+
+	if ([value isEqualToString:@"Custom"])
+		[self insertSpecifier:customBundleIdentifier afterSpecifierID:@"WeatherBundleIdentifier" animated:YES];
+	else
+		[self removeSpecifier:customBundleIdentifier animated:YES];
 }
 
 - (void) showOverride:(id) value specifier:(id) specifier
@@ -29,10 +40,13 @@
 	}
 }
 
-- (void) viewDidBecomeVisible
+- (void) viewWillBecomeVisible:(id) specifier
 {
+	[super viewWillBecomeVisible:specifier];
+
 	location = [[self specifierForID:@"Location"] retain];
 	unit = [[self specifierForID:@"Celsius"] retain];
+	customBundleIdentifier = [[self specifierForID:@"CustomWeatherBundleIdentifier"] retain];
 
 	PSSpecifier* override = [self specifierForID:@"OverrideLocation"];
 	id value = [self readPreferenceValue:override];
@@ -41,6 +55,11 @@
 		NSArray* overrideSpecs = [NSArray arrayWithObjects:location, unit, nil];
 		[self removeContiguousSpecifiers:overrideSpecs animated:YES];
 	}
+
+	PSSpecifier* bundle = [self specifierForID:@"WeatherBundleIdentifier"];
+	value = [self readPreferenceValue:bundle];
+	if (!value || ![value isEqualToString:@"Custom"])
+		[self removeSpecifier:customBundleIdentifier animated:YES];
 }
 
 - (NSArray*) specifiers

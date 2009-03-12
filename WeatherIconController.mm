@@ -248,8 +248,19 @@ static WeatherIconController* instance = nil;
 
 		if (NSString* id = [prefs objectForKey:@"WeatherBundleIdentifier"])
 		{
-			[bundleIdentifier release];
-			bundleIdentifier = [id retain];
+			if ([id isEqualToString:@"Custom"])
+			{
+				if (NSString* custom = [prefs objectForKey:@"CustomWeatherBundleIdentifier"])
+				{
+					[bundleIdentifier release];
+					bundleIdentifier = [custom retain];
+				}
+			}
+			else
+			{
+				[bundleIdentifier release];
+				bundleIdentifier = [id retain];
+			}
 		}
 		NSLog(@"WI: Weather Bundle Identifier: %@", bundleIdentifier);
 
