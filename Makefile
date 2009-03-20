@@ -64,7 +64,7 @@ clean:
 		rm -f *.o $(Target) WeatherIconSettings
 		rm -rf package
 
-package:	$(Target)
+package:	$(Target) WeatherIconSettings
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences

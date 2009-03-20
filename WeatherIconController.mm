@@ -834,11 +834,11 @@ foundCharacters:(NSString *)string
 
 - (void) refresh
 {
-	if (!weatherIcon)
-		[self updateWeatherIcon];
-
 	if (!showWeatherIcon && !self.showStatusBarWeather)
 		return;
+
+	if ((showWeatherIcon && !weatherIcon) || (self.showStatusBarWeather && !statusBarIndicatorMode0 && !statusBarIndicatorMode1))
+		[self updateWeatherIcon];
 
 	if ([self needsRefresh])
 		[NSThread detachNewThreadSelector:@selector(refreshInBackground) toTarget:self withObject:nil];
