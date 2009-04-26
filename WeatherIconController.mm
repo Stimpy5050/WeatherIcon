@@ -366,6 +366,7 @@ static WeatherIconController* instance = nil;
 	showStatusBarImage = false;
 	showStatusBarTemp = false;
 	refreshInterval = 900;
+	failedCount = 0;
 
 	temp = [defaultTemp retain];
 	code = [defaultCode retain];
@@ -785,17 +786,22 @@ foundCharacters:(NSString *)string
 	if (debug)
 		NSLog(@"WI:Debug: Done refreshing timezone.");
 
+	BOOL success = true;
 	if (!lastUpdateTime || [lastUpdateTime compare:nextRefreshTime] == NSOrderedAscending)
 	{
 		NSLog(@"WI: Update failed.");
-		return false;
+		success = false;
+		
+		if (failedCount++ < 3)
+			return success;
 	}
 
+	failedCount = 0;
 	[nextRefreshTime release];
 	nextRefreshTime = [[NSDate dateWithTimeIntervalSinceNow:refreshInterval] retain];
 
 	NSLog(@"WI: Next refresh time: %@", nextRefreshTime);
-	return true;
+	return success;
 }
 
 - (void) refreshInBackground

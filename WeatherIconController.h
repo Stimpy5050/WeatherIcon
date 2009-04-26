@@ -39,6 +39,7 @@
 	// refresh date info
 	NSDate* nextRefreshTime;
 	NSDate* lastUpdateTime;
+	int failedCount;
 
 	// theme info
 	NSString* tempStyle;
