@@ -149,6 +149,8 @@ static id $SBBookmarkIcon$initWithWebClip$(SBBookmarkIcon<WeatherIcon> *self, SE
 }
 
 extern "C" void WeatherIconInitialize() {
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
 	if (objc_getClass("SpringBoard") == nil)
 		return;
 
@@ -181,4 +183,6 @@ extern "C" void WeatherIconInitialize() {
 	
 	NSLog(@"WI: Init weather controller.");
 	_controller = [WeatherIconController sharedInstance];
+
+	[pool release];
 }
