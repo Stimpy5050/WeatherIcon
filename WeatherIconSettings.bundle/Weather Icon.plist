@@ -293,15 +293,17 @@
 			<string>PSGroupCell</string>
 		</dict>
 		<dict>	
-			<key>action</key>
-			<string>donate:</string>
 			<key>cell</key>
-			<string>PSButtonCell</string>
-			<key>label</key>
-			<string>Donate via PayPal</string>
+                        <string>PSLinkCell</string>
+                        <key>bundle</key>
+                        <string>WebViewController</string>
+                        <key>isController</key>
+                        <true/>
+                        <key>label</key>
+                        <string>Donate via PayPal</string>
+                        <key>URL</key>
+                        <string>https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=3324856</string>
 		</dict>
-
-	
 	</array>
 	<key>title</key>
 	<string>Weather Icon</string>
