@@ -303,6 +303,8 @@
                         <string>Donate via PayPal</string>
                         <key>URL</key>
                         <string>https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=3324856</string>
+			<key>embed</key>
+			<false/>
 		</dict>
 	</array>
 	<key>title</key>
