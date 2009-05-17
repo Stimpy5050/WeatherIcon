@@ -27,6 +27,24 @@ static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $SBIconController = objc_getClass("SBIconController");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
+static NSString* defaultStatusBarTempStyleFSO(@""
+	"font-family: Helvetica; "
+	"font-weight: bold; "
+	"font-size: 14px; "
+	"color: white; "
+	"height: 20px;"
+	"margin-top: 1px;"
+"");
+//static NSString* defaultStatusBarTempStyleFST = defaultStatusBarTempStyleFSO;
+static NSString* defaultStatusBarTempStyle(@""
+	"font-family: Helvetica; "
+	"font-weight: bold; "
+	"font-size: 14px; "
+	"color: black; "
+	"text-shadow: rgba(255, 255, 255, 0.6) 0px 1px 0px; "
+	"height: 20px;"
+	"margin-top: 1px;"
+"");
 static NSString* defaultTempStyle(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
@@ -320,6 +338,26 @@ static WeatherIconController* instance = nil;
 			        tempStyleNight = [[tempStyle stringByAppendingString:nstyle] retain];
 			else
 				tempStyleNight = [tempStyle retain];
+
+			[statusBarTempStyle release];
+			if (NSString* style = [dict objectForKey:@"StatusBarTempStyle"])
+				statusBarTempStyle = [[defaultStatusBarTempStyle stringByAppendingString:style] retain];
+			else
+				statusBarTempStyle = [defaultStatusBarTempStyle retain];
+
+			[statusBarTempStyleFSO release];
+			if (NSString* nstyle = [dict objectForKey:@"StatusBarTempStyleFSO"])
+			        statusBarTempStyleFSO = [[defaultStatusBarTempStyleFSO stringByAppendingString:nstyle] retain];
+			else
+				statusBarTempStyleFSO = [defaultStatusBarTempStyleFSO retain];
+
+/*
+			[statusBarTempStyleFST release];
+			if (NSString* nstyle = [dict objectForKey:@"StatusBarTempStyleFST"])
+			        statusBarTempStyleFST = [[defaultStatusBarTempStyleFST stringByAppendingString:nstyle] retain];
+			else
+				statusBarTempStyleFST = [defaultStatusBarTempStyleFST retain];
+*/
 
 			if (NSNumber* scale = [dict objectForKey:@"StatusBarImageScale"])
 				statusBarImageScale = [scale floatValue];
@@ -616,9 +654,11 @@ foundCharacters:(NSString *)string
 	CGSize tempSize = CGSizeMake(0, 20);
         CGSize sbSize = CGSizeMake(0, 20);
 
+	NSString* style = (mode == 0 ? statusBarTempStyle : statusBarTempStyleFSO);
+
         if (showStatusBarTemp)
 	{
-	        tempSize = [t sizeWithFont:font];
+	        tempSize = [t sizeWithStyle:style forWidth:40];
                 sbSize.width += tempSize.width;
 	}
 
@@ -632,10 +672,7 @@ foundCharacters:(NSString *)string
         if (showStatusBarTemp)
         {
 		if (debug) NSLog(@"WI:Debug: Drawing temp on status bar");
-                CGContextRef ctx = UIGraphicsGetCurrentContext();
-                float f = (mode == 0 ? 0.2 : 1);
-                CGContextSetRGBFillColor(ctx, f, f, f, 1);
-                [t drawAtPoint:CGPointMake(0, 1) withFont:font];
+                [t drawAtPoint:CGPointMake(0, 0) withStyle:style];
         }
 
         if (showStatusBarImage && image)
@@ -875,6 +912,7 @@ foundCharacters:(NSString *)string
 
 - (UIImage*) statusBarIndicator:(int)mode
 {
+	NSLog(@"WI: Mode: %d", mode);
 	return (mode == 0 ? statusBarIndicatorMode0 : statusBarIndicatorMode1);
 }
 
@@ -896,6 +934,10 @@ foundCharacters:(NSString *)string
 
 	[tempStyle release];
 	[tempStyleNight release];
+
+	[statusBarTempStyle release];
+	[statusBarTempStyleFSO release];
+//	[statusBarTempStyleFST release];
 
 	[currentPrefs release];
 

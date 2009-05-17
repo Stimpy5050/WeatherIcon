@@ -44,6 +44,9 @@
 	// theme info
 	NSString* tempStyle;
 	NSString* tempStyleNight;
+	NSString* statusBarTempStyle;
+	NSString* statusBarTempStyleFSO;
+//	NSString* statusBarTempStyleFST;
 	NSDictionary* mappings;
 	float imageScale;
 	int imageMarginTop;
