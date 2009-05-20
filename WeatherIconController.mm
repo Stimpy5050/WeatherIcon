@@ -393,6 +393,8 @@ static WeatherIconController* instance = nil;
 {
 	tempStyle = [defaultTempStyle retain];
 	tempStyleNight = [tempStyle retain];
+	statusBarTempStyle = [defaultStatusBarTempStyle retain];
+	statusBarTempStyleFSO = [defaultStatusBarTempStyleFSO retain];
 	statusBarImageScale = 1.0;
 	imageScale = 1.0;
 	imageMarginTop = 0;
