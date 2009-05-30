@@ -215,6 +215,16 @@ static WeatherIconController* instance = nil;
 		[currentPrefs release];
 		currentPrefs = [prefs retain];
 
+		[currentCondition release];
+		currentCondition = [[currentPrefs objectForKey:@"CurrentCondition"] retain];
+
+		if (currentCondition == nil)
+		{
+			currentCondition = [NSMutableDictionary dictionaryWithCapacity:5];
+			[currentPrefs setObject:currentCondition forKey:@"CurrentCondition"];
+		}
+
+
 		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
 			overrideLocation = [ol boolValue];
 		NSLog(@"WI: Override Location: %d", overrideLocation);
@@ -419,6 +429,86 @@ static WeatherIconController* instance = nil;
 	return self;
 }
 
+- (NSString*) mapImage:(NSString*) prefix
+{
+	// no mappings
+	if (!mappings)
+		return nil;
+
+	NSString* suffix = (night ? @"_night" : @"_day");	
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
+		return mapped;
+
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, code]])
+		return mapped;
+
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
+		return mapped;
+
+	if (NSString* mapped = [mappings objectForKey:prefix])
+		return mapped;
+
+	return nil;
+}
+
+- (NSString*) findImage:(NSBundle*) bundle name:(NSString*) name
+{
+	NSString* path = [bundle pathForResource:name ofType:@"png"];
+	if (path)
+	{
+		if (debug)
+			NSLog(@"WI:Debug: Found %@ Image: %@", name, path);
+
+		return path;
+	}
+
+	return nil;
+}
+
+- (NSString*) findWeatherImagePath:(NSString*) prefix code:(NSString*) code night:(BOOL) night
+{
+	NSString* suffix = (night ? @"_night" : @"_day");	
+
+	if (NSString* mapped = [self mapImage:prefix])
+	{
+		if (debug)
+			NSLog(@"WI:Debug: Mapped %@%@%@ to %@", prefix, code, suffix, mapped);
+		prefix = mapped;
+	}
+
+	if (debug)
+		NSLog(@"WI:Debug: Find image for %@%@%@", prefix, code, suffix);
+
+        NSBundle* bundle = [NSBundle mainBundle];
+	if (NSString* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
+		return img;
+
+	if (NSString* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, code]])
+		return img;
+
+	if (NSString* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
+		return img;
+
+	if (NSString* img = [self findImage:bundle name:prefix])
+		return img;
+
+	if (debug)
+		NSLog(@"WI:Debug: No image found for %@%@%@", prefix, code, suffix);
+
+	return nil;
+}
+
+- (NSString*) findWeatherImagePath:(NSString*) prefix
+{
+	return [self findWeatherImagePath:prefix code:code night:night];
+}
+
+- (UIImage*) findWeatherImage:(NSString*) prefix
+{
+	NSString* path = [self findWeatherImagePath:prefix];
+	return (path ? [UIImage imageWithContentsOfFile:path] : nil);
+}
+
 - (void)parser:(NSXMLParser *)parser
 didStartElement:(NSString *)elementName
 namespaceURI:(NSString *)namespaceURI
@@ -452,7 +542,45 @@ qualifiedName:(NSString *)qName
 	{
 		[temp release];
 		temp = [[attributeDict objectForKey:@"chill"] retain];
+		[currentCondition setValue:temp forKey:@"temp"];
 		NSLog(@"WI: Temp: %@", temp);
+	}
+	else if ([elementName isEqualToString:@"yweather:location"])
+	{
+		NSString* city = [attributeDict objectForKey:@"city"];
+		[currentCondition setValue:city forKey:@"city"];
+	}
+	else if ([elementName isEqualToString:@"yweather:forecast"])
+	{
+		NSString* date = [attributeDict objectForKey:@"date"];
+		NSString* low = [attributeDict objectForKey:@"low"];
+		NSString* high = [attributeDict objectForKey:@"high"];
+		NSString* code = [attributeDict objectForKey:@"code"];
+		NSString* desc = [attributeDict objectForKey:@"text"];
+
+		NSMutableDictionary* forecast = [NSMutableDictionary dictionaryWithCapacity:6];
+		[forecast setValue:low forKey:@"low"];
+		[forecast setValue:high forKey:@"high"];
+		[forecast setValue:code forKey:@"code"];
+		[forecast setValue:desc forKey:@"description"];
+
+		NSString* iconPath = [self findWeatherImagePath:@"weatherstatus" code:code night:false];
+		if (iconPath == nil)
+			iconPath = [self findWeatherImagePath:@"weather" code:code night:false];
+		[forecast setValue:iconPath forKey:@"icon"];
+		[forecast setValue:date forKey:@"date"];
+
+		NSMutableArray* arr = [currentCondition objectForKey:@"forecast"];
+		if (arr == nil)
+		{
+			arr = [NSMutableArray arrayWithCapacity:3];
+			[currentCondition setObject:arr forKey:@"forecast"];
+		}
+
+		if ([arr count] == 2)
+			[arr removeObjectAtIndex:0];
+
+		[arr addObject:forecast];
 	}
 	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
@@ -460,11 +588,17 @@ qualifiedName:(NSString *)qName
 		{
 			[temp release];
 			temp = [[attributeDict objectForKey:@"temp"] retain];
+			[currentCondition setValue:temp forKey:@"temp"];
 			NSLog(@"WI: Temp: %@", temp);
 		}
 
 		[code release];
 		code = [[attributeDict objectForKey:@"code"] retain];
+		[currentCondition setValue:code forKey:@"code"];
+
+		NSString* desc = [attributeDict objectForKey:@"text"];
+		[currentCondition setValue:desc forKey:@"description"];
+
 		NSLog(@"WI: Code: %@", code);
 
 		[lastUpdateTime release];
@@ -535,76 +669,6 @@ foundCharacters:(NSString *)string
 	}
 
 	return false;
-}
-
-- (NSString*) mapImage:(NSString*) prefix
-{
-	// no mappings
-	if (!mappings)
-		return nil;
-
-	NSString* suffix = (night ? @"_night" : @"_day");	
-	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
-		return mapped;
-
-	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, code]])
-		return mapped;
-
-	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
-		return mapped;
-
-	if (NSString* mapped = [mappings objectForKey:prefix])
-		return mapped;
-
-	return nil;
-}
-
-- (UIImage*) findImage:(NSBundle*) bundle name:(NSString*) name
-{
-	NSString* path = [bundle pathForResource:name ofType:@"png"];
-	UIImage* image = (path ? [UIImage imageWithContentsOfFile:path] : nil);
-	if (image)
-	{
-		if (debug)
-			NSLog(@"WI:Debug: Found %@ Image: %@", name, path);
-
-		return image;
-	}
-
-	return nil;
-}
-
-- (UIImage*) findWeatherImage:(NSString*) prefix
-{
-	NSString* suffix = (night ? @"_night" : @"_day");	
-
-	if (NSString* mapped = [self mapImage:prefix])
-	{
-		if (debug)
-			NSLog(@"WI:Debug: Mapped %@%@%@ to %@", prefix, code, suffix, mapped);
-		prefix = mapped;
-	}
-
-	if (debug)
-		NSLog(@"WI:Debug: Find image for %@%@%@", prefix, code, suffix);
-
-        NSBundle* bundle = [NSBundle mainBundle];
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
-		return img;
-
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, code]])
-		return img;
-
-	if (UIImage* img = [self findImage:bundle name:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
-		return img;
-
-	if (UIImage* img = [self findImage:bundle name:prefix])
-		return img;
-
-	if (debug)
-		NSLog(@"WI:Debug: No image found for %@%@%@", prefix, code, suffix);
-
-	return nil;
 }
 
 - (void) updateNightSetting
@@ -780,11 +844,12 @@ foundCharacters:(NSString *)string
 		[self updateIndicator];
 
 	// save the current condition
-	NSMutableDictionary* current = [NSMutableDictionary dictionaryWithCapacity:5];
-	[current setObject:temp forKey:@"temp"];
-	[current setObject:code forKey:@"code"];
-	[current setObject:[NSNumber numberWithBool:night] forKey:@"night"];
-	[currentPrefs setObject:current forKey:@"CurrentCondition"];
+	NSString* iconPath = [self findWeatherImagePath:@"weatherstatus"];
+	if (iconPath == nil)
+		iconPath = [self findWeatherImagePath:@"weather"];
+	[currentCondition setValue:iconPath forKey:@"icon"];
+
+	[currentPrefs setObject:currentCondition forKey:@"CurrentCondition"];
 	[currentPrefs writeToFile:prefsPath atomically:YES];
 
 	// release the temp data to save memory
@@ -950,6 +1015,7 @@ foundCharacters:(NSString *)string
 	[statusBarTempStyleFSO release];
 //	[statusBarTempStyleFST release];
 
+	[currentCondition release];
 	[currentPrefs release];
 
 	[super dealloc];

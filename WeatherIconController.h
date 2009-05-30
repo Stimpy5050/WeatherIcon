@@ -54,6 +54,7 @@
 
 	// user preferences
 	NSMutableDictionary* currentPrefs;
+	NSMutableDictionary* currentCondition;
 	BOOL isCelsius;
 	BOOL overrideLocation;
 	BOOL showFeelsLike;
