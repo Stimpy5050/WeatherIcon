@@ -53,7 +53,7 @@
 	float statusBarImageScale;
 
 	// user preferences
-	NSDictionary* currentPrefs;
+	NSMutableDictionary* currentPrefs;
 	BOOL isCelsius;
 	BOOL overrideLocation;
 	BOOL showFeelsLike;

@@ -367,6 +367,7 @@ static WeatherIconController* instance = nil;
 
 			if (NSNumber* top = [dict objectForKey:@"ImageMarginTop"])
 				imageMarginTop = [top intValue];
+			NSLog(@"WI: Image Margin Top: %d", imageMarginTop);
 
 			if (NSNumber* v = [dict objectForKey:@"ShowWeatherIcon"])
 				showWeatherIcon = [v boolValue];
@@ -711,6 +712,7 @@ foundCharacters:(NSString *)string
 		float width = weatherImage.size.width * imageScale;
 		float height = weatherImage.size.height * imageScale;
 	        CGRect iconRect = CGRectMake((size.width - width) / 2, imageMarginTop, width, height);
+		NSLog(@"WI: Drawing icon at %f,%f,%f,%f", iconRect.origin.x, iconRect.origin.y, iconRect.size.width, iconRect.size.height);
 		[weatherImage drawInRect:iconRect];
 	}
 
@@ -776,6 +778,14 @@ foundCharacters:(NSString *)string
 	// now the status bar image
 	if (self.showStatusBarWeather)
 		[self updateIndicator];
+
+	// save the current condition
+	NSMutableDictionary* current = [NSMutableDictionary dictionaryWithCapacity:5];
+	[current setObject:temp forKey:@"temp"];
+	[current setObject:code forKey:@"code"];
+	[current setObject:[NSNumber numberWithBool:night] forKey:@"night"];
+	[currentPrefs setObject:current forKey:@"CurrentCondition"];
+	[currentPrefs writeToFile:prefsPath atomically:YES];
 
 	// release the temp data to save memory
 	[self releaseTempInfo];
@@ -914,7 +924,6 @@ foundCharacters:(NSString *)string
 
 - (UIImage*) statusBarIndicator:(int)mode
 {
-	NSLog(@"WI: Mode: %d", mode);
 	return (mode == 0 ? statusBarIndicatorMode0 : statusBarIndicatorMode1);
 }
 

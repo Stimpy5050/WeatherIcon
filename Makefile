@@ -38,7 +38,7 @@ Target=WeatherIcon.dylib
 
 all:	$(Target) WeatherIconSettings
 
-install: 	$(Target) WeatherIconSettings
+deploy: 	$(Target) WeatherIconSettings WeatherIconPlugin
 		chmod 755 $(Target)
 		chmod 755 WeatherIconSettings
 		rm -f /Library/MobileSubstrate/DynamicLibraries/$(Target)
@@ -47,11 +47,20 @@ install: 	$(Target) WeatherIconSettings
 		cp -a Preferences/* /Library/PreferenceLoader/Preferences
 		cp -r WeatherIconSettings.bundle /System/Library/PreferenceBundles
 		cp -a WeatherIconSettings /System/Library/PreferenceBundles/WeatherIconSettings.bundle
+		cp -r WeatherIconPlugin.bundle /Library/LockInfo/Plugins
+		rm -f /Library/LockInfo/Plugins/WeatherIconPlugin.bundle/WeatherIconPlugin
+		cp -a WeatherIconPlugin /Library/LockInfo/Plugins/WeatherIconPlugin.bundle
+
+install:	deploy
 		restart
 
 WeatherIconSettings: WeatherIconSettings.mm 
 		$(Compiler) -Winline -Wswitch -Wshadow -g0 -O2 -Wall -bundle -L/usr/lib -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework CoreGraphics -framework Foundation -framework CoreFoundation -framework UIKit -lobjc -I/var/include -multiply_defined suppress -fobjc-call-cxx-cdtors -fobjc-exceptions -ObjC++ -o $@ $(filter %.mm,$^)
 		ldid -S WeatherIconSettings
+
+WeatherIconPlugin: WeatherIconPlugin.mm 
+		$(Compiler) -Winline -Wswitch -Wshadow -g0 -O2 -Wall -bundle -L/usr/lib -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework CoreGraphics -framework Foundation -framework CoreFoundation -framework UIKit -lobjc -I/var/include -multiply_defined suppress -fobjc-call-cxx-cdtors -fobjc-exceptions -ObjC++ -o $@ $(filter %.mm,$^)
+		ldid -S WeatherIconPlugin
 
 $(Target):	WeatherIconController.o WeatherIcon.o
 		$(Compiler) $(CFLAGS) $(LDFLAGS) -o $@ $^
