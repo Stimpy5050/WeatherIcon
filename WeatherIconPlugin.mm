@@ -25,7 +25,7 @@
 {
 	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
 	NSFileManager* fm = [NSFileManager defaultManager];
-	if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traversLink:true])
+	if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traverseLink:true])
 		if (NSDate* modDate = [attrs objectForKey:NSFileModificationDate])
 			if ([modDate timeIntervalSinceReferenceDate] <= lastUpdate)
 				return nil;
