@@ -59,6 +59,8 @@ static NSString* defaultTempStyle(@""
 static NSString* defaultTemp = @"?";
 static NSString* defaultCode = @"3200";
 
+static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TUE", @"WED", @"THU", @"FRI", @"SAT", nil];
+
 static WeatherIconController* instance = nil;
 
 @implementation WeatherIconController
@@ -542,7 +544,7 @@ qualifiedName:(NSString *)qName
 	{
 		[temp release];
 		temp = [[attributeDict objectForKey:@"chill"] retain];
-		[currentCondition setValue:temp forKey:@"temp"];
+		[currentCondition setValue:[NSNumber numberWithIn:[temp intValue]] forKey:@"temp"];
 		NSLog(@"WI: Temp: %@", temp);
 	}
 	else if ([elementName isEqualToString:@"yweather:location"])
@@ -552,23 +554,24 @@ qualifiedName:(NSString *)qName
 	}
 	else if ([elementName isEqualToString:@"yweather:forecast"])
 	{
-		NSString* date = [attributeDict objectForKey:@"date"];
+		NSString* day = [attributeDict objectForKey:@"day"];
 		NSString* low = [attributeDict objectForKey:@"low"];
 		NSString* high = [attributeDict objectForKey:@"high"];
 		NSString* code = [attributeDict objectForKey:@"code"];
 		NSString* desc = [attributeDict objectForKey:@"text"];
 
 		NSMutableDictionary* forecast = [NSMutableDictionary dictionaryWithCapacity:6];
-		[forecast setValue:low forKey:@"low"];
-		[forecast setValue:high forKey:@"high"];
-		[forecast setValue:code forKey:@"code"];
+		[forecast setValue:[NSNumber numberWithInt:[low intValue]] forKey:@"low"];
+		[forecast setValue:[NSNumber numberWithInt:[high intValue]] forKey:@"high"];
+		[forecast setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
 		[forecast setValue:desc forKey:@"description"];
+
+		[forecast setValue:[NSNumber numberWithInt:[dayCodes indexOfObject:[day uppercaseString]]] forKey:@"daycode"];
 
 		NSString* iconPath = [self findWeatherImagePath:@"weatherstatus" code:code night:false];
 		if (iconPath == nil)
 			iconPath = [self findWeatherImagePath:@"weather" code:code night:false];
 		[forecast setValue:iconPath forKey:@"icon"];
-		[forecast setValue:date forKey:@"date"];
 
 		NSMutableArray* arr = [currentCondition objectForKey:@"forecast"];
 		if (arr == nil)
@@ -588,13 +591,13 @@ qualifiedName:(NSString *)qName
 		{
 			[temp release];
 			temp = [[attributeDict objectForKey:@"temp"] retain];
-			[currentCondition setValue:temp forKey:@"temp"];
+			[currentCondition setValue:[NSNumber numberWithInt:[temp intValue]] forKey:@"temp"];
 			NSLog(@"WI: Temp: %@", temp);
 		}
 
 		[code release];
 		code = [[attributeDict objectForKey:@"code"] retain];
-		[currentCondition setValue:code forKey:@"code"];
+		[currentCondition setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
 
 		NSString* desc = [attributeDict objectForKey:@"text"];
 		[currentCondition setValue:desc forKey:@"description"];
