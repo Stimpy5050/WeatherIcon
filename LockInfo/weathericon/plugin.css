@@ -1,0 +1,155 @@
+  div.weathericon div.Forecast {
+    border-bottom: 1px solid rgba(0,0,0,0.7);
+  }
+  
+  div.weathericon img.weatherIcon {
+    float: left;
+    width:16px;
+    height:16px;
+  	margin-left: 10px;
+  	margin-right: 6px;
+  	line-height: 19px;
+  	margin-top: -1px;
+  }
+  
+  div.weathericon span.temp {
+    float: left;
+    padding-left: 5px;
+  }
+  
+  div.weathericon span.desc {
+    float: right;
+    padding-top: -2px;
+    padding-right: 6px;
+    white-space: nowrap;
+  }
+  
+  div.weathericon span.city {
+    float: left;
+  }
+  
+  div.weathericon span.city:after {
+    content: ' :';
+  }
+  
+  div.weathericon div.Forecast {
+    font-size:11px;
+    font-family: sans-serif;
+    text-shadow: rgba(0,0,0,0.7) 0 0 2px;
+    margin:none;
+    padding: 0;
+    color: white;
+    padding-left: auto;
+    padding-right: auto;
+    overflow: hidden;
+    background-repeat: repeat-y;
+		background-image: url(../../imgs/darkbar1.png);
+		font-size:12px;
+    text-shadow: rgba(0,0,0,0.7) 0 1 0px;
+    padding-left:10px;
+    padding-right: 0px;
+  	padding-top: 0px;
+  }
+  
+  div.weathericon div.Forecast div.day {
+    font-size: 10px;
+  	vertical-align:top;
+  	width:50.3px;
+  	display:table-cell!important;display:inline;
+  	font-weight:bold;
+  	text-align:center;
+    padding-top: 2px;
+  }
+  
+  div.weathericon div.Forecast div.icon {
+  	vertical-align:top;
+  	width:50.3px;
+  	display:table-cell!important;display:inline;
+  	text-align:center;
+  }
+  
+  div.weathericon div.Forecast div.icon img {
+    width:16px;
+    height:16px;
+  }
+  
+  div.weathericon div.Forecast div.hi, div.weathericon div.Forecast div.low {
+  	vertical-align:top;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+  }
+  
+  div.weathericon div.Forecast div.hi{
+  	color:#fff;
+    padding-left: 3px;
+  }
+  
+  div.weathericon div.Forecast div.low {
+  	color:#ccc;   
+    padding-left: 3px;
+  }
+  
+  div.weathericon div.Forecast div.temp {
+  	vertical-align:top;
+  	width:50.3px;
+  	display:table-cell!important;display:inline;
+  	text-align:center;
+  }
+  
+  div.weathericon div.header.error {
+    padding-left: 14px;
+    color: rgb(242,162,162);
+  }
+  
+  div.weathericon div.Forecast div.dayD {
+    height: 18px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
+  
+  div.weathericon div.Forecast div.dayD div.icon {
+    width: auto; 
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  
+  div.weathericon div.Forecast div.dayD div.day {
+    width: auto;
+    padding-left: 6px;
+    line-height: 17px;
+  }
+  
+  div.weathericon div.Forecast div.dayD div.day:after {
+    content: ':';
+  }
+  
+  div.weathericon div.Forecast div.dayD div.temp {
+    width: 100%;
+    text-align: right;
+    padding-right: 3px;
+  }
+  
+  div.weathericon div.Forecast div.dayD div.temp div {
+    width: auto;
+    float: right;
+    padding-top: 4px;
+  }
+  
+  div.weathericon div.Forecast div.dayD div.desc {
+    font-size: 10px;
+  	vertical-align: middle;
+  	width: auto;
+  	display:table-cell!important;display:inline;
+    padding-top: 2px;
+    padding-left: 5px;
+    white-space: nowrap;
+  }
+  
+  div.weathericon .Updated {
+    padding: 3px;
+    font-size: 10px;
+    text-align: right;
+  }
+  
+  weatherLU
