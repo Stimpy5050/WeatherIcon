@@ -2,8 +2,9 @@
 #include <Foundation/Foundation.h>
 #include <JSON/JSON.h>
 #include "WeatherIconController.h"
+#include "PluginDelegate.h"
 
-@interface WeatherIconPlugin : NSObject
+@interface WeatherIconPlugin : NSObject <PluginDelegate>
 {
 	double lastUpdate;
 }
@@ -16,12 +17,7 @@
 
 @synthesize preferences;
 
--(NSTimeInterval) refreshInterval
-{
-	return 1;
-}
-
--(NSString*) json
+-(NSDictionary*) data
 {
 	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
 	NSFileManager* fm = [NSFileManager defaultManager];
@@ -39,10 +35,8 @@
 		[dict setObject:[wiPrefs objectForKey:@"CurrentCondition"] forKey:@"weather"];
 
 	[dict setObject:self.preferences forKey:@"preferences"];
-	NSString* json = [dict JSONRepresentation];
-	NSLog(@"WI: Returning JSON: %@", json);
 	lastUpdate = [NSDate timeIntervalSinceReferenceDate];
-	return json;
+	return dict;
 }
 
 @end
