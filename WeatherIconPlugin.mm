@@ -36,6 +36,8 @@
 
 	[dict setObject:self.preferences forKey:@"preferences"];
 	lastUpdate = [NSDate timeIntervalSinceReferenceDate];
+
+//	NSLog(@"WI: LockInfo: %@", dict);
 	return dict;
 }
 

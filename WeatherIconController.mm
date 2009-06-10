@@ -575,7 +575,7 @@ qualifiedName:(NSString *)qName
 		[forecast setValue:[NSNumber numberWithInt:[high intValue]] forKey:@"high"];
 		[forecast setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
 		[forecast setValue:desc forKey:@"description"];
-		[forecast setValue:[NSNumber numberWithInt:[day intValue]] forKey:@"daycode"];
+		[forecast setValue:[NSNumber numberWithInt:([day intValue] - 1)] forKey:@"daycode"];
 
 		NSString* iconPath = [self findWeatherImagePath:@"weatherstatus" code:code night:false];
 		if (iconPath == nil)
