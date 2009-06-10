@@ -404,6 +404,7 @@ static WeatherIconController* instance = nil;
 
 - (id) init
 {
+	yahooRSS = false;
 	tempStyle = [defaultTempStyle retain];
 	tempStyleNight = [tempStyle retain];
 	statusBarTempStyle = [defaultStatusBarTempStyle retain];
@@ -517,7 +518,7 @@ namespaceURI:(NSString *)namespaceURI
 qualifiedName:(NSString *)qName
    attributes:(NSDictionary *)attributeDict
 {
-	if ([elementName isEqualToString:@"yweather:astronomy"])
+	if ([elementName isEqualToString:@"yweather:astronomy"] || [elementName isEqualToString:@"astronomy"])
 	{
 		[sunrise release];
 		[sunset release];
@@ -540,17 +541,58 @@ qualifiedName:(NSString *)qName
 	{
 		parserContent = [[NSMutableString alloc] init];
 	}
-	else if (showFeelsLike && [elementName isEqualToString:@"yweather:wind"])
+	else if ([elementName isEqualToString:@"result"])
+	{
+		if (useLocalTime)
+		{
+			[localWeatherTime release];
+			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
+			localWeatherTime = [[NSDate dateWithTimeIntervalSince1970:timestamp] retain];
+		}
+	}
+	else if (showFeelsLike && ([elementName isEqualToString:@"yweather:wind"] || [elementName isEqualToString:@"wind"]))
 	{
 		[temp release];
 		temp = [[attributeDict objectForKey:@"chill"] retain];
-		[currentCondition setValue:[NSNumber numberWithIn:[temp intValue]] forKey:@"temp"];
+		[currentCondition setValue:[NSNumber numberWithInt:[temp intValue]] forKey:@"temp"];
 		NSLog(@"WI: Temp: %@", temp);
 	}
-	else if ([elementName isEqualToString:@"yweather:location"])
+	else if ([elementName isEqualToString:@"yweather:location"] || [elementName isEqualToString:@"location"])
 	{
 		NSString* city = [attributeDict objectForKey:@"city"];
 		[currentCondition setValue:city forKey:@"city"];
+	}
+	else if ([elementName isEqualToString:@"forecast"])
+	{
+		NSString* day = [attributeDict objectForKey:@"dayofweek"];
+		NSString* low = [attributeDict objectForKey:@"low"];
+		NSString* high = [attributeDict objectForKey:@"high"];
+		NSString* code = [attributeDict objectForKey:@"code"];
+		NSString* desc = [attributeDict objectForKey:@"text"];
+
+		NSMutableDictionary* forecast = [NSMutableDictionary dictionaryWithCapacity:6];
+		[forecast setValue:[NSNumber numberWithInt:[low intValue]] forKey:@"low"];
+		[forecast setValue:[NSNumber numberWithInt:[high intValue]] forKey:@"high"];
+		[forecast setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
+		[forecast setValue:desc forKey:@"description"];
+		[forecast setValue:[NSNumber numberWithInt:[day intValue]] forKey:@"daycode"];
+
+		NSString* iconPath = [self findWeatherImagePath:@"weatherstatus" code:code night:false];
+		if (iconPath == nil)
+			iconPath = [self findWeatherImagePath:@"weather" code:code night:false];
+		[forecast setValue:iconPath forKey:@"icon"];
+
+		NSMutableArray* arr = [currentCondition objectForKey:@"forecast"];
+		if (arr == nil)
+		{
+			arr = [NSMutableArray arrayWithCapacity:7];
+			[currentCondition setObject:arr forKey:@"forecast"];
+		}
+
+		if ([arr count] == 6)
+			[arr removeObjectAtIndex:0];
+
+		[arr addObject:forecast];
 	}
 	else if ([elementName isEqualToString:@"yweather:forecast"])
 	{
@@ -584,6 +626,37 @@ qualifiedName:(NSString *)qName
 			[arr removeObjectAtIndex:0];
 
 		[arr addObject:forecast];
+	}
+	else if ([elementName isEqualToString:@"condition"])
+	{
+		if (!showFeelsLike)
+		{
+			[temp release];
+			temp = [[attributeDict objectForKey:@"temp"] retain];
+			[currentCondition setValue:[NSNumber numberWithInt:[temp intValue]] forKey:@"temp"];
+			NSLog(@"WI: Temp: %@", temp);
+		}
+
+		[code release];
+		code = [[attributeDict objectForKey:@"code"] retain];
+		[currentCondition setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
+
+		NSString* desc = [attributeDict objectForKey:@"text"];
+		[currentCondition setValue:desc forKey:@"description"];
+
+		NSLog(@"WI: Code: %@", code);
+
+		[lastUpdateTime release];
+		lastUpdateTime = [[NSDate date] retain];
+		NSLog(@"WI: Last Update Time: %@", lastUpdateTime);
+
+		if (!useLocalTime)
+		{
+			[localWeatherTime release];
+			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
+			localWeatherTime = [[NSDate dateWithTimeIntervalSince1970:timestamp] retain];
+		}
+		NSLog(@"WI: Local Weather Time: %@", localWeatherTime);
 	}
 	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
@@ -679,11 +752,13 @@ foundCharacters:(NSString *)string
 	night = false;
 	if (localWeatherTime && sunrise && sunset)
 	{
+		NSDate* weatherDate = localWeatherTime;
+
 		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 		[df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
 		if (timeZone)
 			[df setTimeZone:timeZone];
-		[df setDateFormat:@"dd MMM yyyy hh:mm a"];
+		[df setDateFormat:(yahooRSS ? @"dd MMM yyyy hh:mm a" : @"dd MMM yyyy HHmm")];
 
 		NSString* date = [df stringFromDate:localWeatherTime];
 		NSArray* dateParts = [date componentsSeparatedByString:@" "];
@@ -700,11 +775,10 @@ foundCharacters:(NSString *)string
 			[dateParts objectAtIndex:2],
 			sunset];
 
-		NSDate* weatherDate = localWeatherTime;
 		NSDate* sunriseDate = [df dateFromString:sunriseFullDateStr];
 		NSDate* sunsetDate = [df dateFromString:sunsetFullDateStr];
-		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
 
+		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
 		night = ([weatherDate compare:sunriseDate] == NSOrderedAscending ||
 				[weatherDate compare:sunsetDate] == NSOrderedDescending);
 	}
@@ -879,12 +953,38 @@ foundCharacters:(NSString *)string
 	}
 
 	NSLog(@"WI: Refreshing weather for %@...", location);
-	NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", location, (isCelsius ? @"c" : @"f")];
-	NSURL* url = [NSURL URLWithString:urlStr];
-	NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
-	[parser setDelegate:self];
-	[parser parse];
-	[parser release];
+	if (yahooRSS)
+	{
+		NSString* urlStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", location, (isCelsius ? @"c" : @"f")];
+		NSURL* url = [NSURL URLWithString:urlStr];
+		NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+		[parser setDelegate:self];
+		[parser parse];
+		[parser release];
+	}
+	else
+	{
+		NSString* urlStr = @"http://iphone-wu.apple.com/dgw?imei=B7693A01-F383-4327-8771-501ABD85B5C1&apptype=weather&t=4";
+		NSURL* url = [NSURL URLWithString:urlStr];
+		NSMutableURLRequest* req = [NSMutableURLRequest requestWithURL:url];
+		req.HTTPMethod = @"POST";
+		NSString* body = [NSString stringWithFormat:@"<?xml version=\"1.0\" encoding=\"utf-8\"?><request devtype=\"Apple iPhone v2.2\" deployver=\"Apple iPhone v2.2\" app=\"YGoiPhoneClient\" appver=\"1.0.0.5G77\" api=\"weather\" apiver=\"1.0.0\" acknotification=\"0000\"><query id=\"30\" timestamp=\"0\" type=\"getforecastbylocationid\"><list><id>%@</id></list><language>en_US</language><unit>%@</unit></query></request>", location, (isCelsius ? @"c" : @"f")];
+		req.HTTPBody = [body dataUsingEncoding:NSUTF8StringEncoding];
+		[req setValue:@"Apple iPhone v2.2 Weather v1.0.0.5G77" forHTTPHeaderField:@"User-Agent"];
+		[req setValue:@"*/*" forHTTPHeaderField:@"Accept"];
+		[req setValue:@"en-us" forHTTPHeaderField:@"Accept-Language"];
+		[req setValue:@"" forHTTPHeaderField:@"Accept-Encoding"];
+		[req setValue:@"text/xml" forHTTPHeaderField:@"Content-Type"];
+		NSData* data = [NSURLConnection sendSynchronousRequest:req returningResponse:nil error:nil];
+//		NSString* retData = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+//		NSLog(@"WI: Data: %@", retData);
+//		[retData release];
+
+		NSXMLParser* parser = [[NSXMLParser alloc] initWithData:data];
+		[parser setDelegate:self];
+		[parser parse];
+		[parser release];
+	}
 
 	if (debug)
 		NSLog(@"WI:Debug: Done refreshing weather.");
@@ -892,9 +992,9 @@ foundCharacters:(NSString *)string
 	if (useLocalTime && !timeZone && longitude && latitude)
 	{
 		NSLog(@"WI: Refreshing time zone for %@...", location);
-		urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", latitude, longitude];
-		url = [NSURL URLWithString:urlStr];
-		parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
+		NSString* urlStr = [NSString stringWithFormat:@"http://www.earthtools.org/timezone/%@/%@", latitude, longitude];
+		NSURL* url = [NSURL URLWithString:urlStr];
+		NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:url];
 		[parser setDelegate:self];
 		[parser parse];
 		[parser release];

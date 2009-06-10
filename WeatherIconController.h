@@ -19,6 +19,7 @@
 	BOOL themeLoaded;
 	BOOL prefsLoaded;
 	BOOL weatherPrefsLoaded;
+	BOOL yahooRSS;
 
 	// image caches
 	UIImage* statusBarIndicatorMode0;
