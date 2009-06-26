@@ -8,9 +8,10 @@
  */
 
 #import "WeatherIconController.h"
-#import <substrate.h>
+#import "substrate.h"
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
+#import <SpringBoard/SBImageCache.h>
 #import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBIconController.h>
 #import <SpringBoard/SBStatusBar.h>
@@ -809,7 +810,7 @@ foundCharacters:(NSString *)string
         if (showStatusBarImage && image)
                 sbSize.width += ceil(image.size.width * statusBarImageScale);
 
-	if (debug) NSLog(@"WI:Debug: Status Bar Size: %f, %f", sbSize.width, sbSize.height);
+	NSLog(@"WI:Debug: Status Bar Size: %f, %f", sbSize.width, sbSize.height);
 
         UIGraphicsBeginImageContext(sbSize);
 
@@ -853,7 +854,6 @@ foundCharacters:(NSString *)string
 		float width = weatherImage.size.width * imageScale;
 		float height = weatherImage.size.height * imageScale;
 	        CGRect iconRect = CGRectMake((size.width - width) / 2, imageMarginTop, width, height);
-		NSLog(@"WI: Drawing icon at %f,%f,%f,%f", iconRect.origin.x, iconRect.origin.y, iconRect.size.width, iconRect.size.height);
 		[weatherImage drawInRect:iconRect];
 	}
 
@@ -861,8 +861,9 @@ foundCharacters:(NSString *)string
 	NSString* style = [NSString stringWithFormat:(night ? tempStyleNight : tempStyle), (int)size.width];
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
-	[weatherIcon release];
+	UIImage* tmpIcon = weatherIcon;
 	weatherIcon = [UIGraphicsGetImageFromCurrentImageContext() retain];
+	[tmpIcon release];
 
 	UIGraphicsEndImageContext();
 
@@ -870,31 +871,38 @@ foundCharacters:(NSString *)string
 	if (iconController)
 	{
 		NSLog(@"WI: Refreshing icon...");
+
 	        // now force the icon to refresh
-	        SBIconModel* model(MSHookIvar<SBIconModel*>(iconController, "_iconModel"));
-	        [model reloadIconImageForDisplayIdentifier:bundleIdentifier];
-
-		// get the SBIconController and refresh the contentView
-		[iconController.contentView setNeedsDisplay];
-
-		// refresh all of the subviews to get the reflection right
-		SBIcon* applicationIcon = [model iconForDisplayIdentifier:bundleIdentifier];
-		if (applicationIcon)
+	        if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
 		{
-			NSArray* views = [applicationIcon subviews];
-			for (int i = 0; i < views.count; i++)
-				[[views objectAtIndex:i] setNeedsDisplay];
+		        [model reloadIconImageForDisplayIdentifier:bundleIdentifier];
+
+		        if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
+				if ([cache respondsToSelector:@selector(removeImageForKey:)])
+					[cache removeImageForKey:bundleIdentifier];
+
+			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:bundleIdentifier])
+			{
+				if (UIImageView* imageView = MSHookIvar<UIImageView*>(applicationIcon, "_image"))
+				{
+					imageView.image = weatherIcon;
+					imageView.bounds = CGRectMake(0, 0, size.width, size.height);
+					[imageView setNeedsDisplay];
+				}
+			}
 		}
 	}
 }
 
 - (void) updateIndicator
 {
-	[statusBarIndicatorMode0 release];
+	UIImage* tmpImg = statusBarIndicatorMode0;
 	statusBarIndicatorMode0 = [[self createIndicator:0] retain];
+	[tmpImg release];
 
-	[statusBarIndicatorMode1 release];
+	tmpImg = statusBarIndicatorMode1;
 	statusBarIndicatorMode1 = [[self createIndicator:1] retain];
+	[tmpImg release];
 
 	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
 	if (statusBarController)
@@ -1071,6 +1079,7 @@ foundCharacters:(NSString *)string
 
 - (UIImage*) icon
 {
+	NSLog(@"WI: returning %@", weatherIcon);
 	return weatherIcon;
 }
 

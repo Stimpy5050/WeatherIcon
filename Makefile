@@ -1,38 +1,28 @@
-Compiler=g++
+CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-gcc-4.0.1
+CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-g++-4.0.1
+LD=$(CC)
 
-LDFLAGS=	-lobjc -O2 -g0 \
-				-framework Foundation \
-				-framework UIKit \
-				-framework CoreFoundation \
-				-framework CoreGraphics \
-				-framework GraphicsServices \
-				-multiply_defined suppress \
-				-L/usr/lib \
-				-F/System/Library/Frameworks \
-				-F/System/Library/PrivateFrameworks \
-				-dynamiclib \
-				-init _WeatherIconInitialize \
-				-Wall \
-				-Werror \
-				-lsubstrate \
-				-lobjc \
-				-ObjC++ \
-				-fobjc-exceptions \
-				-march=armv6 \
-				-mcpu=arm1176jzf-s \
-				-fobjc-call-cxx-cdtors
+SDKVER=2.0
+SDK=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
+LDFLAGS=	-framework Foundation \
+		-framework UIKit \
+		-framework CoreFoundation \
+		-framework CoreGraphics \
+		-framework GraphicsServices \
+		-framework Preferences \
+		-L"$(SDK)/usr/lib" \
+		-F"$(SDK)/System/Library/Frameworks" \
+		-F"$(SDK)/System/Library/PrivateFrameworks" \
+		-lsubstrate \
+		-lobjc 
 
-CFLAGS= -O2 -dynamiclib \
-  -fsigned-char -g0 -fobjc-exceptions \
-  -Wall -Wundeclared-selector -Wreturn-type \
-  -Wredundant-decls \
-  -Wchar-subscripts \
-  -Winline -Wswitch -Wshadow \
+CFLAGS= -I/Users/david/iPhone/package/var/include \
   -I/var/include \
   -I/var/include/gcc/darwin/4.0 \
-  -D_CTYPE_H_ \
-  -D_BSD_ARM_SETJMP_H \
-  -D_UNISTD_H_
+  -I"$(SDK)/usr/include" \
+  -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/include" \
+  -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/gcc/arm-apple-darwin9/4.2.1/include" \
+  -DDEBUG -Diphoneos_version_min=2.0
 
 Target=WeatherIcon.dylib
 
@@ -44,30 +34,30 @@ deploy: 	$(Target) WeatherIconSettings WeatherIconPlugin
 		rm -f /Library/MobileSubstrate/DynamicLibraries/$(Target)
 		cp $(Target) /Library/MobileSubstrate/DynamicLibraries/
 		cp *.plist /Library/MobileSubstrate/DynamicLibraries/
-		cp -a Preferences/* /Library/PreferenceLoader/Preferences
+		cp Preferences/* /Library/PreferenceLoader/Preferences
 		cp -r WeatherIconSettings.bundle /System/Library/PreferenceBundles
-		cp -a WeatherIconSettings /System/Library/PreferenceBundles/WeatherIconSettings.bundle
+		cp WeatherIconSettings /System/Library/PreferenceBundles/WeatherIconSettings.bundle
 		cp -r WeatherIconPlugin.bundle /Library/LockInfo/Plugins
 		rm -f /Library/LockInfo/Plugins/WeatherIconPlugin.bundle/WeatherIconPlugin
-		cp -a WeatherIconPlugin /Library/LockInfo/Plugins/WeatherIconPlugin.bundle
+		cp WeatherIconPlugin /Library/LockInfo/Plugins/WeatherIconPlugin.bundle
 
 install:	deploy
 		restart
 
 WeatherIconSettings: WeatherIconSettings.mm 
-		$(Compiler) -Winline -Wswitch -Wshadow -g0 -O2 -Wall -bundle -L/usr/lib -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework CoreGraphics -framework Foundation -framework CoreFoundation -framework UIKit -lobjc -I/var/include -multiply_defined suppress -fobjc-call-cxx-cdtors -fobjc-exceptions -ObjC++ -o $@ $(filter %.mm,$^)
+		$(CPP) $(CFLAGS) $(LDFLAGS) -bundle -o $@ $(filter %.mm,$^)
 		ldid -S WeatherIconSettings
 
 WeatherIconPlugin: WeatherIconPlugin.mm 
-		$(Compiler) -Winline -Wswitch -Wshadow -g0 -O2 -Wall -bundle -L/usr/lib -F/System/Library/Frameworks -F/System/Library/PrivateFrameworks -framework Preferences -framework CoreGraphics -framework Foundation -framework CoreFoundation -framework UIKit -lobjc -I/var/include -multiply_defined suppress -fobjc-call-cxx-cdtors -fobjc-exceptions -ObjC++ -o $@ $(filter %.mm,$^)
+		$(CPP) $(CFLAGS) $(LDFLAGS) -bundle -o $@ $(filter %.mm,$^)
 		ldid -S WeatherIconPlugin
 
 $(Target):	WeatherIconController.o WeatherIcon.o
-		$(Compiler) $(CFLAGS) $(LDFLAGS) -o $@ $^
+		$(CC) $(CFLAGS) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
 
 %.o:	%.mm
-		$(Compiler) -c $(CFLAGS) $< -o $@
+		$(CPP) -c $(CFLAGS) $< -o $@
 
 clean:
 		rm -f *.o $(Target) WeatherIconSettings
@@ -79,12 +69,12 @@ package:	$(Target) WeatherIconSettings
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
 	mkdir -p package/weathericon/System/Library/PreferenceBundles
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
-	cp -a $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
-	cp -a *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
-	cp -a Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
+	cp $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
-	cp -a WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
-	cp -a *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
-	cp -a control package/weathericon/DEBIAN
+	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
+	cp *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
+	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/weathericon weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
