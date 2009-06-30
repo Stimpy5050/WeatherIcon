@@ -32,19 +32,17 @@ static NSString* defaultStatusBarTempStyleFSO(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
 	"font-size: 14px; "
-	"color: white; "
+	"color: #eeeeee; "
 	"height: 20px;"
-	"margin-top: 1px;"
 "");
 //static NSString* defaultStatusBarTempStyleFST = defaultStatusBarTempStyleFSO;
 static NSString* defaultStatusBarTempStyle(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
 	"font-size: 14px; "
-	"color: black; "
+	"color: #1111111; "
 	"text-shadow: rgba(255, 255, 255, 0.6) 0px 1px 0px; "
 	"height: 20px;"
-	"margin-top: 1px;"
 "");
 static NSString* defaultTempStyle(@""
 	"font-family: Helvetica; "
@@ -804,6 +802,7 @@ foundCharacters:(NSString *)string
         if (showStatusBarTemp)
 	{
 	        tempSize = [t sizeWithStyle:style forWidth:40];
+		NSLog(@"WI: Temp size: %f, %f", tempSize.width, tempSize.height);
                 sbSize.width += tempSize.width;
 	}
 
@@ -868,7 +867,7 @@ foundCharacters:(NSString *)string
 	UIGraphicsEndImageContext();
 
 	SBIconController* iconController = [$SBIconController sharedInstance];
-	if (iconController)
+	if (weatherIcon != nil && iconController)
 	{
 		NSLog(@"WI: Refreshing icon...");
 
@@ -908,8 +907,8 @@ foundCharacters:(NSString *)string
 	if (statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicator...");
-		[statusBarController removeStatusBarItem:@"WeatherIcon"];
 		[statusBarController addStatusBarItem:@"WeatherIcon"];
+		[statusBarController removeStatusBarItem:@"WeatherIcon"];
 	}
 }
 

@@ -16,12 +16,12 @@ LDFLAGS=	-framework Foundation \
 		-lsubstrate \
 		-lobjc 
 
-CFLAGS= -I/Users/david/iPhone/package/var/include \
+CFLAGS= -I$(SDK)/var/include \
   -I/var/include \
   -I/var/include/gcc/darwin/4.0 \
   -I"$(SDK)/usr/include" \
   -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/include" \
-  -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/gcc/arm-apple-darwin9/4.2.1/include" \
+  -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/gcc/arm-apple-darwin9/4.0.1/include" \
   -DDEBUG -Diphoneos_version_min=2.0
 
 Target=WeatherIcon.dylib
@@ -63,12 +63,13 @@ clean:
 		rm -f *.o $(Target) WeatherIconSettings
 		rm -rf package
 
-package:	$(Target) WeatherIconSettings
+package:	$(Target) WeatherIconSettings 
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
 	mkdir -p package/weathericon/System/Library/PreferenceBundles
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
+	mkdir -p package/weathericon/Library/LockInfo/Plugins
 	cp $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
