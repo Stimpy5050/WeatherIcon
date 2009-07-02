@@ -874,22 +874,24 @@ foundCharacters:(NSString *)string
 	        // now force the icon to refresh
 	        if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
 		{
-		        [model reloadIconImageForDisplayIdentifier:bundleIdentifier];
-
-		        if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
-				if ([cache respondsToSelector:@selector(removeImageForKey:)])
-					[cache removeImageForKey:bundleIdentifier];
-
 			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:bundleIdentifier])
 			{
+		        	[model reloadIconImageForDisplayIdentifier:bundleIdentifier];
+	
+			        if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
+					if ([cache respondsToSelector:@selector(removeImageForKey:)])
+						[cache removeImageForKey:bundleIdentifier];
+
 				if (UIImageView* imageView = MSHookIvar<UIImageView*>(applicationIcon, "_image"))
 				{
+					imageView.bounds = CGRectMake(0, 0, weatherIcon.size.width, weatherIcon.size.height);
 					imageView.image = weatherIcon;
-					imageView.bounds = CGRectMake(0, 0, size.width, size.height);
 					[imageView setNeedsDisplay];
 				}
 			}
 		}
+
+		NSLog(@"WI: Done refreshing icon.");
 	}
 }
 
@@ -907,8 +909,9 @@ foundCharacters:(NSString *)string
 	if (statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicator...");
-		[statusBarController addStatusBarItem:@"WeatherIcon"];
 		[statusBarController removeStatusBarItem:@"WeatherIcon"];
+		[statusBarController addStatusBarItem:@"WeatherIcon"];
+		NSLog(@"WI: Done refreshing indicator.");
 	}
 }
 

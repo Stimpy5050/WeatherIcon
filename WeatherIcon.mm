@@ -52,6 +52,11 @@ static WeatherIconController* _controller;
 static SBStatusBarContentView* _sb0;
 static SBStatusBarContentView* _sb1;
 
+@interface SBStatusBarContentView3 : SBStatusBarContentView
+-(BOOL) showOnLeft;
+-(BOOL) isVisible;
+@end
+
 static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 {
 	[self wi_updateInterface];
@@ -85,7 +90,19 @@ static id weatherIcon(SBIcon *self, SEL sel)
 	return [_controller icon];
 }
 
-static void addWeatherView(SBStatusBarContentsView* self)
+static float findStart(SBStatusBarContentsView* self, const char* varName, const char* visibleVarName, float currentStart)
+{
+	if (SBStatusBarContentView3* icon  = MSHookIvar<NSMutableArray*>(self, varName))
+	{
+//		BOOL visible  = MSHookIvar<BOOL>(icon, visibleVarName);
+//		NSLog(@"WI: findStart: Icon %@ is visible? %d", icon, visible);	
+		return (icon.frame.origin.x > 0 && icon.isVisible && icon.frame.origin.x < currentStart ? icon.frame.origin.x : currentStart);
+	}
+
+	return currentStart;
+}
+
+static void updateWeatherView(SBStatusBarContentsView* self)
 {	
 	SBStatusBar* sb = [self statusBar];
 	int mode = [sb mode];
@@ -97,6 +114,7 @@ static void addWeatherView(SBStatusBarContentsView* self)
 		{
 			Class sbClass = objc_getClass("SBStatusBarContentView");
 			weatherView = [[[sbClass alloc] initWithContentsView:self] autorelease];
+			weatherView.tag = -1;
 			[weatherView setAlpha:[$SBStatusBarContentsView contentAlphaForMode:mode]];
 			[weatherView setMode:mode];
 
@@ -109,14 +127,10 @@ static void addWeatherView(SBStatusBarContentsView* self)
 				_sb1 = [weatherView retain];
 		}
 
-		SBStatusBarContentView* battery = MSHookIvar<NSMutableArray*>(self, "_batteryView");
-		float x = battery.frame.origin.x;
-
-		if ([self shouldDisplayBatteryPercentage])
-		{
-			SBStatusBarContentView* batteryPercent = MSHookIvar<NSMutableArray*>(self, "_batteryPercentageView");
-			x = batteryPercent.frame.origin.x;
-		}
+		float x = findStart(self, "_batteryView", "_showBatteryView", 480);
+		x = findStart(self, "_batteryPercentageView", "_showBatteryPercentageView", x);
+		x = findStart(self, "_bluetoothView", "_showBluetoothView", x);
+		x = findStart(self, "_bluetoothBatteryView", "_showBluetoothBatteryView", x);
 
 //		NSLog(@"WI: Moving weather view to %f", x - indicator.size.width - 3);	
 		weatherView.frame = CGRectMake(x - indicator.size.width - 3, 0, indicator.size.width, indicator.size.height);	
@@ -137,10 +151,92 @@ static void addWeatherView(SBStatusBarContentsView* self)
 	}
 }
 
+static void updateWeatherView(SBStatusBarContentView* view)
+{
+	if (!((SBStatusBarContentView3*)view).showOnLeft)
+	{
+		SBStatusBarContentsView* contents = MSHookIvar<SBStatusBarContentsView*>(view, "_contentsView");
+		updateWeatherView(contents);
+	}
+}
+
+static void updateWeatherView(SBStatusBarContentView* view, float before, float after)
+{
+//	if (before != after)
+		updateWeatherView(view);
+}
+
+MSHook(void, reflowContentViewsBool, SBStatusBarContentsView* self, SEL sel, BOOL b)
+{	
+	NSLog(@"WI: reflowContentViewsBool");
+	_reflowContentViewsBool(self, sel, b);
+}
+
+MSHook(void, reflowContentViewsNow, SBStatusBarContentsView* self, SEL sel)
+{	
+	NSLog(@"WI: reflowContentViewsNow");
+	_reflowContentViewsNow(self, sel);
+	updateWeatherView(self);
+}
+
+MSHook(void, reflowContentViews, SBStatusBarContentsView* self, SEL sel)
+{	
+	NSLog(@"WI: reflowContentViews");
+	_reflowContentViews(self, sel);
+	updateWeatherView(self);
+}
+
 MSHook(void, _arrangeIconsByPriority, SBStatusBarContentsView* self, SEL sel, float left, float right)
 {	
+	NSLog(@"WI: arrangeIconsByPriority");
 	__arrangeIconsByPriority(self, sel, left, right);
-	addWeatherView(self);
+	updateWeatherView(self);
+}
+
+MSHook(float, _removeViews, SBStatusBarContentsView* self, SEL sel, id views, float needed, float total)
+{	
+	NSLog(@"WI: removeViews: %@", views);
+	return __removeViews(self, sel, views, needed, total);
+//	updateWeatherView(self);
+}
+
+MSHook(void, sbSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect)
+{
+	NSLog(@"WI: setFrame: %@", self);
+	float before = self.frame.origin.x;
+	_sbSetFrame(self, sel, rect);
+	updateWeatherView(self);
+}
+
+MSHook(void, bSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect)
+{
+	NSLog(@"WI: setFrame: %@", self);
+	CGRect before = self.frame;
+	_bSetFrame(self, sel, rect);
+	updateWeatherView(self);
+}
+
+MSHook(void, btSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect)
+{
+	NSLog(@"WI: setFrame: %@", self);
+	CGRect before = self.frame;
+	_btSetFrame(self, sel, rect);
+	updateWeatherView(self);
+}
+
+MSHook(void, btSetHidden, SBStatusBarContentView* self, SEL sel, BOOL b)
+{
+	NSLog(@"WI: setHidden: %@", self);
+	_btSetHidden(self, sel, b);
+	updateWeatherView(self);
+}
+
+MSHook(void, btbSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect)
+{
+	NSLog(@"WI: setFrame: %@", self);
+	CGRect before = self.frame;
+	_btbSetFrame(self, sel, rect);
+	updateWeatherView(self);
 }
 
 MSHook(void, indicatorSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect) 
@@ -253,6 +349,10 @@ extern "C" void TweakInit() {
 	Class $SBApplication = objc_getClass("SBApplication");
 	Class $SBIconModel = objc_getClass("SBIconModel");
 	Class $SBStatusBarController = objc_getClass("SBStatusBarController");
+	Class $SBStatusBarBatteryView = objc_getClass("SBStatusBarBatteryView");
+	Class $SBStatusBarBluetoothView = objc_getClass("SBStatusBarBluetoothView");
+	Class $SBStatusBarBluetoothBatteryView = objc_getClass("SBStatusBarBluetoothBatteryView");
+	Class $SBStatusBarContentView = objc_getClass("SBStatusBarContentView");
 	Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
 	Class $SBStatusBarIndicatorsView = objc_getClass("SBStatusBarIndicatorsView");
 	$SBStatusBarContentsView = objc_getClass("SBStatusBarContentsView");
@@ -265,7 +365,22 @@ extern "C" void TweakInit() {
 	MSHookMessage($SBStatusBarIndicatorsView, @selector(reloadIndicators), (IMP) &$SBStatusBarIndicatorsView$reloadIndicators, "wi_");
 	MSHookMessage($SBAwayView, @selector(updateInterface), (IMP) &$SBAwayView$updateInterface, "wi_");
 	Hook(SBStatusBarIndicatorView, setFrame:, indicatorSetFrame);
-	Hook(SBStatusBarContentsView, _arrangeIconsByPriorityWithLeftWidth:rightWidth:, _arrangeIconsByPriority);
+//	Hook(SBStatusBarContentView, setFrame:, sbSetFrame);
+//	Hook(SBStatusBarBluetoothView, setFrame:, btSetFrame);
+//	Hook(SBStatusBarBluetoothView, setHidden:, btSetHidden);
+//	Hook(SBStatusBarBluetoothBatteryView, setFrame:, btbSetFrame);
+//	Hook(SBStatusBarBatteryView, setFrame:, bSetFrame);
+//	Hook(SBStatusBarContentsView, _arrangeIconsByPriorityWithLeftWidth:rightWidth:, _arrangeIconsByPriority);
+//	Hook(SBStatusBarContentsView, _removeViews:withNeededCapacity:totalCapacity:, _removeViews);
+//	Hook(SBStatusBarContentsView, reflowContentViews, reflowContentViews);
+//	Hook(SBStatusBarContentsView, reflowContentViews:, reflowContentViewsBool);
+	Hook(SBStatusBarContentsView, reflowContentViewsNow, reflowContentViewsNow);
+//	Hook(SBStatusBarContentView, setVisible:, setVisible);
+//	Hook(SBStatusBarBluetoothView, setVisible:, btSetVisible);
+//	Hook(SBStatusBarBluetoothView, stop, btStop);
+//	Hook(SBStatusBarBluetoothBatteryView, setVisible:, btbSetVisible);
+//	Hook(SBStatusBarBluetoothBatteryView, stop, btbStop);
+//	Hook(SBStatusBarContentView, setShowOnLeft:, setShowOnLeft);
 	
 	NSLog(@"WI: Init weather controller.");
 	_controller = [WeatherIconController sharedInstance];
