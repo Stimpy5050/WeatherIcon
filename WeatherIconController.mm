@@ -588,9 +588,6 @@ qualifiedName:(NSString *)qName
 			[currentCondition setObject:arr forKey:@"forecast"];
 		}
 
-		if ([arr count] == 6)
-			[arr removeObjectAtIndex:0];
-
 		[arr addObject:forecast];
 	}
 	else if ([elementName isEqualToString:@"yweather:forecast"])
@@ -620,9 +617,6 @@ qualifiedName:(NSString *)qName
 			arr = [NSMutableArray arrayWithCapacity:3];
 			[currentCondition setObject:arr forKey:@"forecast"];
 		}
-
-		if ([arr count] == 2)
-			[arr removeObjectAtIndex:0];
 
 		[arr addObject:forecast];
 	}
@@ -909,8 +903,18 @@ foundCharacters:(NSString *)string
 	if (statusBarController)
 	{
 		NSLog(@"WI: Refreshing indicator...");
-		[statusBarController removeStatusBarItem:@"WeatherIcon"];
-		[statusBarController addStatusBarItem:@"WeatherIcon"];
+		if ([statusBarController respondsToSelector:@selector(showBatteryPercentageChanged)])
+		{
+			// 3.x
+			[statusBarController addStatusBarItem:@"WeatherIcon"];
+			[statusBarController removeStatusBarItem:@"WeatherIcon"];
+		}
+		else
+		{
+			// 2.x
+			[statusBarController removeStatusBarItem:@"WeatherIcon"];
+			[statusBarController addStatusBarItem:@"WeatherIcon"];
+		}
 		NSLog(@"WI: Done refreshing indicator.");
 	}
 }
@@ -961,6 +965,9 @@ foundCharacters:(NSString *)string
 		NSLog(@"WI: No location set.");
 		return false;
 	}
+
+	// clear the current forecast
+	[currentCondition removeObjectForKey:@"forecast"];
 
 	NSLog(@"WI: Refreshing weather for %@...", location);
 	if (yahooRSS)
