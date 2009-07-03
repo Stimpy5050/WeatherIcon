@@ -160,12 +160,6 @@ static void updateWeatherView(SBStatusBarContentView* view)
 	}
 }
 
-static void updateWeatherView(SBStatusBarContentView* view, float before, float after)
-{
-//	if (before != after)
-		updateWeatherView(view);
-}
-
 MSHook(void, reflowContentViewsNow, SBStatusBarContentsView* self, SEL sel)
 {	
 	NSLog(@"WI: reflowContentViewsNow");
@@ -314,10 +308,15 @@ extern "C" void TweakInit() {
 	MSHookMessage($SBBookmarkIcon, @selector(initWithWebClip:), (IMP) &$SBBookmarkIcon$initWithWebClip$, "wi_");
 	MSHookMessage($SBStatusBarIndicatorsView, @selector(reloadIndicators), (IMP) &$SBStatusBarIndicatorsView$reloadIndicators, "wi_");
 	MSHookMessage($SBAwayView, @selector(updateInterface), (IMP) &$SBAwayView$updateInterface, "wi_");
-	Hook(SBStatusBarIndicatorView, setFrame:, indicatorSetFrame);
-	Hook(SBStatusBarContentsView, reflowContentViewsNow, reflowContentViewsNow);
-	Hook(SBStatusBarBluetoothView, setFrame:, btSetFrame);
-	Hook(SBStatusBarBluetoothBatteryView, setFrame:, btbSetFrame);
+
+	// only hook these in 3.0
+	if ($SBStatusBarIndicatorsView == nil)
+	{
+		Hook(SBStatusBarIndicatorView, setFrame:, indicatorSetFrame);
+		Hook(SBStatusBarBluetoothView, setFrame:, btSetFrame);
+		Hook(SBStatusBarBluetoothBatteryView, setFrame:, btbSetFrame);
+		Hook(SBStatusBarContentsView, reflowContentViewsNow, reflowContentViewsNow);
+	}
 	
 	NSLog(@"WI: Init weather controller.");
 	_controller = [WeatherIconController sharedInstance];
