@@ -33,7 +33,7 @@ static NSString* defaultStatusBarTempStyleFSO(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
 	"font-size: 14px; "
-	"color: #eeeeee; "
+	"color: #efefef; "
 	"height: 20px;"
 "");
 //static NSString* defaultStatusBarTempStyleFST = defaultStatusBarTempStyleFSO;

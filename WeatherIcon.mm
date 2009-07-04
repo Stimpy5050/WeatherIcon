@@ -68,7 +68,7 @@ static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 	{
 		Class cls = objc_getClass("SBTelephonyManager");
 		SBTelephonyManager* mgr = [cls sharedTelephonyManager];
-		NSLog(@"WI: Telephony: %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists);
+//		NSLog(@"WI: Telephony: %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists);
 		refresh = (!mgr.inCall && !mgr.incomingCallExists && !mgr.activeCallExists);
 	}
 	else
@@ -79,7 +79,7 @@ static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 		refresh = [sbui isOnAC];
 	}
 
-	NSLog(@"WI: Refreshing? %d", refresh);
+//	NSLog(@"WI: Refreshing? %d", refresh);
 	if (refresh)
 		[_controller refresh];
 }
@@ -89,7 +89,7 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 	// do the unscatter
 	[self wi_unscatter:b startTime:time];
 
-	NSLog(@"WI: Refreshing on unscatter.");
+//	NSLog(@"WI: Refreshing on unscatter.");
 
 	// refresh the weather model
 	[_controller refresh];
