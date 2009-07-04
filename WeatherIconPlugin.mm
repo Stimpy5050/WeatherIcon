@@ -19,20 +19,18 @@
 
 -(NSDictionary*) data
 {
-	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.plist";
+	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
 	NSFileManager* fm = [NSFileManager defaultManager];
 	if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traverseLink:true])
 		if (NSDate* modDate = [attrs objectForKey:NSFileModificationDate])
 			if ([modDate timeIntervalSinceReferenceDate] <= lastUpdate)
 				return nil;
 
-	NSDictionary* wiPrefs = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
-	NSDictionary* current = [wiPrefs objectForKey:@"CurrentCondition"];
-
+	NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:1];
 
 	if (current != nil)
-		[dict setObject:[wiPrefs objectForKey:@"CurrentCondition"] forKey:@"weather"];
+		[dict setObject:current forKey:@"weather"];
 
 	[dict setObject:self.preferences forKey:@"preferences"];
 	lastUpdate = [NSDate timeIntervalSinceReferenceDate];

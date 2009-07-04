@@ -28,6 +28,7 @@ static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $SBIconController = objc_getClass("SBIconController");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
+static NSString* conditionPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
 static NSString* defaultStatusBarTempStyleFSO(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
@@ -193,12 +194,14 @@ static WeatherIconController* instance = nil;
 
 			if (![zip isEqualToString:location])
 			{
-				[timeZone release];
+				NSString* tmp = timeZone;
 				timeZone = nil;
+				[tmp release];
 			}
 
-			[location release];
+			NSString* tmp = location;
 			location = [zip retain];
+			[tmp release];
 		}	
 	}
 
@@ -213,17 +216,16 @@ static WeatherIconController* instance = nil;
 	NSMutableDictionary* prefs = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 	if (prefs)
 	{
-		[currentPrefs release];
+		NSDictionary* tmpPrefs = currentPrefs;
 		currentPrefs = [prefs retain];
+		[tmpPrefs release];
 
-		[currentCondition release];
-		currentCondition = [[currentPrefs objectForKey:@"CurrentCondition"] retain];
+		NSDictionary* tmpCondition = currentCondition;
+		currentCondition = [[NSMutableDictionary dictionaryWithContentsOfFile:conditionPath] retain];
+		[tmpCondition release];
 
 		if (currentCondition == nil)
-		{
-			currentCondition = [NSMutableDictionary dictionaryWithCapacity:5];
-			[currentPrefs setObject:currentCondition forKey:@"CurrentCondition"];
-		}
+			currentCondition = [[NSMutableDictionary dictionaryWithCapacity:5] retain];
 
 
 		if (NSNumber* ol = [prefs objectForKey:@"OverrideLocation"])
@@ -240,12 +242,14 @@ static WeatherIconController* instance = nil;
 			{
 				if (![loc isEqualToString:location])
 				{
-					[timeZone release];
+					NSString* tmpTZ = timeZone;
 					timeZone = nil;
+					[tmpTZ release];
 				}
 
-				[location release];
+				NSString* tmpLoc = location;
 				location = [[NSString stringWithString:loc] retain];
+				[tmpLoc release];
 			}
 
 			if (NSNumber* celsius = [prefs objectForKey:@"Celsius"])
@@ -281,14 +285,16 @@ static WeatherIconController* instance = nil;
 			{
 				if (NSString* custom = [prefs objectForKey:@"CustomWeatherBundleIdentifier"])
 				{
-					[bundleIdentifier release];
+					NSString* tmp = bundleIdentifier;
 					bundleIdentifier = [custom retain];
+					[tmp release];
 				}
 			}
 			else
 			{
-				[bundleIdentifier release];
+				NSString* tmp = bundleIdentifier;
 				bundleIdentifier = [id retain];
+				[tmp release];
 			}
 		}
 		NSLog(@"WI: Weather Bundle Identifier: %@", bundleIdentifier);
@@ -338,37 +344,33 @@ static WeatherIconController* instance = nil;
 			NSLog(@"WI: Loading theme prefs: %@", themePrefs);
 
 			// reset the temp style
-			[tempStyle release];
+			NSString* tmp = tempStyle;
 			if (NSString* style = [dict objectForKey:@"TempStyle"])
 				tempStyle = [[defaultTempStyle stringByAppendingString:style] retain];
 			else
 				tempStyle = [defaultTempStyle retain];
+			[tmp release];
 
-			[tempStyleNight release];
+			tmp = tempStyleNight;
 			if (NSString* nstyle = [dict objectForKey:@"TempStyleNight"])
 			        tempStyleNight = [[tempStyle stringByAppendingString:nstyle] retain];
 			else
 				tempStyleNight = [tempStyle retain];
+			[tmp release];
 
-			[statusBarTempStyle release];
+			tmp = statusBarTempStyle;
 			if (NSString* style = [dict objectForKey:@"StatusBarTempStyle"])
 				statusBarTempStyle = [[defaultStatusBarTempStyle stringByAppendingString:style] retain];
 			else
 				statusBarTempStyle = [defaultStatusBarTempStyle retain];
+			[tmp release];
 
-			[statusBarTempStyleFSO release];
+			tmp = statusBarTempStyleFSO;
 			if (NSString* nstyle = [dict objectForKey:@"StatusBarTempStyleFSO"])
 			        statusBarTempStyleFSO = [[defaultStatusBarTempStyleFSO stringByAppendingString:nstyle] retain];
 			else
 				statusBarTempStyleFSO = [defaultStatusBarTempStyleFSO retain];
-
-/*
-			[statusBarTempStyleFST release];
-			if (NSString* nstyle = [dict objectForKey:@"StatusBarTempStyleFST"])
-			        statusBarTempStyleFST = [[defaultStatusBarTempStyleFST stringByAppendingString:nstyle] retain];
-			else
-				statusBarTempStyleFST = [defaultStatusBarTempStyleFST retain];
-*/
+			[tmp release];
 
 			if (NSNumber* scale = [dict objectForKey:@"StatusBarImageScale"])
 				statusBarImageScale = [scale floatValue];
@@ -393,8 +395,9 @@ static WeatherIconController* instance = nil;
 			NSLog(@"WI: Show Status Bar Temp: %d", showStatusBarTemp);
 	
 			// get the mappings for the theme
-			[mappings release];
+			NSDictionary* tmpMappings = mappings;
 			mappings = [[dict objectForKey:@"Mappings"] retain];
+			[tmpMappings release];
 		}
 	}	
 
@@ -519,11 +522,14 @@ qualifiedName:(NSString *)qName
 {
 	if ([elementName isEqualToString:@"yweather:astronomy"] || [elementName isEqualToString:@"astronomy"])
 	{
-		[sunrise release];
-		[sunset release];
+		NSString* tmpSunrise = sunrise;
+		NSString* tmpSunset = sunset;
 
 		sunrise = [[attributeDict objectForKey:@"sunrise"] retain];
 		sunset = [[attributeDict objectForKey:@"sunset"] retain];
+
+		[tmpSunrise release];
+		[tmpSunset release];
 
 		NSLog(@"WI: Sunrise: %@", sunrise);
 		NSLog(@"WI: Sunset: %@", sunset);
@@ -544,15 +550,18 @@ qualifiedName:(NSString *)qName
 	{
 		if (useLocalTime)
 		{
-			[localWeatherTime release];
+			NSDate* tmp = localWeatherTime;
 			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
 			localWeatherTime = [[NSDate dateWithTimeIntervalSince1970:timestamp] retain];
+			[tmp release];
 		}
 	}
 	else if (showFeelsLike && ([elementName isEqualToString:@"yweather:wind"] || [elementName isEqualToString:@"wind"]))
 	{
-		[temp release];
+		NSString* tmp = temp;
 		temp = [[attributeDict objectForKey:@"chill"] retain];
+		[tmp release];
+
 		[currentCondition setValue:[NSNumber numberWithInt:[temp intValue]] forKey:@"temp"];
 		NSLog(@"WI: Temp: %@", temp);
 	}
@@ -624,14 +633,17 @@ qualifiedName:(NSString *)qName
 	{
 		if (!showFeelsLike)
 		{
-			[temp release];
+			NSString* tmp = temp;
 			temp = [[attributeDict objectForKey:@"temp"] retain];
+			[tmp release];
+
 			[currentCondition setValue:[NSNumber numberWithInt:[temp intValue]] forKey:@"temp"];
 			NSLog(@"WI: Temp: %@", temp);
 		}
 
-		[code release];
+		NSString* tmp = code;
 		code = [[attributeDict objectForKey:@"code"] retain];
+		[tmp release];
 		[currentCondition setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
 
 		NSString* desc = [attributeDict objectForKey:@"text"];
@@ -639,15 +651,17 @@ qualifiedName:(NSString *)qName
 
 		NSLog(@"WI: Code: %@", code);
 
-		[lastUpdateTime release];
+		NSDate* tmpDate = lastUpdateTime;
 		lastUpdateTime = [[NSDate date] retain];
+		[tmpDate release];
 		NSLog(@"WI: Last Update Time: %@", lastUpdateTime);
 
 		if (!useLocalTime)
 		{
-			[localWeatherTime release];
 			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
+			tmpDate = localWeatherTime;
 			localWeatherTime = [[NSDate dateWithTimeIntervalSince1970:timestamp] retain];
+			[tmpDate release];
 		}
 		NSLog(@"WI: Local Weather Time: %@", localWeatherTime);
 	}
@@ -655,14 +669,18 @@ qualifiedName:(NSString *)qName
 	{
 		if (!showFeelsLike)
 		{
-			[temp release];
+			NSString* tmp = temp;
 			temp = [[attributeDict objectForKey:@"temp"] retain];
+			[tmp release];
+
 			[currentCondition setValue:[NSNumber numberWithInt:[temp intValue]] forKey:@"temp"];
 			NSLog(@"WI: Temp: %@", temp);
 		}
 
-		[code release];
+		NSString* tmp = code;
 		code = [[attributeDict objectForKey:@"code"] retain];
+		[tmp release];
+
 		[currentCondition setValue:[NSNumber numberWithInt:[code intValue]] forKey:@"code"];
 
 		NSString* desc = [attributeDict objectForKey:@"text"];
@@ -670,11 +688,12 @@ qualifiedName:(NSString *)qName
 
 		NSLog(@"WI: Code: %@", code);
 
-		[lastUpdateTime release];
+		NSDate* tmpDate = lastUpdateTime;
 		lastUpdateTime = [[NSDate date] retain];
+		[tmpDate release];
 		NSLog(@"WI: Last Update Time: %@", lastUpdateTime);
 
-		[localWeatherTime release];
+		tmpDate = localWeatherTime;
 		if (useLocalTime)
 		{
 			localWeatherTime = [lastUpdateTime retain];
@@ -687,6 +706,8 @@ qualifiedName:(NSString *)qName
 			[df setDateFormat:@"EEE, dd MMM yyyy hh:mm a"];
 			localWeatherTime = [[df dateFromString:weatherDate] retain];
 		}
+		[tmpDate release];
+
 		NSLog(@"WI: Local Weather Time: %@", localWeatherTime);
 	}
 }
@@ -698,21 +719,24 @@ qualifiedName:(NSString *)qName
 {
 	if (useLocalTime && [elementName isEqualToString:@"geo:lat"])
 	{
-		[latitude release];
+		NSString* tmp = latitude;
 		latitude = [parserContent retain];
+		[tmp release];
 		NSLog(@"WI: Latitude: %@", latitude);
 	}
 	else if (useLocalTime && [elementName isEqualToString:@"geo:long"])
 	{
-		[longitude release];
+		NSString* tmp = longitude;
 		longitude = [parserContent retain];
+		[tmp release];
 		NSLog(@"WI: Longitude: %@", longitude);
 	}
 	else if ([elementName isEqualToString:@"offset"])
 	{
 		int offset = [parserContent intValue];
-		[timeZone release];
+		NSTimeZone* tmp = timeZone;
 		timeZone = [[NSTimeZone timeZoneForSecondsFromGMT:(offset * 3600)] retain];
+		[tmp release];
 		NSLog(@"WI: Local time zone: %@", timeZone);
 	}
 }
@@ -940,8 +964,7 @@ foundCharacters:(NSString *)string
 		iconPath = [self findWeatherImagePath:@"weather"];
 	[currentCondition setValue:iconPath forKey:@"icon"];
 
-	[currentPrefs setObject:currentCondition forKey:@"CurrentCondition"];
-	[currentPrefs writeToFile:prefsPath atomically:YES];
+	[currentCondition writeToFile:conditionPath atomically:YES];
 
 	// release the temp data to save memory
 	[self releaseTempInfo];
@@ -1031,8 +1054,10 @@ foundCharacters:(NSString *)string
 	}
 
 	failedCount = 0;
-	[nextRefreshTime release];
+
+	NSDate* tmpDate = nextRefreshTime;
 	nextRefreshTime = [[NSDate dateWithTimeIntervalSinceNow:refreshInterval] retain];
+	[tmpDate release];
 
 	NSLog(@"WI: Next refresh time: %@", nextRefreshTime);
 	return success;
@@ -1062,8 +1087,9 @@ foundCharacters:(NSString *)string
 - (void) setNeedsRefresh
 {
 	if (debug) NSLog(@"WI:Debug: Marking for refresh.");
-	[nextRefreshTime release];
+	NSDate* tmpDate = nextRefreshTime;
 	nextRefreshTime = [[NSDate date] retain];
+	[tmpDate release];
 }
 
 - (void) refreshNow

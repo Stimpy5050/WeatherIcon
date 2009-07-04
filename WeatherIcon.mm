@@ -12,6 +12,7 @@
 #import "WeatherIconSettings.h"
 #import <SpringBoard/SBIcon.h>
 #import <SpringBoard/SBIconList.h>
+#import <SpringBoard/SBTelephonyManager.h>
 #import <SpringBoard/SBIconController.h>
 #import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SBStatusBar.h>
@@ -63,7 +64,14 @@ static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 
 	// refresh the weather model
 	BOOL refresh = !self.dimmed;
-	if (!refresh)
+	if (refresh)
+	{
+		Class cls = objc_getClass("SBTelephonyManager");
+		SBTelephonyManager* mgr = [cls sharedTelephonyManager];
+		NSLog(@"WI: Telephony: %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists);
+		refresh = (!mgr.inCall && !mgr.incomingCallExists && !mgr.activeCallExists);
+	}
+	else
 	{
 		// check AC
 		Class cls = objc_getClass("SBUIController");
@@ -71,6 +79,7 @@ static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 		refresh = [sbui isOnAC];
 	}
 
+	NSLog(@"WI: Refreshing? %d", refresh);
 	if (refresh)
 		[_controller refresh];
 }
@@ -79,6 +88,8 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 {
 	// do the unscatter
 	[self wi_unscatter:b startTime:time];
+
+	NSLog(@"WI: Refreshing on unscatter.");
 
 	// refresh the weather model
 	[_controller refresh];
@@ -162,7 +173,7 @@ static void updateWeatherView(SBStatusBarContentView* view)
 
 MSHook(void, reflowContentViewsNow, SBStatusBarContentsView* self, SEL sel)
 {	
-	NSLog(@"WI: reflowContentViewsNow");
+//	NSLog(@"WI: reflowContentViewsNow");
 	_reflowContentViewsNow(self, sel);
 	updateWeatherView(self);
 }
