@@ -58,20 +58,28 @@ static SBStatusBarContentView* _sb1;
 -(BOOL) isVisible;
 @end
 
+static void refreshController(BOOL now)
+{
+	Class cls = objc_getClass("SBTelephonyManager");
+	SBTelephonyManager* mgr = [cls sharedTelephonyManager];
+//	NSLog(@"WI: Telephony: %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists);
+	if (!mgr.inCall && !mgr.incomingCallExists && !mgr.activeCallExists && !mgr.outgoingCallExists)
+	{
+		if (now)
+			[_controller refreshNow];
+		else
+			[_controller refresh];
+	}
+}
+
 static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 {
 	[self wi_updateInterface];
 
 	// refresh the weather model
 	BOOL refresh = !self.dimmed;
-	if (refresh)
-	{
-		Class cls = objc_getClass("SBTelephonyManager");
-		SBTelephonyManager* mgr = [cls sharedTelephonyManager];
-//		NSLog(@"WI: Telephony: %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists);
-		refresh = (!mgr.inCall && !mgr.incomingCallExists && !mgr.activeCallExists);
-	}
-	else
+
+	if (!refresh)
 	{
 		// check AC
 		Class cls = objc_getClass("SBUIController");
@@ -81,7 +89,7 @@ static void $SBAwayView$updateInterface(SBAwayView<WeatherIcon> *self, SEL sel)
 
 //	NSLog(@"WI: Refreshing? %d", refresh);
 	if (refresh)
-		[_controller refresh];
+		refreshController(false);
 }
 
 static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SEL sel, BOOL b, double time) 
@@ -92,7 +100,7 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 //	NSLog(@"WI: Refreshing on unscatter.");
 
 	// refresh the weather model
-	[_controller refresh];
+	refreshController(false);
 }
 
 static id weatherIcon(SBIcon *self, SEL sel) 
@@ -237,7 +245,7 @@ static void $SBApplication$deactivated(SBApplication<WeatherIcon> *self, SEL sel
 	    [_controller isWeatherIcon:self.displayIdentifier])
 	{
 		// refresh the weather model
-		[_controller refreshNow];
+		refreshController(true);
 	}
 
 	if ([self.displayIdentifier isEqualToString:@"com.apple.Preferences"])

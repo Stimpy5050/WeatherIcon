@@ -63,7 +63,7 @@ clean:
 		rm -f *.o $(Target) WeatherIconSettings
 		rm -rf package
 
-package:	$(Target) WeatherIconSettings 
+package:	$(Target) WeatherIconSettings WeatherIconPlugin
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
@@ -75,6 +75,8 @@ package:	$(Target) WeatherIconSettings
 	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
+	cp -r WeatherIconPlugin.bundle package/weathericon/Library/LockInfo/Plugins
+	cp WeatherIconPlugin package/weathericon/Library/LockInfo/Plugins/WeatherIconPlugin.bundle
 	cp *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf

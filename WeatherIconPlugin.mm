@@ -1,8 +1,10 @@
-#include <substrate.h>
 #include <Foundation/Foundation.h>
-#include <JSON/JSON.h>
 #include "WeatherIconController.h"
-#include "PluginDelegate.h"
+
+@protocol PluginDelegate 
+-(void) setPreferences:(NSDictionary*) preferences;
+-(NSDictionary*) data;
+@end
 
 @interface WeatherIconPlugin : NSObject <PluginDelegate>
 {
