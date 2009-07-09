@@ -100,7 +100,8 @@ static void $SBIconController$unscatter$(SBIconController<WeatherIcon> *self, SE
 //	NSLog(@"WI: Refreshing on unscatter.");
 
 	// refresh the weather model
-	refreshController(false);
+	if (_controller.icon == nil)
+		refreshController(false);
 }
 
 static id weatherIcon(SBIcon *self, SEL sel) 
