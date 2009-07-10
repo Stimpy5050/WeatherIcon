@@ -77,6 +77,7 @@
 - (void)setNeedsRefresh;
 - (void)refresh;
 - (void)refreshNow;
+- (NSDate*)lastUpdateTime;
 - (BOOL)showStatusBarWeather;
 - (UIImage*)icon;
 - (UIImage*)statusBarIndicator:(int) mode;

@@ -126,6 +126,11 @@ static WeatherIconController* instance = nil;
 	return bundleIdentifier;
 }
 
+- (NSDate*) lastUpdateTime
+{
+	return lastUpdateTime;
+}
+
 - (BOOL) needsRefresh
 {
         NSDate* now = [NSDate date];
@@ -853,7 +858,7 @@ foundCharacters:(NSString *)string
 	return indicator;
 }
 
-- (void) updateIcon
+- (UIImage*) createIcon
 {
 	UIImage* bgIcon = [self findWeatherImage:@"weatherbg"];
 	UIImage* weatherImage = [self findWeatherImage:@"weather"];
@@ -878,11 +883,17 @@ foundCharacters:(NSString *)string
 	NSString* style = [NSString stringWithFormat:(night ? tempStyleNight : tempStyle), (int)size.width];
        	[t drawAtPoint:CGPointMake(0, 0) withStyle:style];
 
-	UIImage* tmpIcon = weatherIcon;
-	weatherIcon = [UIGraphicsGetImageFromCurrentImageContext() retain];
-	[tmpIcon release];
-
+	UIImage* icon = UIGraphicsGetImageFromCurrentImageContext();
 	UIGraphicsEndImageContext();
+
+	return icon;
+}
+
+- (void) updateIcon
+{
+	UIImage* tmpIcon = weatherIcon;
+	weatherIcon = [[self createIcon] retain];
+	[tmpIcon release];
 
 	SBIconController* iconController = [$SBIconController sharedInstance];
 	if (weatherIcon != nil && iconController)
@@ -1114,6 +1125,12 @@ foundCharacters:(NSString *)string
 
 - (UIImage*) icon
 {
+	if (weatherIcon == nil)
+	{
+		NSLog(@"WI: Creating temporary icon.");
+		return [self createIcon];
+	}
+
 	NSLog(@"WI: returning %@", weatherIcon);
 	return weatherIcon;
 }
