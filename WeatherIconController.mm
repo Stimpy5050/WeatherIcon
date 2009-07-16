@@ -903,16 +903,25 @@ foundCharacters:(NSString *)string
 	        // now force the icon to refresh
 	        if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
 		{
+			NSLog(@"WI: Loading icon model...");
 			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:bundleIdentifier])
 			{
+				NSLog(@"WI: Loading application icon...");
 		        	[model reloadIconImageForDisplayIdentifier:bundleIdentifier];
 	
+				NSLog(@"WI: Loading icon cache...");
 			        if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
+				{
 					if ([cache respondsToSelector:@selector(removeImageForKey:)])
+					{		
+						NSLog(@"WI: Removing icon from cache...");
 						[cache removeImageForKey:bundleIdentifier];
+					}
+				}
 
 				if (UIImageView* imageView = MSHookIvar<UIImageView*>(applicationIcon, "_image"))
 				{
+					NSLog(@"WI: Resetting icon image...");
 					imageView.bounds = CGRectMake(0, 0, weatherIcon.size.width, weatherIcon.size.height);
 					imageView.image = weatherIcon;
 					[imageView setNeedsDisplay];

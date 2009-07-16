@@ -26,7 +26,7 @@ CFLAGS= -I$(SDK)/var/include \
 
 Target=WeatherIcon.dylib
 
-all:	$(Target) WeatherIconSettings
+all:	package
 
 deploy: 	$(Target) WeatherIconSettings WeatherIconPlugin
 		chmod 755 $(Target)
@@ -52,7 +52,7 @@ WeatherIconPlugin: WeatherIconPlugin.mm
 		$(CPP) $(CFLAGS) $(LDFLAGS) -bundle -o $@ $(filter %.mm,$^)
 		ldid -S WeatherIconPlugin
 
-$(Target):	WeatherIconController.o WeatherIcon.o
+$(Target):	Tweak.mm
 		$(CC) $(CFLAGS) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
 
