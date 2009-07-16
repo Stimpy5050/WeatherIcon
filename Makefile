@@ -28,45 +28,30 @@ Target=WeatherIcon.dylib
 
 all:	package
 
-deploy: 	$(Target) WeatherIconSettings WeatherIconPlugin
-		chmod 755 $(Target)
-		chmod 755 WeatherIconSettings
-		rm -f /Library/MobileSubstrate/DynamicLibraries/$(Target)
-		cp $(Target) /Library/MobileSubstrate/DynamicLibraries/
-		cp *.plist /Library/MobileSubstrate/DynamicLibraries/
-		cp Preferences/* /Library/PreferenceLoader/Preferences
-		cp -r WeatherIconSettings.bundle /System/Library/PreferenceBundles
-		cp WeatherIconSettings /System/Library/PreferenceBundles/WeatherIconSettings.bundle
-		cp -r WeatherIconPlugin.bundle /Library/LockInfo/Plugins
-		rm -f /Library/LockInfo/Plugins/WeatherIconPlugin.bundle/WeatherIconPlugin
-		cp WeatherIconPlugin /Library/LockInfo/Plugins/WeatherIconPlugin.bundle
-
-install:	deploy
-		restart
-
-WeatherIconSettings: WeatherIconSettings.mm 
-		$(CPP) $(CFLAGS) $(LDFLAGS) -bundle -o $@ $(filter %.mm,$^)
+WeatherIconSettings: WeatherIconSettings.o
+		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S WeatherIconSettings
 
-WeatherIconPlugin: WeatherIconPlugin.mm 
-		$(CPP) $(CFLAGS) $(LDFLAGS) -bundle -o $@ $(filter %.mm,$^)
+WeatherIconPlugin: WeatherIconPlugin.o
+		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S WeatherIconPlugin
 
-$(Target):	Tweak.mm
-		$(CC) $(CFLAGS) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
+$(Target):	Tweak.o
+		$(LD) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
 
 %.o:	%.mm
 		$(CPP) -c $(CFLAGS) $< -o $@
 
 clean:
-		rm -f *.o $(Target) WeatherIconSettings
+		rm -f *.o $(Target) WeatherIconSettings WeatherIconPlugin
 		rm -rf package
 
 package:	$(Target) WeatherIconSettings WeatherIconPlugin
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
+	mkdir -p package/weathericon/Library/Themes
 	mkdir -p package/weathericon/System/Library/PreferenceBundles
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
 	mkdir -p package/weathericon/Library/LockInfo/Plugins
@@ -75,6 +60,7 @@ package:	$(Target) WeatherIconSettings WeatherIconPlugin
 	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
+	cp -r LockInfo\ WeatherIcon\ \(Matte\).theme package/weathericon/Library/Themes
 	cp -r WeatherIconPlugin.bundle package/weathericon/Library/LockInfo/Plugins
 	cp WeatherIconPlugin package/weathericon/Library/LockInfo/Plugins/WeatherIconPlugin.bundle
 	cp *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
