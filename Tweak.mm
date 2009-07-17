@@ -320,6 +320,17 @@ static WeatherIconController* instance = nil;
 	return true;
 }
 
+- (BOOL) showWeatherBadge
+{
+	if (NSNumber* n = [self.theme objectForKey:@"ShowWeatherBadge"])
+		return [n boolValue];
+
+	if (NSNumber* v = [self.preferences objectForKey:@"ShowWeatherBadge"])
+		return [v boolValue];
+
+	return false;
+}
+
 - (BOOL) showStatusBarImage
 {
 	if (NSNumber* n = [self.theme objectForKey:@"ShowStatusBarImage"])
@@ -691,6 +702,18 @@ foundCharacters:(NSString *)string
 					imageView.image = self.weatherIcon;
 					[imageView setNeedsDisplay];
 				}
+
+				if (self.showWeatherBadge)
+				{
+					[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
+				}
+				else
+				{
+			        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
+			        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
+							if ([badgeStr hasSuffix:@"\u00B0"])
+								[applicationIcon setBadge:nil];
+				}
 			}
 		}
 
@@ -876,6 +899,7 @@ static Class $SBTelephonyManager;
 static WeatherIconController* _controller;
 static SBStatusBarContentView* _sb0;
 static SBStatusBarContentView* _sb1;
+static NSTimeInterval lastPrefsUpdate = 0;
 
 @interface SBStatusBarContentView3 : SBStatusBarContentView
 -(BOOL) showOnLeft;
@@ -1063,12 +1087,33 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 {
 	_deactivated(self, sel);
 
+	BOOL refresh = false;
+
+	if ([self.displayIdentifier isEqualToString:@"com.apple.Preferences"])
+	{
+		NSFileManager* fm = [NSFileManager defaultManager];
+                if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traverseLink:true])
+                {
+                        if (NSDate* modDate = [attrs objectForKey:NSFileModificationDate])
+                        {
+                                if ([modDate timeIntervalSinceReferenceDate] > lastPrefsUpdate)
+                                {
+					lastPrefsUpdate = [modDate timeIntervalSinceReferenceDate];
+					refresh = true;
+				}
+			}
+		}
+	}
+
 	if ([self.displayIdentifier isEqualToString:@"com.apple.weather"] ||
 	    [_controller isWeatherIcon:self.displayIdentifier])
 	{
 		// refresh the weather model
-		refreshController(true);
+		refresh = true;
 	}
+
+	if (refresh)
+		refreshController(true);
 }
 
 MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app) 
