@@ -6,6 +6,8 @@
 -(NSDictionary*) data;
 @end
 
+static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
+
 @interface WeatherIconPlugin : NSObject <PluginDelegate>
 {
 	double lastUpdate;
@@ -21,23 +23,23 @@
 
 -(NSDictionary*) data
 {
-	NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
+	NSDate* modDate = nil;
 	NSFileManager* fm = [NSFileManager defaultManager];
 	if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traverseLink:true])
-		if (NSDate* modDate = [attrs objectForKey:NSFileModificationDate])
+		if (modDate = [attrs objectForKey:NSFileModificationDate])
 			if ([modDate timeIntervalSinceReferenceDate] <= lastUpdate)
 				return nil;
 
-	NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:prefsPath];
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:1];
 
-	if (current != nil)
+	if (NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:prefsPath])
+	{
 		[dict setObject:current forKey:@"weather"];
+		lastUpdate = (modDate == nil ? lastUpdate : [modDate timeIntervalSinceReferenceDate]);
+	}
 
 	[dict setObject:self.preferences forKey:@"preferences"];
-	lastUpdate = [NSDate timeIntervalSinceReferenceDate];
 
-//	NSLog(@"WI: LockInfo: %@", dict);
 	return dict;
 }
 

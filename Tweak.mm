@@ -703,8 +703,7 @@ foundCharacters:(NSString *)string
 	self.statusBarIndicator = [self createIndicator:0];
 	self.statusBarIndicatorFSO = [self createIndicator:1];
 
-	SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController];
-	if (statusBarController)
+	if (SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController])
 	{
 		NSLog(@"WI: Refreshing indicator...");
 		if ([statusBarController respondsToSelector:@selector(showBatteryPercentageChanged)])
@@ -953,10 +952,11 @@ static void updateWeatherView(SBStatusBarContentsView* self)
 		SBStatusBarContentView* weatherView = (mode == 0 ? _sb0 : _sb1);
 		if (weatherView == nil)
 		{
+			NSLog(@"WI: Creating new weather indicator view for mode %d", mode);
 			Class sbClass = objc_getClass("SBStatusBarContentView");
 			weatherView = [[[sbClass alloc] initWithContentsView:self] autorelease];
 			weatherView.tag = -1;
-			[weatherView setAlpha:[$SBStatusBarContentsView contentAlphaForMode:mode]];
+			weatherView.alpha = [$SBStatusBarContentsView contentAlphaForMode:mode];
 			[weatherView setMode:mode];
 
 			UIImageView* iv = [[[UIImageView alloc] initWithImage:indicator] autorelease];
