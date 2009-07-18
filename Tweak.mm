@@ -702,18 +702,6 @@ foundCharacters:(NSString *)string
 					imageView.image = self.weatherIcon;
 					[imageView setNeedsDisplay];
 				}
-
-				if (self.showWeatherBadge)
-				{
-					[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
-				}
-				else
-				{
-			        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
-			        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
-							if ([badgeStr hasSuffix:@"\u00B0"])
-								[applicationIcon setBadge:nil];
-				}
 			}
 		}
 
@@ -756,6 +744,27 @@ foundCharacters:(NSString *)string
 	if (self.showStatusBarWeather)
 		[self updateIndicator];
 
+	if (SBIconController* iconController = [$SBIconController sharedInstance])
+	{
+		if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
+		{
+			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier])
+			{
+				if (self.showWeatherBadge)
+				{
+					[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
+				}
+				else
+				{
+			        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
+			        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
+							if ([badgeStr hasSuffix:@"\u00B0"])
+								[applicationIcon setBadge:nil];
+				}
+			}
+		}
+	}
+	
 	// save the current condition
 	NSString* iconPath = [self findWeatherImagePath:@"weatherstatus"];
 	if (iconPath == nil)
