@@ -41,6 +41,7 @@
 			<array>
 				<string>iPhone Weather</string>
 				<string>The Weather Channel</string>
+				<string>The Weather Channel Max</string>
 				<string>WeatherBug</string>
 				<string>WeatherBug Elite</string>
 				<string>AccuWeather.com</string>
@@ -57,6 +58,7 @@
 			<array>
 				<string>com.apple.weather</string>
 				<string>com.weather.TWC</string>
+				<string>com.yourcompany.TWCMax</string>
 				<string>com.aws.weatherbug.pro</string>
 				<string>com.aws.weatherbug.elite</string>
 				<string>com.yourcompany.TestWithCustomTabs</string>
