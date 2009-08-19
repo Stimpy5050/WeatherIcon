@@ -1,5 +1,4 @@
 #include <Foundation/Foundation.h>
-#include "WeatherIconController.h"
 
 @protocol PluginDelegate 
 -(void) setPreferences:(NSDictionary*) preferences;

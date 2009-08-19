@@ -1,6 +1,5 @@
 #include <objc/runtime.h>
 #import "WeatherIconSettings.h"
-#import "WeatherIconController.h"
 #import <Foundation/Foundation.h>
 #import <SpringBoard/SBUIController.h>
 #import <UIKit/UIApplication.h>

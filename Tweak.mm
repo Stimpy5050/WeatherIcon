@@ -1001,7 +1001,8 @@ static void updateWeatherView(SBStatusBarContentsView* self)
 				_sb1 = [weatherView retain];
 		}
 
-		float x = findStart(self, "_batteryView", "_showBatteryView", 480);
+		BOOL landscape = (sb.orientation == 90 || sb.orientation == -90);
+		float x = findStart(self, "_batteryView", "_showBatteryView", (landscape ? 480 : 320));
 		x = findStart(self, "_batteryPercentageView", "_showBatteryPercentageView", x);
 //		x = findStart(self, "_bluetoothView", "_showBluetoothView", x);
 //		x = findStart(self, "_bluetoothBatteryView", "_showBluetoothBatteryView", x);
