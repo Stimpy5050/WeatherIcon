@@ -69,6 +69,7 @@
 
 static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $SBIconController = objc_getClass("SBIconController");
+static Class $SBImageCache = objc_getClass("SBImageCache");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 static NSString* conditionPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
@@ -688,22 +689,17 @@ foundCharacters:(NSString *)string
 	        // now force the icon to refresh
 	        if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
 		{
-			NSLog(@"WI: Loaded model: %@", model);
 			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier])
 			{
-				NSLog(@"WI: Loaded app icon: %@", applicationIcon);
 		        	[model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
 	
-				NSLog(@"WI: Looking for cache...");
-			        if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
-					if ([cache respondsToSelector:@selector(removeImageForKey:)])
-						[cache removeImageForKey:self.bundleIdentifier];
-
-				NSLog(@"WI: Cache cleared.");
+				if ($SBImageCache != nil)
+			        	if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
+						if ([cache respondsToSelector:@selector(removeImageForKey:)])
+							[cache removeImageForKey:self.bundleIdentifier];
 
 				if (UIImageView* imageView = MSHookIvar<UIImageView*>(applicationIcon, "_image"))
 				{
-					NSLog(@"WI: Loaded image: %@", imageView);
 					imageView.bounds = CGRectMake(0, 0, self.weatherIcon.size.width, self.weatherIcon.size.height);
 					imageView.image = self.weatherIcon;
 					[imageView setNeedsDisplay];
@@ -1148,6 +1144,16 @@ MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app)
 	return self;
 }
 
+MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOOL small) 
+{
+	if (!small && [icon.displayIdentifier isEqualToString:_controller.bundleIdentifier])
+	{
+		return _controller.weatherIcon;
+	}
+
+	return _getCachedImagedForIcon(self, sel, icon, small);
+}
+
 MSHook(id, initWithWebClip, SBBookmarkIcon *self, SEL sel, id clip) 
 {
 	self = _initWithWebClip(self, sel, clip);
@@ -1183,6 +1189,7 @@ extern "C" void TweakInit() {
 	objc_registerClassPair($WIBookmarkIcon);
 
 	Class $SBAwayView = objc_getClass("SBAwayView");
+	Class $SBIconModel = objc_getClass("SBIconModel");
 	Class $SBIconController = objc_getClass("SBIconController");
 	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
 	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
@@ -1203,6 +1210,7 @@ extern "C" void TweakInit() {
 	Hook(SBBookmarkIcon, initWithWebClip:, initWithWebClip);
 	Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
 	Hook(SBAwayView, updateInterface, updateInterface);
+	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
 
 	// only hook these in 3.0
 	if ($SBStatusBarIndicatorsView == nil)
