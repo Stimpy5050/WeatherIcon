@@ -51,7 +51,6 @@ package:	$(Target) WeatherIconSettings WeatherIconPlugin
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
-	mkdir -p package/weathericon/Library/LockInfo
 	mkdir -p package/weathericon/System/Library/PreferenceBundles
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
 	mkdir -p package/weathericon/Library/LockInfo/Plugins
@@ -62,7 +61,6 @@ package:	$(Target) WeatherIconSettings WeatherIconPlugin
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
 	cp -r WeatherIconPlugin.bundle package/weathericon/Library/LockInfo/Plugins
 	cp WeatherIconPlugin package/weathericon/Library/LockInfo/Plugins/WeatherIconPlugin.bundle
-	cp -r LockInfo\ Matte\ WeatherIcon.theme/* package/weathericon/Library/LockInfo
 	cp *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
