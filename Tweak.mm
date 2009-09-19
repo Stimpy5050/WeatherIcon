@@ -1146,7 +1146,7 @@ MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app)
 
 MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOOL small) 
 {
-	if (!small && [icon.displayIdentifier isEqualToString:_controller.bundleIdentifier])
+	if (!small && [_controller isWeatherIcon:icon.displayIdentifier])
 	{
 		return _controller.weatherIcon;
 	}
