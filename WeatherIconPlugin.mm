@@ -143,7 +143,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-        return 2;
+        return 1;
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
@@ -160,12 +160,19 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	return v;
 }
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return 64;
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [weather objectForKey:@"forecast"];
+/*
 	if (indexPath.row == 0)
 	{
+*/
         	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:@"ForecastIconCell"];
 
 		if (fc == nil)
@@ -173,10 +180,15 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 			fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ForecastIconCell"] autorelease];
 			fc.backgroundColor = [UIColor blackColor];
 				
-			ForecastIconView* fcv = [[[ForecastIconView alloc] initWithFrame:CGRectMake(10, 0, 300, 35)] autorelease];
+			ForecastIconView* fcv = [[[ForecastIconView alloc] initWithFrame:CGRectMake(10, 0, 300, 34)] autorelease];
 			fcv.backgroundColor = [UIColor blackColor];
 			fcv.tag = 42;
 			[fc.contentView addSubview:fcv];
+
+			ForecastTempView* ftv = [[[ForecastTempView alloc] initWithFrame:CGRectMake(10, 32, 300, 30)] autorelease];
+			ftv.backgroundColor = [UIColor blackColor];
+			ftv.tag = 43;
+			[fc.contentView addSubview:ftv];
 		}
 
 		ForecastIconView* fcv = [fc viewWithTag:42];
@@ -188,7 +200,11 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		}
 		fcv.icons = arr;
 
+		ForecastTempView* ftv = [fc viewWithTag:43];
+		ftv.forecast = [forecast copy];
+
 		return fc;
+/*
 	}
 	else
 	{
@@ -209,6 +225,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 		return ft;
         }
+*/
 }
 
 -(NSDictionary*) data
