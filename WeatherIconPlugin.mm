@@ -74,6 +74,39 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 @end
 
+@interface HeaderView : UIView
+
+@property (nonatomic, retain) UIImage* icon;
+@property (nonatomic, retain) NSString* city;
+@property (nonatomic) int temp;
+@property (nonatomic, retain) NSString* condition;
+
+@end
+
+@implementation HeaderView
+
+@synthesize icon, city, temp, condition;
+
+-(void) drawRect:(struct CGRect) rect
+{
+	NSLog(@"LI:WeatherIcon: Drawing section header");
+
+        [self.icon drawInRect:CGRectMake(0, 0, 23, 23)];
+
+        NSString* str = [NSString stringWithFormat:@"%@: %d\u00B0", self.city, self.temp];
+        [[UIColor blackColor] set];
+	[str drawInRect:CGRectMake(23, 3, 170, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
+        [[UIColor lightGrayColor] set];
+	[str drawInRect:CGRectMake(23, 2, 170, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
+
+        [[UIColor blackColor] set];
+	[self.condition drawInRect:CGRectMake(170, 4, 145, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        [[UIColor lightGrayColor] set];
+	[self.condition drawInRect:CGRectMake(170, 3, 145, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+}
+
+@end
+
 @interface WeatherIconPlugin : NSObject <PluginDelegate, UITableViewDataSource>
 {
 	double lastUpdate;
@@ -82,13 +115,12 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 @property (nonatomic, retain) NSMutableDictionary* iconCache;
 @property (nonatomic, retain) NSDictionary* dataCache;
 @property (nonatomic, retain) NSDictionary* preferences;
-@property (nonatomic, retain) UIView* sectionHeaderView;
 
 @end
 
 @implementation WeatherIconPlugin
 
-@synthesize preferences, dataCache, iconCache, sectionHeaderView;
+@synthesize preferences, dataCache, iconCache;
 
 -(id) init
 {
@@ -116,40 +148,20 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-	if (self.sectionHeaderView == nil)
-	{
-		NSLog(@"LI:WeatherIcon: Creating section header");
-		UIView* c = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
-        	c.backgroundColor = [UIColor blackColor];
+	UIView* c = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
+	c.backgroundColor = [UIColor blackColor];
 
-		NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-       		UIImageView* ic = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 23, 23)] autorelease];
-		ic.image = [self loadIcon:[weather objectForKey:@"icon"]];
-		[c addSubview:ic];
+	HeaderView* v = [[[HeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
+	v.backgroundColor = [UIColor clearColor];
 
-	        UILabel* l = [[[UILabel alloc] initWithFrame:CGRectMake(ic.frame.size.width, 0, 170, 22)] autorelease];
-	        l.font = [UIFont boldSystemFontOfSize:14];
-	        l.textColor = [UIColor lightGrayColor];
-	        l.shadowColor = [UIColor blackColor];
-	        l.shadowOffset = CGSizeMake(0, 1);
-	        l.backgroundColor = [UIColor clearColor];
-	      	l.text = [NSString stringWithFormat:@"%@: %@\u00B0", [weather objectForKey:@"city"], [weather objectForKey:@"temp"]];;
-	        [c addSubview:l];
-	
-	        l = [[[UILabel alloc] initWithFrame:CGRectMake(170, 0, 145, 21)] autorelease];
-		l.textAlignment = UITextAlignmentRight;
-	        l.font = [UIFont boldSystemFontOfSize:12];
-	        l.textColor = [UIColor lightGrayColor];
-	        l.shadowColor = [UIColor blackColor];
-	        l.shadowOffset = CGSizeMake(0, 1);
-	        l.backgroundColor = [UIColor clearColor];
-		l.text = [weather objectForKey:@"description"];
-	        [c addSubview:l];
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	v.icon = [self loadIcon:[weather objectForKey:@"icon"]];
+	v.city = [weather objectForKey:@"city"];
+	v.temp = [[weather objectForKey:@"temp"] intValue];
+	v.condition = [weather objectForKey:@"description"];
 
-		self.sectionHeaderView = c;
-	}
-	
-        return self.sectionHeaderView;
+	[c addSubview:v];
+	return c;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -223,7 +235,6 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	[dict setObject:self.preferences forKey:@"preferences"];
 
 	self.dataCache = dict;
-	self.sectionHeaderView = nil;
 
 	return dict;
 }
