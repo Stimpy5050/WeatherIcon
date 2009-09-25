@@ -148,9 +148,6 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-	UIView* c = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
-	c.backgroundColor = [UIColor blackColor];
-
 	HeaderView* v = [[[HeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
 	v.backgroundColor = [UIColor clearColor];
 
@@ -160,8 +157,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	v.temp = [[weather objectForKey:@"temp"] intValue];
 	v.condition = [weather objectForKey:@"description"];
 
-	[c addSubview:v];
-	return c;
+	return v;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
