@@ -160,10 +160,10 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	if (fc == nil)
 	{
 		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ForecastCell"] autorelease];
-		fc.backgroundColor = [UIColor blackColor];
+		fc.backgroundColor = [UIColor clearColor];
 		
 		ForecastView* fcv = [[[ForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 85)] autorelease];
-		fcv.backgroundColor = [UIColor blackColor];
+		fcv.backgroundColor = [UIColor clearColor];
 		fcv.tag = 42;
 		[fc.contentView addSubview:fcv];
 	}
