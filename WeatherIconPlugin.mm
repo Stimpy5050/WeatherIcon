@@ -117,7 +117,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 {
 	UIImage* icon = [self.iconCache objectForKey:path];
 
-	if (icon == nil)
+	if (path != nil && icon == nil)
 	{
 		icon = [UIImage imageWithContentsOfFile:path];
 		[self.iconCache setValue:icon forKey:path];
@@ -147,7 +147,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return 85;
+	return 86;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -162,14 +162,16 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ForecastCell"] autorelease];
 		fc.backgroundColor = [UIColor clearColor];
 		
-		ForecastView* fcv = [[[ForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 85)] autorelease];
+		ForecastView* fcv = [[[ForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 86)] autorelease];
 		fcv.backgroundColor = [UIColor clearColor];
 		fcv.tag = 42;
 		[fc.contentView addSubview:fcv];
 	}
 
 	ForecastView* fcv = [fc viewWithTag:42];
-	fcv.forecast = [forecast copy];
+	NSArray* forecastCopy = [forecast copy];
+	fcv.forecast = forecastCopy;
+	[forecastCopy release];
 
 	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
 	for (int i = 0; i < forecast.count && i < 6; i++)

@@ -65,3 +65,11 @@ package:	$(Target) WeatherIconSettings WeatherIconPlugin
 	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/weathericon weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
+
+lockinfo: WeatherIconPlugin
+	mkdir -p package/lockinfo/DEBIAN
+	mkdir -p package/lockinfo/Library/
+	cp -r Themes package/lockinfo/Library/
+	cp lockinfo-control package/lockinfo/DEBIAN/control
+	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/lockinfo wili_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
