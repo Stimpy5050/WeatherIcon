@@ -36,9 +36,10 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		[[UIColor whiteColor] set];
 		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
-		UIImage* image = [self.icons objectAtIndex:i];
 		r = CGRectMake(rect.origin.x + ((width - 40) / 2) + (width * i), r.origin.y + r.size.height - 1, 40, 40);
-		[image drawInRect:r];
+		id image = [self.icons objectAtIndex:i];
+		if (image != [NSNull null])
+			[image drawInRect:r];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"high"]];
         	r = CGRectMake(rect.origin.x + (width * i), r.origin.y + r.size.height - 1, width, 12);
@@ -71,7 +72,8 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 {
 	NSLog(@"LI:WeatherIcon: Drawing section header");
 
-        [self.icon drawInRect:CGRectMake(0, 0, 23, 23)];
+	if (self.icon != nil)
+        	[self.icon drawInRect:CGRectMake(0, 0, 23, 23)];
 
 	NSString* city = self.city;
 	NSRange r = [city rangeOfString:@","];
@@ -113,9 +115,9 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	return [super init];
 }
 
--(UIImage*) loadIcon:(NSString*) path
+-(id) loadIcon:(NSString*) path
 {
-	UIImage* icon = [self.iconCache objectForKey:path];
+	id icon = [self.iconCache objectForKey:path];
 
 	if (path != nil && icon == nil)
 	{
@@ -177,7 +179,8 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	for (int i = 0; i < forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [forecast objectAtIndex:i];
-		[arr addObject:[self loadIcon:[day objectForKey:@"icon"]]];
+		UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+		[arr addObject:(icon == nil ? [NSNull null] : icon)];
 	}
 	fcv.icons = arr;
 
