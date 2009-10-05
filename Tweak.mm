@@ -60,6 +60,7 @@
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
 - (void)setNeedsRefresh;
+- (BOOL)isRefreshing;
 - (void)refresh;
 - (void)refreshNow;
 - (NSTimeInterval)lastUpdateTime;
@@ -135,7 +136,7 @@ static WeatherIconController* instance = nil;
 
 - (BOOL) needsRefresh
 {
-	return (self.nextRefreshTime > [NSDate timeIntervalSinceReferenceDate] ? false : !refreshing);
+	return (self.nextRefreshTime < [NSDate timeIntervalSinceReferenceDate]);
 }
 
 - (void) loadTheme
@@ -832,8 +833,6 @@ foundCharacters:(NSString *)string
 - (void) refreshInBackground
 {
 	// mark as refreshing
-	refreshing = true;
-
 	@try
 	{
 		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -855,6 +854,11 @@ foundCharacters:(NSString *)string
 	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate] - 1;
 }
 
+- (BOOL) isRefreshing
+{
+	return refreshing;
+}
+
 - (void) refreshNow
 {
 	[self setNeedsRefresh];
@@ -869,13 +873,26 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
+	@synchronized (self)
+	{
+		if (self.isRefreshing)
+			return;
+
+		refreshing = true;
+	}
+
 	if ((self.showWeatherIcon && !self.weatherIcon) || (self.showStatusBarWeather && !self.statusBarIndicator && !self.statusBarIndicatorFSO))
 		[self updateWeatherIcon];
 
 	if ([self needsRefresh])
-		[NSThread detachNewThreadSelector:@selector(refreshInBackground) toTarget:self withObject:nil];
+	{
+		[self performSelectorInBackground:@selector(refreshInBackground) withObject:nil];
+	}
 	else
+	{
 		NSLog(@"WI: Weather icon doesn't need refreshing right now: %d, %f, %f", refreshing, self.nextRefreshTime, [NSDate timeIntervalSinceReferenceDate]);
+		refreshing = false;
+	}
 }
 
 - (UIImage*) icon
@@ -936,7 +953,7 @@ static void refreshController(BOOL now)
 		NSLog(@"WI: No telephony manager.");
 	}
 
-	if (refresh)
+	if (refresh && !_controller.isRefreshing)
 	{
 		if (now)
 			[_controller refreshNow];
