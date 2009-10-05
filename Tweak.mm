@@ -64,6 +64,8 @@
 - (void)refresh;
 - (void)refreshNow;
 - (NSTimeInterval)lastUpdateTime;
+
+- (UIImage*)icon;
 - (UIImage*)statusBarIndicator:(int) mode;
 
 @end
@@ -1007,11 +1009,6 @@ MSHook(void, unscatter, SBIconController *self, SEL sel, BOOL b, double time)
 		refreshController(false);
 }
 
-static id weatherIcon(SBIcon *self, SEL sel) 
-{
-	return [_controller icon];
-}
-
 static float findStart(SBStatusBarContentsView* self, const char* varName, const char* visibleVarName, float currentStart)
 {
 	if (SBStatusBarContentView3* icon  = MSHookIvar<NSMutableArray*>(self, varName))
@@ -1197,7 +1194,7 @@ MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOO
 {
 	if (!small && [_controller isWeatherIcon:icon.displayIdentifier])
 	{
-		return _controller.weatherIcon;
+		return _controller.icon;
 	}
 
 	return _getCachedImagedForIcon(self, sel, icon, small);
@@ -1214,6 +1211,11 @@ MSHook(id, initWithWebClip, SBBookmarkIcon *self, SEL sel, id clip)
 	}
 
 	return self;
+}
+
+static id weatherIcon(SBIcon *self, SEL sel) 
+{
+	return _controller.icon;
 }
 
 #define Hook(cls, sel, imp) \
