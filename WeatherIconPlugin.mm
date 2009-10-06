@@ -26,6 +26,14 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	NSLog(@"LI:WeatherIcon: Redrawing temps...");
 	int width = (rect.size.width / 6);
 
+	double scale = 0.66;
+
+	NSBundle* bundle = [NSBundle mainBundle];
+	NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
+	if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
+		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
+			scale = n.doubleValue;
+
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
@@ -36,13 +44,24 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		[[UIColor whiteColor] set];
 		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
-		r = CGRectMake(rect.origin.x + ((width - 40) / 2) + (width * i), r.origin.y + r.size.height - 1, 40, 40);
 		id image = [self.icons objectAtIndex:i];
-		if (image != [NSNull null])
+		if (image == [NSNull null])
+		{
+			r.origin.y = r.origin.y + r.size.height - 1;
+			r.size.height = 4;
+		}
+		else
+		{
+			CGSize s = [image size];
+			s.width *= scale;
+			s.height *= scale;
+
+			r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), r.origin.y + r.size.height + 15 - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
+		}
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"high"]];
-        	r = CGRectMake(rect.origin.x + (width * i), r.origin.y + r.size.height - 1, width, 12);
+        	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 45), width, 12);
 		[[UIColor whiteColor] set];
 		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
@@ -73,7 +92,21 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	NSLog(@"LI:WeatherIcon: Drawing section header");
 
 	if (self.icon != nil)
-        	[self.icon drawInRect:CGRectMake(0, 0, 23, 23)];
+	{
+		double scale = 0.33;
+
+		NSBundle* bundle = [NSBundle mainBundle];
+		NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
+		if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
+			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
+				scale = n.doubleValue;
+
+		CGSize s = self.icon.size;
+		s.width *= scale;
+		s.height *= scale;
+
+        	[self.icon drawInRect:CGRectMake((rect.size.height / 2) - (s.width / 2), (rect.size.height / 2) - (s.height / 2), s.width, s.height)];
+	}
 
 	NSString* city = self.city;
 	NSRange r = [city rangeOfString:@","];
@@ -149,7 +182,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return 86;
+	return 77;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
