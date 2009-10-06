@@ -91,6 +91,8 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 {
 	NSLog(@"LI:WeatherIcon: Drawing section header");
 
+	CGSize s = CGSizeMake(23, 23);
+
 	if (self.icon != nil)
 	{
 		double scale = 0.33;
@@ -101,9 +103,8 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
 				scale = n.doubleValue;
 
-		CGSize s = self.icon.size;
-		s.width *= scale;
-		s.height *= scale;
+		s.width = self.icon.size.width * scale;
+		s.height = self.icon.size.height * scale;
 
         	[self.icon drawInRect:CGRectMake((rect.size.height / 2) - (s.width / 2), (rect.size.height / 2) - (s.height / 2), s.width, s.height)];
 	}
@@ -115,9 +116,9 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
         NSString* str = [NSString stringWithFormat:@"%@: %d\u00B0", city, self.temp];
         [[UIColor blackColor] set];
-	[str drawInRect:CGRectMake(23, 3, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
+	[str drawInRect:CGRectMake(s.width, 3, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
         [[UIColor lightGrayColor] set];
-	[str drawInRect:CGRectMake(23, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
+	[str drawInRect:CGRectMake(s.width, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
 
         [[UIColor blackColor] set];
 	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
