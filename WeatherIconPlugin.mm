@@ -40,8 +40,12 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [dayNames objectAtIndex:daycode.intValue];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 4, width, 11);
-		[[UIColor whiteColor] set];
+        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 5, width, 11);
+        	[[UIColor blackColor] set];
+		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+
+        	r.origin.y -= 1;
+        	[[UIColor colorWithRed:0.85 green:0.85 blue:0.85 alpha:1] set];
 		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
 		id image = [self.icons objectAtIndex:i];
@@ -61,15 +65,21 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		}
 
 		str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-//		str = [[day objectForKey:@"high"] stringValue];
-        	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 48), (width / 2), 11);
-		[[UIColor whiteColor] set];
+        	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 48) + 1, (width / 2), 11);
+        	[[UIColor blackColor] set];
+		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+
+        	r.origin.y -= 1;
+        	[[UIColor colorWithRed:0.85 green:0.85 blue:0.85 alpha:1] set];
 		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-//		str = [[day objectForKey:@"low"] stringValue];
-        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + (image == [NSNull null] ? 19 : 48), (width / 2), 11);
-		[[UIColor lightGrayColor] set];
+        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + (image == [NSNull null] ? 19 : 48) + 1, (width / 2), 11);
+        	[[UIColor blackColor] set];
+		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+
+        	r.origin.y -= 1;
+        	[[UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1] set];
 		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 }
