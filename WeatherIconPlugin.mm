@@ -56,19 +56,21 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 			s.width *= scale;
 			s.height *= scale;
 
-			r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), r.origin.y + r.size.height + 15 - (s.height / 2), s.width, s.height);
+			r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), r.origin.y + r.size.height + 18 - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
 		}
 
-		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"high"]];
-        	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 45), width, 12);
+		str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
+//		str = [[day objectForKey:@"high"] stringValue];
+        	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 48), (width / 2), 11);
 		[[UIColor whiteColor] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake(rect.origin.x + (width * i), r.origin.y + r.size.height + 2, width, 12);
+//		str = [[day objectForKey:@"low"] stringValue];
+        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + (image == [NSNull null] ? 19 : 48), (width / 2), 11);
 		[[UIColor lightGrayColor] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 }
 
@@ -115,9 +117,10 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
         NSString* str = [NSString stringWithFormat:@"%@: %d\u00B0", city, self.temp];
         [[UIColor blackColor] set];
-	[str drawInRect:CGRectMake(25, 3, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
+	int x = (self.icon == nil ? 5 : 24);
+	[str drawInRect:CGRectMake(x, 3, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
         [[UIColor lightGrayColor] set];
-	[str drawInRect:CGRectMake(25, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
+	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
 
         [[UIColor blackColor] set];
 	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
@@ -182,7 +185,17 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return 77;
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	NSArray* forecast = [weather objectForKey:@"forecast"];
+	BOOL hasIcon = false;
+
+	for (int i = 0; i < forecast.count && i < 6; i++)
+	{
+		NSDictionary* day = [forecast objectAtIndex:i];
+		hasIcon |= ([self loadIcon:[day objectForKey:@"icon"]] != nil);
+	}
+	
+	return (hasIcon ? 66 : 38);
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -197,7 +210,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ForecastCell"] autorelease];
 		fc.backgroundColor = [UIColor clearColor];
 		
-		ForecastView* fcv = [[[ForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 86)] autorelease];
+		ForecastView* fcv = [[[ForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 66)] autorelease];
 		fcv.backgroundColor = [UIColor clearColor];
 		fcv.tag = 42;
 		[fc.contentView addSubview:fcv];
