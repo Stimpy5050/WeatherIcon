@@ -1,12 +1,8 @@
+#include "PluginDelegate.h"
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
 
 static NSArray* dayNames = [[NSArray arrayWithObjects:@"SUN", @"MON", @"TUE", @"WED", @"THU", @"FRI", @"SAT", nil] retain];
-
-@protocol PluginDelegate 
--(void) setPreferences:(NSDictionary*) preferences;
--(NSDictionary*) data;
-@end
 
 static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
 
@@ -24,6 +20,23 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 -(void) drawRect:(struct CGRect) rect
 {
 	NSLog(@"LI:WeatherIcon: Redrawing temps...");
+
+	// find the tableview
+	LockInfoTableView* table;
+	UIView* view = self;
+	while (true)
+	{
+		view = view.superview;
+		if (view == nil)
+			break;	
+
+		if ([view isKindOfClass:[UITableView class]])
+		{
+			table = (LockInfoTableView*)view;
+			break;
+		}
+	}
+
 	int width = (rect.size.width / 6);
 
 	double scale = 0.66;
@@ -41,12 +54,12 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [dayNames objectAtIndex:daycode.intValue];
         	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 5, width, 11);
-        	[[UIColor blackColor] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[table.shadowColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[[UIColor colorWithRed:0.85 green:0.85 blue:0.85 alpha:1] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[table.summaryColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
 		id image = [self.icons objectAtIndex:i];
 		if (image == [NSNull null])
@@ -66,21 +79,22 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 		str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
         	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 48) + 1, (width / 2), 11);
-        	[[UIColor blackColor] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[table.shadowColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
         	r.origin.y -= 1;
-        	[[UIColor colorWithRed:0.85 green:0.85 blue:0.85 alpha:1] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[table.summaryColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
         	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + (image == [NSNull null] ? 19 : 48) + 1, (width / 2), 11);
-        	[[UIColor blackColor] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[table.shadowColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 
         	r.origin.y -= 1;
-        	[[UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1] set];
-		[str drawInRect:r withFont:[UIFont boldSystemFontOfSize:11] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[table.detailColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 }
 
