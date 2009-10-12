@@ -6,14 +6,14 @@ static NSArray* dayNames = [[NSArray arrayWithObjects:@"SUN", @"MON", @"TUE", @"
 
 static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
 
-@interface ForecastView : UIView
+@interface WIForecastView : UIView
 
 @property (nonatomic, retain) NSArray* icons;
 @property (nonatomic, retain) NSArray* forecast;
 
 @end
 
-@implementation ForecastView
+@implementation WIForecastView
 
 @synthesize forecast, icons;
 
@@ -22,7 +22,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	NSLog(@"LI:WeatherIcon: Redrawing temps...");
 
 	// find the tableview
-	LockInfoTableView* table;
+	LITableView* table;
 	UIView* view = self;
 	while (true)
 	{
@@ -32,7 +32,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 		if ([view isKindOfClass:[UITableView class]])
 		{
-			table = (LockInfoTableView*)view;
+			table = (LITableView*)view;
 			break;
 		}
 	}
@@ -100,7 +100,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 @end
 
-@interface HeaderView : UIView
+@interface WIHeaderView : UIView
 
 @property (nonatomic, retain) UIImage* icon;
 @property (nonatomic, retain) NSString* city;
@@ -109,7 +109,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 @end
 
-@implementation HeaderView
+@implementation WIHeaderView
 
 @synthesize icon, city, temp, condition;
 
@@ -154,7 +154,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 @end
 
-@interface WeatherIconPlugin : NSObject <PluginDelegate, UITableViewDataSource>
+@interface WeatherIconPlugin : NSObject <LIPluginDelegate, UITableViewDataSource>
 {
 	double lastUpdate;
 }
@@ -195,7 +195,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-	HeaderView* v = [[[HeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
+	WIHeaderView* v = [[[WIHeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
 	v.backgroundColor = [UIColor clearColor];
 
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
@@ -234,13 +234,13 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ForecastCell"] autorelease];
 		fc.backgroundColor = [UIColor clearColor];
 		
-		ForecastView* fcv = [[[ForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 66)] autorelease];
+		WIForecastView* fcv = [[[WIForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 66)] autorelease];
 		fcv.backgroundColor = [UIColor clearColor];
 		fcv.tag = 42;
 		[fc.contentView addSubview:fcv];
 	}
 
-	ForecastView* fcv = [fc viewWithTag:42];
+	WIForecastView* fcv = [fc viewWithTag:42];
 	NSArray* forecastCopy = [forecast copy];
 	fcv.forecast = forecastCopy;
 	[forecastCopy release];
@@ -253,6 +253,9 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		[arr addObject:(icon == nil ? [NSNull null] : icon)];
 	}
 	fcv.icons = arr;
+
+	// mark dirty
+	[fcv setNeedsDisplay];
 
 	return fc;
 }
