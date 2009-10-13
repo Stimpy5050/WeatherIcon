@@ -376,18 +376,18 @@ static WeatherIconController* instance = nil;
 	return self;
 }
 
-- (NSString*) mapImage:(NSString*) prefix
+- (NSString*) mapImage:(NSString*) prefix code:(NSString*) code night:(BOOL) night
 {
 	// no mappings
 	NSDictionary* mappings = self.mappings;
 	if (mappings == nil)
 		return nil;
 
-	NSString* suffix = (self.isNight ? @"_night" : @"_day");	
-	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, self.code, suffix]])
+	NSString* suffix = (night ? @"_night" : @"_day");	
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@%@", prefix, code, suffix]])
 		return mapped;
 
-	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, self.code]])
+	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, code]])
 		return mapped;
 
 	if (NSString* mapped = [mappings objectForKey:[NSString stringWithFormat:@"%@%@", prefix, suffix]])
@@ -414,7 +414,7 @@ static WeatherIconController* instance = nil;
 {
 	NSString* suffix = (night ? @"_night" : @"_day");	
 
-	if (NSString* mapped = [self mapImage:prefix])
+	if (NSString* mapped = [self mapImage:prefix code:code night:night])
 	{
 		prefix = mapped;
 	}
