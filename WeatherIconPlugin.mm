@@ -134,21 +134,35 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
         	[self.icon drawInRect:CGRectMake((rect.size.height / 2) - (s.width / 2), (rect.size.height / 2) - (s.height / 2), s.width, s.height)];
 	}
 
+	// find the tableview
+	LITableView* table;
+	UIView* view = self;
+	while (true)
+	{
+		view = view.superview;
+		if (view == nil)
+			break;	
+
+		if ([view isKindOfClass:[UITableView class]])
+		{
+			table = (LITableView*)view;
+			break;
+		}
+	}
+
 	NSString* city = self.city;
 	NSRange r = [city rangeOfString:@","];
 	if (r.location != NSNotFound)
 		city = [city substringToIndex:r.location];
 
         NSString* str = [NSString stringWithFormat:@"%@: %d\u00B0", city, self.temp];
-        [[UIColor blackColor] set];
+        [table.shadowColor set];
 	int x = (self.icon == nil ? 5 : 24);
 	[str drawInRect:CGRectMake(x, 3, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
-        [[UIColor lightGrayColor] set];
-	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
-
-        [[UIColor blackColor] set];
 	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
-        [[UIColor lightGrayColor] set];
+
+        [table.headerColor set];
+	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
 	[self.condition drawInRect:CGRectMake(165, 3, 150, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 }
 
@@ -193,7 +207,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
         return 1;
 }
 
-- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+- (UIView *)tableView:(LITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
 	WIHeaderView* v = [[[WIHeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
 	v.backgroundColor = [UIColor clearColor];
