@@ -79,7 +79,7 @@ static LITableView* findTableView(UIView* view)
 			s.width *= scale;
 			s.height *= scale;
 
-			CGRect r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + 18 - (s.height / 2), s.width, s.height);
+			CGRect r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + (rect.size.height / 2) - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
 		}
 	}
@@ -270,16 +270,12 @@ static LITableView* findTableView(UIView* view)
 			hasIcon |= ([self loadIcon:[day objectForKey:@"icon"]] != nil);
 		}
 
-		int height = (hasIcon ? 34 : 4);
+		int height = (hasIcon ? 30 : 4);
 		return height;
-	}
-	else if (indexPath == 0)
-	{
-		return 15;
 	}
 	else
 	{
-		return 16;
+		return 17;
 	}
 }
 
@@ -317,7 +313,7 @@ static LITableView* findTableView(UIView* view)
 				fcv = [[[WIForecastDaysView alloc] initWithFrame:CGRectMake(10, 2, 300, 15)] autorelease];
 				break;
 			case 1:
-				fcv = [[[WIForecastIconView alloc] initWithFrame:CGRectMake(10, 0, 300, 34)] autorelease];
+				fcv = [[[WIForecastIconView alloc] initWithFrame:CGRectMake(10, 0, 300, 30)] autorelease];
 				break;
 			case 2:
 				fcv = [[[WIForecastTempView alloc] initWithFrame:CGRectMake(10, 0, 300, 15)] autorelease];
