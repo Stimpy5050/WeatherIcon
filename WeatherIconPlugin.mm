@@ -273,6 +273,10 @@ static LITableView* findTableView(UIView* view)
 		int height = (hasIcon ? 34 : 4);
 		return height;
 	}
+	else if (indexPath == 0)
+	{
+		return 15;
+	}
 	else
 	{
 		return 16;
