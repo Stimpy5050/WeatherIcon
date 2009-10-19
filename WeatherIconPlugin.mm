@@ -6,24 +6,9 @@ static NSArray* dayNames = [[NSArray arrayWithObjects:@"SUN", @"MON", @"TUE", @"
 
 static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
 
-@interface WIForecastView : UIView
-
-@property (nonatomic, retain) NSArray* icons;
-@property (nonatomic, retain) NSArray* forecast;
-
-@end
-
-@implementation WIForecastView
-
-@synthesize forecast, icons;
-
--(void) drawRect:(struct CGRect) rect
+static LITableView* findTableView(UIView* view)
 {
-	NSLog(@"LI:WeatherIcon: Redrawing temps...");
-
-	// find the tableview
-	LITableView* table;
-	UIView* view = self;
+	LITableView* table = nil;
 	while (true)
 	{
 		view = view.superview;
@@ -37,8 +22,45 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		}
 	}
 
-	int width = (rect.size.width / 6);
+	return table;
+}
 
+@interface WIForecastView : UIView
+
+@property (nonatomic, retain) NSArray* icons;
+@property (nonatomic, retain) NSArray* forecast;
+
+@end
+
+@implementation WIForecastView
+
+@synthesize forecast, icons;
+
+@end
+
+@interface WIHeaderView : UIView
+
+@property (nonatomic, retain) UIImage* icon;
+@property (nonatomic, retain) NSString* city;
+@property (nonatomic) int temp;
+@property (nonatomic, retain) NSString* condition;
+
+@end
+
+@interface WIForecastDaysView : WIForecastView
+@end
+
+@interface WIForecastIconView : WIForecastView
+@end
+
+@interface WIForecastTempView : WIForecastView
+@end
+
+@implementation WIForecastIconView
+
+-(void) drawRect:(struct CGRect) rect
+{
+	int width = (rect.size.width / 6);
 	double scale = 0.66;
 
 	NSBundle* bundle = [NSBundle mainBundle];
@@ -47,38 +69,36 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
 			scale = n.doubleValue;
 
+	LITableView* table = findTableView(self);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
-		NSDictionary* day = [self.forecast objectAtIndex:i];
-		
-		NSNumber* daycode = [day objectForKey:@"daycode"];
-		NSString* str = [dayNames objectAtIndex:daycode.intValue];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 5, width, 11);
-        	[table.shadowColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
-
-        	r.origin.y -= 1;
-        	[table.summaryColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
-
 		id image = [self.icons objectAtIndex:i];
-		if (image == [NSNull null])
-		{
-			r.origin.y = r.origin.y + r.size.height - 1;
-			r.size.height = 4;
-		}
-		else
+		if (image != [NSNull null])
 		{
 			CGSize s = [image size];
 			s.width *= scale;
 			s.height *= scale;
 
-			r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), r.origin.y + r.size.height + 18 - (s.height / 2), s.width, s.height);
+			CGRect r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + 18 - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
 		}
+	}
+}
 
-		str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-        	r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + (image == [NSNull null] ? 19 : 48) + 1, (width / 2), 11);
+@end
+
+@implementation WIForecastTempView
+
+-(void) drawRect:(struct CGRect) rect
+{
+	int width = (rect.size.width / 6);
+	LITableView* table = findTableView(self);
+	for (int i = 0; i < self.forecast.count && i < 6; i++)
+	{
+		NSDictionary* day = [self.forecast objectAtIndex:i];
+
+		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
+        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, (width / 2), 11);
         	[table.shadowColor set];
 		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
@@ -88,7 +108,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + (image == [NSNull null] ? 19 : 48) + 1, (width / 2), 11);
+        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + 1, (width / 2), 11);
         	[table.shadowColor set];
 		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 
@@ -100,12 +120,27 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 @end
 
-@interface WIHeaderView : UIView
+@implementation WIForecastDaysView
 
-@property (nonatomic, retain) UIImage* icon;
-@property (nonatomic, retain) NSString* city;
-@property (nonatomic) int temp;
-@property (nonatomic, retain) NSString* condition;
+-(void) drawRect:(struct CGRect) rect
+{
+	int width = (rect.size.width / 6);
+	LITableView* table = findTableView(self);
+	for (int i = 0; i < self.forecast.count && i < 6; i++)
+	{
+		NSDictionary* day = [self.forecast objectAtIndex:i];
+		
+		NSNumber* daycode = [day objectForKey:@"daycode"];
+		NSString* str = [dayNames objectAtIndex:daycode.intValue];
+        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, 13);
+        	[table.shadowColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+
+        	r.origin.y -= 1;
+        	[table.summaryColor set];
+		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+	}
+}
 
 @end
 
@@ -204,7 +239,7 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-        return 1;
+        return 3;
 }
 
 - (UIView *)tableView:(LITableView *)tableView viewForHeaderInSection:(NSInteger)section
@@ -223,17 +258,25 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	NSArray* forecast = [weather objectForKey:@"forecast"];
-	BOOL hasIcon = false;
-
-	for (int i = 0; i < forecast.count && i < 6; i++)
+	if (indexPath.row == 1)
 	{
-		NSDictionary* day = [forecast objectAtIndex:i];
-		hasIcon |= ([self loadIcon:[day objectForKey:@"icon"]] != nil);
+		NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+		NSArray* forecast = [weather objectForKey:@"forecast"];
+		BOOL hasIcon = false;
+
+		for (int i = 0; i < forecast.count && i < 6; i++)
+		{
+			NSDictionary* day = [forecast objectAtIndex:i];
+			hasIcon |= ([self loadIcon:[day objectForKey:@"icon"]] != nil);
+		}
+
+		int height = (hasIcon ? 34 : 4);
+		return height;
 	}
-	
-	return (hasIcon ? 66 : 38);
+	else
+	{
+		return 16;
+	}
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -241,14 +284,42 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [weather objectForKey:@"forecast"];
         	
-	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:@"ForecastCell"];
+	NSString* reuse;
+	switch (indexPath.row)
+	{
+		case 0:
+			reuse = @"ForecastDays";
+			break;
+		case 1:
+			reuse = @"ForecastIcon";
+			break;
+		case 2:
+			reuse = @"ForecastTemp";
+			break;
+	}
+
+	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:reuse];
 
 	if (fc == nil)
 	{
-		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"ForecastCell"] autorelease];
+		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuse] autorelease];
 		fc.backgroundColor = [UIColor clearColor];
 		
-		WIForecastView* fcv = [[[WIForecastView alloc] initWithFrame:CGRectMake(10, 0, 300, 66)] autorelease];
+		WIForecastView* fcv = nil;
+
+		switch (indexPath.row)
+		{
+			case 0:
+				fcv = [[[WIForecastDaysView alloc] initWithFrame:CGRectMake(10, 2, 300, 15)] autorelease];
+				break;
+			case 1:
+				fcv = [[[WIForecastIconView alloc] initWithFrame:CGRectMake(10, 0, 300, 34)] autorelease];
+				break;
+			case 2:
+				fcv = [[[WIForecastTempView alloc] initWithFrame:CGRectMake(10, 0, 300, 15)] autorelease];
+				break;
+		}
+
 		fcv.backgroundColor = [UIColor clearColor];
 		fcv.tag = 42;
 		[fc.contentView addSubview:fcv];
@@ -259,14 +330,17 @@ static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.
 	fcv.forecast = forecastCopy;
 	[forecastCopy release];
 
-	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
-	for (int i = 0; i < forecast.count && i < 6; i++)
+	if (indexPath.row == 1)
 	{
-		NSDictionary* day = [forecast objectAtIndex:i];
-		UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
-		[arr addObject:(icon == nil ? [NSNull null] : icon)];
+		NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
+		for (int i = 0; i < forecast.count && i < 6; i++)
+		{
+			NSDictionary* day = [forecast objectAtIndex:i];
+			UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+			[arr addObject:(icon == nil ? [NSNull null] : icon)];
+		}
+		fcv.icons = arr;
 	}
-	fcv.icons = arr;
 
 	// mark dirty
 	[fcv setNeedsDisplay];

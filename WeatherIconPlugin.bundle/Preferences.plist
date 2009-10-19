@@ -14,6 +14,18 @@
                         <key>label</key>
                         <string>Enabled</string>
                 </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.WeatherIconPlugin</string>
+                        <key>key</key>
+                        <string>Collapsed</string>
+                        <key>label</key>
+                        <string>Collapsed By Default</string>
+                </dict>
         </array>
 	<key>title</key>
         <string>WeatherIcon</string>
