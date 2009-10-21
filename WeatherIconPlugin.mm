@@ -1,4 +1,4 @@
-#include "PluginDelegate.h"
+#include "PluginDataSource.h"
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
 
@@ -203,20 +203,19 @@ static LITableView* findTableView(UIView* view)
 
 @end
 
-@interface WeatherIconPlugin : NSObject <LIPluginDelegate, UITableViewDataSource>
+@interface WeatherIconPlugin : NSObject <LIPluginDataSource, UITableViewDataSource>
 {
 	double lastUpdate;
 }
 
 @property (nonatomic, retain) NSMutableDictionary* iconCache;
 @property (nonatomic, retain) NSDictionary* dataCache;
-@property (nonatomic, retain) NSDictionary* preferences;
 
 @end
 
 @implementation WeatherIconPlugin
 
-@synthesize preferences, dataCache, iconCache;
+@synthesize dataCache, iconCache;
 
 -(id) init
 {
@@ -348,14 +347,14 @@ static LITableView* findTableView(UIView* view)
 	return fc;
 }
 
--(NSDictionary*) data
+-(void) plugin:(LIPlugin*) plugin loadData:(NSDictionary*) prefs
 {
 	NSDate* modDate = nil;
 	NSFileManager* fm = [NSFileManager defaultManager];
 	if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traverseLink:true])
 		if (modDate = [attrs objectForKey:NSFileModificationDate])
 			if ([modDate timeIntervalSinceReferenceDate] <= lastUpdate)
-				return nil;
+				return;
 
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:1];
 
@@ -365,11 +364,9 @@ static LITableView* findTableView(UIView* view)
 		lastUpdate = (modDate == nil ? lastUpdate : [modDate timeIntervalSinceReferenceDate]);
 	}
 
-	[dict setObject:self.preferences forKey:@"preferences"];
-
+	[dict setObject:prefs forKey:@"preferences"];
 	self.dataCache = dict;
-
-	return dict;
+	[plugin updateView:dict];
 }
 
 @end
