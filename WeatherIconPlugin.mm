@@ -1,4 +1,4 @@
-#include "PluginDataSource.h"
+#include "Plugin.h"
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
 
@@ -69,7 +69,6 @@ static LITableView* findTableView(UIView* view)
 		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
 			scale = n.doubleValue;
 
-	LITableView* table = findTableView(self);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		id image = [self.icons objectAtIndex:i];
@@ -99,22 +98,22 @@ static LITableView* findTableView(UIView* view)
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
         	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, (width / 2), 11);
-        	[table.shadowColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[table.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
         	r.origin.y -= 1;
-        	[table.summaryColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[table.summaryStyle.textColor set];
+		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
         	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + 1, (width / 2), 11);
-        	[table.shadowColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[table.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 
         	r.origin.y -= 1;
-        	[table.detailColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[table.detailStyle.textColor set];
+		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 }
 
@@ -133,12 +132,12 @@ static LITableView* findTableView(UIView* view)
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [dayNames objectAtIndex:daycode.intValue];
         	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, 13);
-        	[table.shadowColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[table.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[table.summaryColor set];
-		[str drawInRect:r withFont:table.detailFont lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[table.summaryStyle.textColor set];
+		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
@@ -191,19 +190,19 @@ static LITableView* findTableView(UIView* view)
 		city = [city substringToIndex:r.location];
 
         NSString* str = [NSString stringWithFormat:@"%@: %d\u00B0", city, self.temp];
-        [table.shadowColor set];
+        [table.headerStyle.shadowColor set];
 	int x = (self.icon == nil ? 5 : 24);
-	[str drawInRect:CGRectMake(x, 3, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
-	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+	[str drawInRect:CGRectMake(x, 3, 137, 22) withFont:table.headerStyle.font lineBreakMode:UILineBreakModeClip];
+	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:table.summaryStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
-        [table.headerColor set];
-	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:[UIFont boldSystemFontOfSize:14] lineBreakMode:UILineBreakModeClip];
-	[self.condition drawInRect:CGRectMake(165, 3, 150, 21) withFont:[UIFont boldSystemFontOfSize:12] lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        [table.headerStyle.textColor set];
+	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:table.headerStyle.font lineBreakMode:UILineBreakModeClip];
+	[self.condition drawInRect:CGRectMake(165, 3, 150, 21) withFont:table.summaryStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 }
 
 @end
 
-@interface WeatherIconPlugin : NSObject <LIPluginDataSource, UITableViewDataSource>
+@interface WeatherIconPlugin : NSObject <LIPluginDelegate, UITableViewDataSource>
 {
 	double lastUpdate;
 }
@@ -347,7 +346,7 @@ static LITableView* findTableView(UIView* view)
 	return fc;
 }
 
--(void) plugin:(LIPlugin*) plugin loadData:(NSDictionary*) prefs
+-(void) loadDataForPlugin:(LIPlugin*) plugin 
 {
 	NSDate* modDate = nil;
 	NSFileManager* fm = [NSFileManager defaultManager];
@@ -364,8 +363,11 @@ static LITableView* findTableView(UIView* view)
 		lastUpdate = (modDate == nil ? lastUpdate : [modDate timeIntervalSinceReferenceDate]);
 	}
 
-	[dict setObject:prefs forKey:@"preferences"];
-	self.dataCache = dict;
+	@synchronized (plugin.lock)
+	{
+		self.dataCache = dict;
+	}
+
 	[plugin updateView:dict];
 }
 
