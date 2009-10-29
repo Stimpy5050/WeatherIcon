@@ -202,7 +202,7 @@ static LITableView* findTableView(UIView* view)
 
 @end
 
-@interface WeatherIconPlugin : NSObject <LIPluginDelegate, UITableViewDataSource>
+@interface WeatherIconPlugin : NSObject <LIPluginDelegate, LITableViewDelegate, UITableViewDataSource>
 {
 	double lastUpdate;
 }
@@ -240,6 +240,44 @@ static LITableView* findTableView(UIView* view)
         return 3;
 }
 
+- (NSString *)tableView:(LITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	return [NSString stringWithFormat:@"%@: %d", [weather objectForKey:@"city"], [[weather objectForKey:@"temp"] intValue]];
+}
+
+- (NSString *)tableView:(LITableView *)tableView detailForHeaderInSection:(NSInteger)section
+{
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	return [weather objectForKey:@"description"];
+}
+
+- (UIImage *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
+{
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	if (UIImage* icon = [self loadIcon:[weather objectForKey:@"icon"]])
+	{
+		double scale = 0.33;
+
+		NSBundle* bundle = [NSBundle mainBundle];
+		NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
+		if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
+			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
+				scale = n.doubleValue;
+
+		CGSize s = icon.size;
+		s.width = s.width * scale;
+		s.height = s.height * scale;
+
+        	UIImageView* view = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, s.width, s.height)] autorelease];
+		view.image = icon;
+		return view;
+	}
+
+	return nil;
+}
+
+/*
 - (UIView *)tableView:(LITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
 	WIHeaderView* v = [[[WIHeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 23)] autorelease];
@@ -253,6 +291,7 @@ static LITableView* findTableView(UIView* view)
 
 	return v;
 }
+*/
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {

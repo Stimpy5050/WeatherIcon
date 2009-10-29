@@ -100,7 +100,7 @@ static BOOL isTomorrow(NSDate* date)
         NSMutableDictionary* collapsed;
 }
 
-@property (nonatomic, retain) LITheme* theme;
+@property (nonatomic, readonly) LITheme* theme;
 
 -(BOOL) isCollapsed:(int) section;
 -(BOOL) toggleSection:(int) section;
@@ -114,10 +114,11 @@ static BOOL isTomorrow(NSDate* date)
 
 @end
 
-@protocol LITableViewDataSource <UITableViewDataSource>
+@protocol LITableViewDelegate <NSObject>
 
 @optional
--(UIImage*) tableView:(LITableView*) tableView iconForHeaderInSection:(NSInteger) section;
+-(NSString*) tableView:(LITableView*) tableView detailForHeaderInSection:(NSInteger) section;
+-(UIImageView*) tableView:(LITableView*) tableView iconForHeaderInSection:(NSInteger) section;
 
 @end
 
