@@ -98,22 +98,22 @@ static LITableView* findTableView(UIView* view)
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
         	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, (width / 2), 11);
-        	[table.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[table.theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
         	r.origin.y -= 1;
-        	[table.summaryStyle.textColor set];
-		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[table.theme.summaryStyle.textColor set];
+		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
         	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + 1, (width / 2), 11);
-        	[table.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[table.theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 
         	r.origin.y -= 1;
-        	[table.detailStyle.textColor set];
-		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[table.theme.detailStyle.textColor set];
+		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 }
 
@@ -132,12 +132,12 @@ static LITableView* findTableView(UIView* view)
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [dayNames objectAtIndex:daycode.intValue];
         	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, 13);
-        	[table.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[table.theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[table.summaryStyle.textColor set];
-		[str drawInRect:r withFont:table.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[table.theme.summaryStyle.textColor set];
+		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
@@ -190,14 +190,14 @@ static LITableView* findTableView(UIView* view)
 		city = [city substringToIndex:r.location];
 
         NSString* str = [NSString stringWithFormat:@"%@: %d\u00B0", city, self.temp];
-        [table.headerStyle.shadowColor set];
+        [table.theme.headerStyle.shadowColor set];
 	int x = (self.icon == nil ? 5 : 24);
-	[str drawInRect:CGRectMake(x, 3, 137, 22) withFont:table.headerStyle.font lineBreakMode:UILineBreakModeClip];
-	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:table.summaryStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+	[str drawInRect:CGRectMake(x, 3, 137, 22) withFont:table.theme.headerStyle.font lineBreakMode:UILineBreakModeClip];
+	[self.condition drawInRect:CGRectMake(165, 4, 150, 21) withFont:table.theme.summaryStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
-        [table.headerStyle.textColor set];
-	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:table.headerStyle.font lineBreakMode:UILineBreakModeClip];
-	[self.condition drawInRect:CGRectMake(165, 3, 150, 21) withFont:table.summaryStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        [table.theme.headerStyle.textColor set];
+	[str drawInRect:CGRectMake(x, 2, 137, 22) withFont:table.theme.headerStyle.font lineBreakMode:UILineBreakModeClip];
+	[self.condition drawInRect:CGRectMake(165, 3, 150, 21) withFont:table.theme.summaryStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 }
 
 @end
