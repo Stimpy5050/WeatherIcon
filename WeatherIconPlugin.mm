@@ -223,7 +223,7 @@ static LITableView* findTableView(UIView* view)
 			hasIcon |= ([self loadIcon:[day objectForKey:@"icon"]] != nil);
 		}
 
-		int height = (hasIcon ? 30 : 4);
+		int height = (hasIcon ? 30 : 0);
 		return height;
 	}
 	else
