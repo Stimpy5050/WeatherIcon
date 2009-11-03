@@ -180,7 +180,12 @@ static LITableView* findTableView(UIView* view)
 - (NSString *)tableView:(LITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	return [NSString stringWithFormat:@"%@: %d\u00B0", [weather objectForKey:@"city"], [[weather objectForKey:@"temp"] intValue]];
+	NSString* city = [weather objectForKey:@"city"];
+	NSRange r = [city rangeOfString:@","];
+	if (r.location != NSNotFound)
+		city = [city substringToIndex:r.location];
+
+	return [NSString stringWithFormat:@"%@: %d\u00B0", city, [[weather objectForKey:@"temp"] intValue]];
 }
 
 - (NSString *)tableView:(LITableView *)tableView detailForHeaderInSection:(NSInteger)section
