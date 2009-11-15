@@ -328,11 +328,7 @@ static LITableView* findTableView(UIView* view)
 		lastUpdate = (modDate == nil ? lastUpdate : [modDate timeIntervalSinceReferenceDate]);
 	}
 
-	@synchronized (plugin.lock)
-	{
-		self.dataCache = dict;
-	}
-
+	[self performSelectorOnMainThread:@selector(setDataCache:) withObject:dict waitUntilDone:YES];
 	[plugin updateView:dict];
 }
 
