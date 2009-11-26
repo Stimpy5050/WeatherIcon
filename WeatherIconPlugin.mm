@@ -186,6 +186,13 @@ static LITableView* findTableView(UIView* view)
 
 - (NSString *)tableView:(LITableView *)tableView detailForHeaderInSection:(NSInteger)section
 {
+	BOOL hide = false;
+	if (NSNumber* b = [self.plugin.preferences objectForKey:@"HideDescription"])
+		hide = b.boolValue;
+
+	if (hide)
+		return @"";
+	
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	return [weather objectForKey:@"description"];
 }

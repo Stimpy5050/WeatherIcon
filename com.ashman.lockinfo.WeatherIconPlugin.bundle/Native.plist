@@ -18,6 +18,18 @@
                         <key>label</key>
                         <string>Collapsed By Default</string>
                 </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.WeatherIconPlugin</string>
+                        <key>key</key>
+                        <string>HideDescription</string>
+                        <key>label</key>
+                        <string>Hide Description</string>
+                </dict>
         </array>
 	<key>title</key>
         <string>WeatherIcon</string>
