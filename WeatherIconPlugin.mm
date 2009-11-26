@@ -2,9 +2,7 @@
 #include <Foundation/Foundation.h>
 #include <UIKit/UIKit.h>
 
-static NSArray* dayNames = [[NSArray arrayWithObjects:@"SUN", @"MON", @"TUE", @"WED", @"THU", @"FRI", @"SAT", nil] retain];
-
-static NSString* prefsPath = @"/User/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
+static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache.plist";
 
 static LITableView* findTableView(UIView* view)
 {
@@ -119,6 +117,9 @@ static LITableView* findTableView(UIView* view)
 
 -(void) drawRect:(struct CGRect) rect
 {
+        NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
+        NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
+
 	int width = (rect.size.width / 6);
 	LITableView* table = findTableView(self);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
@@ -126,7 +127,7 @@ static LITableView* findTableView(UIView* view)
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
-		NSString* str = [dayNames objectAtIndex:daycode.intValue];
+		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
         	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, 13);
         	[table.theme.detailStyle.shadowColor set];
 		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
@@ -139,11 +140,12 @@ static LITableView* findTableView(UIView* view)
 
 @end
 
-@interface WeatherIconPlugin : NSObject <LIPluginDelegate, LITableViewDelegate, UITableViewDataSource>
+@interface WeatherIconPlugin : NSObject <LIPluginController, LITableViewDelegate, UITableViewDataSource>
 {
 	double lastUpdate;
 }
 
+@property (nonatomic, retain) LIPlugin* plugin;
 @property (nonatomic, retain) NSMutableDictionary* iconCache;
 @property (nonatomic, retain) NSDictionary* dataCache;
 
@@ -151,13 +153,7 @@ static LITableView* findTableView(UIView* view)
 
 @implementation WeatherIconPlugin
 
-@synthesize dataCache, iconCache;
-
--(id) init
-{
-	self.iconCache = [NSMutableDictionary dictionaryWithCapacity:10];
-	return [super init];
-}
+@synthesize dataCache, iconCache, plugin;
 
 -(id) loadIcon:(NSString*) path
 {
@@ -311,7 +307,23 @@ static LITableView* findTableView(UIView* view)
 	return fc;
 }
 
--(void) loadDataForPlugin:(LIPlugin*) plugin 
+-(id) initWithPlugin:(LIPlugin*) plugin 
+{
+	self = [super init];
+	self.plugin = plugin;
+	self.iconCache = [NSMutableDictionary dictionaryWithCapacity:10];
+
+	plugin.tableViewDataSource = self;
+	plugin.tableViewDelegate = self;
+
+        NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+        [center addObserver:self selector:@selector(update:) name:LITimerNotification object:nil];
+        [center addObserver:self selector:@selector(update:) name:LIViewReadyNotification object:nil];
+
+	return self;
+}
+
+-(void) updateWeather
 {
 	NSDate* modDate = nil;
 	NSFileManager* fm = [NSFileManager defaultManager];
@@ -328,8 +340,21 @@ static LITableView* findTableView(UIView* view)
 		lastUpdate = (modDate == nil ? lastUpdate : [modDate timeIntervalSinceReferenceDate]);
 	}
 
-	[self performSelectorOnMainThread:@selector(setDataCache:) withObject:dict waitUntilDone:YES];
-	[plugin updateView:dict];
+	if (![dict isEqualToDictionary:self.dataCache])
+	{
+		[self performSelectorOnMainThread:@selector(setDataCache:) withObject:dict waitUntilDone:YES];
+		[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
+	}
+}
+
+-(void) update:(NSNotification*) notif
+{
+	if (!self.plugin.enabled)
+		return;
+
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	[self updateWeather];
+	[pool release];
 }
 
 @end

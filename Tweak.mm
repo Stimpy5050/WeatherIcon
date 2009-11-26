@@ -75,7 +75,7 @@ static Class $SBIconController = objc_getClass("SBIconController");
 static Class $SBImageCache = objc_getClass("SBImageCache");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
-static NSString* conditionPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.Condition.plist";
+static NSString* conditionPath = @"/var/mobile/Library/Caches/com.ashman.WeatherIcon.cache.plist";
 static NSString* weatherPrefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
 static NSString* defaultStatusBarTempStyleFSO(@""
 	"font-family: Helvetica; "
@@ -465,13 +465,13 @@ qualifiedName:(NSString *)qName
 		double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
 		self.localWeatherTime = [NSDate dateWithTimeIntervalSince1970:timestamp];
 	}
-	else if (self.showFeelsLike && [elementName isEqualToString:@"wind"])
+	else if (self.showFeelsLike && [elementName isEqualToString:@"yweather:wind"])
 	{
 		self.temp = [attributeDict objectForKey:@"chill"];
 		[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"temp"];
 		NSLog(@"WI: Temp: %@", self.temp);
 	}
-	else if ([elementName isEqualToString:@"location"])
+	else if ([elementName isEqualToString:@"yweather:location"])
 	{
 		NSString* city = [attributeDict objectForKey:@"city"];
 		[self.currentCondition setValue:city forKey:@"city"];
@@ -505,7 +505,7 @@ qualifiedName:(NSString *)qName
 
 		[arr addObject:forecast];
 	}
-	else if ([elementName isEqualToString:@"condition"])
+	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
 		if (!self.showFeelsLike)
 		{
@@ -793,7 +793,16 @@ foundCharacters:(NSString *)string
 	// clear the current forecast
 	[self.currentCondition removeObjectForKey:@"forecast"];
 
+	
 	NSLog(@"WI: Refreshing weather for %@...", self.location);
+
+	NSString* yahooStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];
+	NSURL* yahooURL = [NSURL URLWithString:yahooStr];
+	NSXMLParser* parser = [[NSXMLParser alloc] initWithContentsOfURL:yahooURL];
+	[parser setDelegate:self];
+	[parser parse];
+	[parser release];
+
 	NSString* urlStr = @"http://iphone-wu.apple.com/dgw?imei=B7693A01-F383-4327-8771-501ABD85B5C1&apptype=weather&t=4";
 	NSURL* url = [NSURL URLWithString:urlStr];
 	NSMutableURLRequest* req = [NSMutableURLRequest requestWithURL:url];
@@ -807,7 +816,7 @@ foundCharacters:(NSString *)string
 	[req setValue:@"text/xml" forHTTPHeaderField:@"Content-Type"];
 	NSData* data = [NSURLConnection sendSynchronousRequest:req returningResponse:nil error:nil];
 
-	NSXMLParser* parser = [[NSXMLParser alloc] initWithData:data];
+	parser = [[NSXMLParser alloc] initWithData:data];
 	[parser setDelegate:self];
 	[parser parse];
 	[parser release];

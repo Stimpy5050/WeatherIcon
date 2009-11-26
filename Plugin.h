@@ -5,6 +5,14 @@
 #include <UIKit/UIView.h>
 #include <UIKit/UILabel.h>
 
+static NSString* LIUndimScreenNotification = @"com.ashman.LockInfo.screenUndimmed";
+static NSString* LITimerNotification = @"com.ashman.LockInfo.timerFired";
+static NSString* LIUpdateViewNotification = @"com.ashman.LockInfo.updateView";
+static NSString* LIViewReadyNotification = @"com.ashman.LockInfo.viewReady";
+static NSString* LIPrefsUpdatedNotification = @".prefsUpdated";
+static NSString* LIBadgeChangedNotification = @".badgeChanged";
+static NSString* LIApplicationDeactivatedNotification = @".applicationDeactivated";
+
 static double SECONDS_PER_DAY = 86400;
 
 static BOOL isSameWeek(NSDate* date1, NSDate* date2)
@@ -42,10 +50,17 @@ static BOOL isTomorrow(NSDate* date)
 
 @interface LIPlugin : NSObject
 
+@property (nonatomic, retain) id<UITableViewDelegate> tableViewDelegate;
+@property (nonatomic, retain) id<UITableViewDataSource> tableViewDataSource;
+
+- (BOOL) enabled;
 - (NSString*) bundleIdentifier;
-- (id) lock;
+- (NSBundle*) bundle;
 - (NSDictionary*) preferences;
+- (NSArray*) managedBundles;
 - (void) updateView:(NSDictionary*) data;
+
+- (id) lock;
 
 @end
 
@@ -69,13 +84,14 @@ static BOOL isTomorrow(NSDate* date)
 @interface LILabel : UIView
 {
 	LIStyle* style;
-	NSString* text;
-	UITextAlignment textAlignment;
+	UILabel* label;
 }
 
 @property (nonatomic, retain) LIStyle* style;
 @property (nonatomic, retain) NSString* text;
 @property (nonatomic) UITextAlignment textAlignment;
+@property (nonatomic) UILineBreakMode lineBreakMode;
+@property (nonatomic) NSInteger numberOfLines;
 
 @end
 
@@ -97,7 +113,6 @@ static BOOL isTomorrow(NSDate* date)
 @interface LITableView : UITableView <UITableViewDataSource, UITableViewDelegate>
 {
         NSMutableArray* sections;
-        NSMutableDictionary* collapsed;
 }
 
 @property (nonatomic, readonly) LITheme* theme;
@@ -107,14 +122,14 @@ static BOOL isTomorrow(NSDate* date)
 
 -(void) reloadPlugin:(LIPlugin*) plugin;
 
--(void) setProperties:(UILabel*) label summary:(BOOL) summary;
-
 -(LITimeView*) timeViewWithFrame:(CGRect) frame;
 -(LILabel*) labelWithFrame:(CGRect) frame;
 
+- (CGFloat)defaultHeightForHeader;
+
 @end
 
-@protocol LITableViewDelegate <NSObject>
+@protocol LITableViewDelegate <UITableViewDelegate>
 
 @optional
 -(NSString*) tableView:(LITableView*) tableView detailForHeaderInSection:(NSInteger) section;
@@ -122,8 +137,8 @@ static BOOL isTomorrow(NSDate* date)
 
 @end
 
-@protocol LIPluginDelegate <NSObject>
+@protocol LIPluginController <NSObject>
 
--(void) loadDataForPlugin:(LIPlugin*) plugin;
+-(id) initWithPlugin:(LIPlugin*) plugin;
 
 @end

@@ -47,29 +47,27 @@ clean:
 		rm -f *.o $(Target) WeatherIconSettings WeatherIconPlugin
 		rm -rf package
 
-package:	$(Target) WeatherIconSettings WeatherIconPlugin
+lockinfo: WeatherIconPlugin
+	mkdir -p package/lockinfo/DEBIAN
+	mkdir -p package/lockinfo/Library/LockInfo/Plugins
+	cp -r com.ashman.lockinfo.WeatherIconPlugin.bundle package/lockinfo/Library/LockInfo/Plugins
+	cp WeatherIconPlugin package/lockinfo/Library/LockInfo/Plugins/com.ashman.lockinfo.WeatherIconPlugin.bundle
+	cp lockinfo-control package/lockinfo/DEBIAN/control
+	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/lockinfo WeatherIconPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
+
+package:	$(Target) WeatherIconSettings lockinfo
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
 	mkdir -p package/weathericon/System/Library/PreferenceBundles
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
-	mkdir -p package/weathericon/Library/LockInfo/Plugins
 	cp $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
-	cp -r WeatherIconPlugin.bundle package/weathericon/Library/LockInfo/Plugins
-	cp WeatherIconPlugin package/weathericon/Library/LockInfo/Plugins/WeatherIconPlugin.bundle
 	cp *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
-	dpkg-deb -b package/weathericon weathericon_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
-
-lockinfo: WeatherIconPlugin
-	mkdir -p package/lockinfo/DEBIAN
-	mkdir -p package/lockinfo/Library/
-	cp -r Themes package/lockinfo/Library/
-	cp lockinfo-control package/lockinfo/DEBIAN/control
-	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
-	dpkg-deb -b package/lockinfo wili_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
+	dpkg-deb -b package/weathericon WeatherIcon_$(shell grep ^Version: control | cut -d ' ' -f 2).deb

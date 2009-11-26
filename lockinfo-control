@@ -1,0 +1,10 @@
+Package: com.ashman.lockinfoweathericon
+Name: WeatherIcon Plugin for LockInfo
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Links WeatherIcon to your LockInfo screen
+Maintainer: David Ashman <dashman@gmail.com>
+Author: David Ashman (Stimpy5050) <dashman@gmail.com>
+Sponsor: 
+Section: LockInfo Addons
+Pre-Depends: com.ashman.weathericon (>= 2.2.27), com.ashman.lockinfo
