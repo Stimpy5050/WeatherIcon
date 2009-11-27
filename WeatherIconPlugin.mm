@@ -4,6 +4,18 @@
 
 static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache.plist";
 
+static NSArray* defaultIcons = [[NSArray arrayWithObjects:
+	@"tstorms", @"tstorms", @"tstorms", @"tstorms", @"tstorms",
+	@"snow", @"snow", @"snow", @"showers", @"showers",
+	@"showers", @"showers", @"showers", @"snow", @"snow",
+	@"snow", @"snow", @"snow", @"snow", @"cloudy",
+	@"cloudy", @"cloudy", @"cloudy", @"cloudy", @"cloudy",
+	@"sunny", @"cloudy", @"cloudy", @"cloudy", @"partly_cloudy",
+	@"partly_cloudy", @"sunny", @"sunny", @"sunny", @"sunny",
+	@"showers", @"sunny", @"tstorms", @"tstorms", @"tstorms",
+	@"showers", @"snow", @"snow", @"snow", @"partly_cloudy",
+	@"tstorms", @"snow", @"tstorms", nil] retain];
+
 static LITableView* findTableView(UIView* view)
 {
 	LITableView* table = nil;
@@ -197,13 +209,31 @@ static LITableView* findTableView(UIView* view)
 	return [weather objectForKey:@"description"];
 }
 
+-(UIImage*) defaultIcon:(NSNumber*) code
+{
+	if (code)
+		if (code.intValue >= 0 && code.intValue < defaultIcons.count)
+			if (NSString* path = [self.plugin.bundle pathForResource:[defaultIcons objectAtIndex:code.intValue] ofType:@"png"])
+				return [self loadIcon:path];
+
+	return nil;
+}
+
+
 - (UIImage *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
 {
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	if (UIImage* icon = [self loadIcon:[weather objectForKey:@"icon"]])
-	{
-		double scale = 0.33;
+	double scale = 0.33;
 
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	UIImage* icon = [self loadIcon:[weather objectForKey:@"icon"]];
+	if (icon == nil)
+	{
+		icon = [self defaultIcon:[weather objectForKey:@"code"]];
+		scale = 0.45;
+	}
+
+	if (icon)
+	{
 		NSBundle* bundle = [NSBundle mainBundle];
 		NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
 		if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
@@ -224,25 +254,7 @@ static LITableView* findTableView(UIView* view)
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	if (indexPath.row == 1)
-	{
-		NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-		NSArray* forecast = [weather objectForKey:@"forecast"];
-		BOOL hasIcon = false;
-
-		for (int i = 0; i < forecast.count && i < 6; i++)
-		{
-			NSDictionary* day = [forecast objectAtIndex:i];
-			hasIcon |= ([self loadIcon:[day objectForKey:@"icon"]] != nil);
-		}
-
-		int height = (hasIcon ? 30 : 0);
-		return height;
-	}
-	else
-	{
-		return 17;
-	}
+	return (indexPath.row == 1 ? 30 : 17);
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -303,6 +315,10 @@ static LITableView* findTableView(UIView* view)
 		{
 			NSDictionary* day = [forecast objectAtIndex:i];
 			UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+
+			if (icon == nil)
+				icon = [self defaultIcon:[day objectForKey:@"code"]];
+
 			[arr addObject:(icon == nil ? [NSNull null] : icon)];
 		}
 		fcv.icons = arr;
