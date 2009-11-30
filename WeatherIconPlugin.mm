@@ -347,7 +347,7 @@ static LITableView* findTableView(UIView* view)
 -(void) updateWeather:(NSDictionary*) weather
 {
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:1];
-	[dict setObject:weather forKey:@"weather"];
+	[dict setValue:weather forKey:@"weather"];
 
 	if (![dict isEqualToDictionary:self.dataCache])
 	{
