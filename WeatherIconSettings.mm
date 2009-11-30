@@ -24,6 +24,7 @@ static NSString* CUSTOM = @"Custom";
 {
 	[self setPreferenceValue:value specifier:specifier];
 	
+/*
 	NSLog(@"WI:Debug: showWeatherIcon");
 
 	id custom = [self readPreferenceValue:bundleIdentifier];
@@ -37,6 +38,7 @@ static NSString* CUSTOM = @"Custom";
 		[self insertContiguousSpecifiers:bundleSpecs afterSpecifierID:@"ShowWeatherIcon" animated:YES];
 	else
 		[self removeContiguousSpecifiers:bundleSpecs animated:YES];
+*/
 }
 
 - (void) customBundleIdentifier:(id) value specifier:(id) specifier
@@ -84,6 +86,7 @@ static NSString* CUSTOM = @"Custom";
 	weatherIconText = [[self specifierForID:@"WeatherIconText"] retain];
 
 	NSLog(@"WI:Debug: Checking icon");
+/*
 	PSSpecifier* icon = [self specifierForID:@"ShowWeatherIcon"];
 	value = [self readPreferenceValue:icon];
 	if (![value boolValue])
@@ -94,6 +97,7 @@ static NSString* CUSTOM = @"Custom";
 	}
 	else
 	{
+*/
 		NSLog(@"WI:Debug: Checking custom");
 		PSSpecifier* bundle = [self specifierForID:@"WeatherBundleIdentifier"];
 		value = [self readPreferenceValue:bundle];
@@ -102,7 +106,7 @@ static NSString* CUSTOM = @"Custom";
 			NSLog(@"WI:Debug: Removing custom");
 			[self removeSpecifier:customBundleIdentifier animated:YES];
 		}
-	}
+//	}
 
 	NSLog(@"WI:Debug: Done with init");
 }

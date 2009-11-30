@@ -153,9 +153,6 @@ static LITableView* findTableView(UIView* view)
 @end
 
 @interface WeatherIconPlugin : NSObject <LIPluginController, LITableViewDelegate, UITableViewDataSource>
-{
-	double lastUpdate;
-}
 
 @property (nonatomic, retain) LIPlugin* plugin;
 @property (nonatomic, retain) NSMutableDictionary* iconCache;
@@ -340,28 +337,17 @@ static LITableView* findTableView(UIView* view)
 	plugin.tableViewDelegate = self;
 
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-        [center addObserver:self selector:@selector(update:) name:LITimerNotification object:nil];
+//        [center addObserver:self selector:@selector(update:) name:LITimerNotification object:nil];
         [center addObserver:self selector:@selector(update:) name:LIViewReadyNotification object:nil];
+        [center addObserver:self selector:@selector(updateOnUpdate:) name:@"WIWeatherUpdatedNotification" object:nil];
 
 	return self;
 }
 
--(void) updateWeather
+-(void) updateWeather:(NSDictionary*) weather
 {
-	NSDate* modDate = nil;
-	NSFileManager* fm = [NSFileManager defaultManager];
-	if (NSDictionary* attrs = [fm fileAttributesAtPath:prefsPath traverseLink:true])
-		if (modDate = [attrs objectForKey:NSFileModificationDate])
-			if ([modDate timeIntervalSinceReferenceDate] <= lastUpdate)
-				return;
-
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:1];
-
-	if (NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:prefsPath])
-	{
-		[dict setObject:current forKey:@"weather"];
-		lastUpdate = (modDate == nil ? lastUpdate : [modDate timeIntervalSinceReferenceDate]);
-	}
+	[dict setObject:weather forKey:@"weather"];
 
 	if (![dict isEqualToDictionary:self.dataCache])
 	{
@@ -370,13 +356,27 @@ static LITableView* findTableView(UIView* view)
 	}
 }
 
+-(void) updateOnUpdate:(NSNotification*) notif
+{
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+//	NSLog(@"LI:Weather: Updating from WI update");
+	[self updateWeather:notif.userInfo];
+	[pool release];
+}
+
 -(void) update:(NSNotification*) notif
 {
 	if (!self.plugin.enabled)
 		return;
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-	[self updateWeather];
+
+	if (NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:prefsPath])
+	{
+//		NSLog(@"LI:Weather: Updating when view is ready");
+		[self updateWeather:current];
+	}
+
 	[pool release];
 }
 

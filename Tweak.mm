@@ -56,6 +56,7 @@
 @property (nonatomic, retain) NSDictionary* weatherPreferences;
 @property (nonatomic, retain) NSMutableDictionary* preferences;
 @property (nonatomic, retain) NSMutableDictionary* currentCondition;
+@property BOOL lockInfo;
 
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
@@ -75,6 +76,7 @@ static Class $SBIconController = objc_getClass("SBIconController");
 static Class $SBImageCache = objc_getClass("SBImageCache");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
+static NSString* lockInfoPrefs = @"/var/mobile/Library/Preferences/com.ashman.lockinfo.WeatherIconPlugin.plist";
 static NSString* conditionPath = @"/var/mobile/Library/Caches/com.ashman.WeatherIcon.cache.plist";
 static NSString* weatherPrefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
 static NSString* defaultStatusBarTempStyleFSO(@""
@@ -123,7 +125,7 @@ static WeatherIconController* instance = nil;
 @synthesize nextRefreshTime, lastUpdateTime;
 
 // preferences
-@synthesize theme, weatherPreferences, preferences, currentCondition;
+@synthesize theme, lockInfo, weatherPreferences, preferences, currentCondition;
 
 - (NSString*) bundleIdentifier
 {
@@ -186,6 +188,12 @@ static WeatherIconController* instance = nil;
 	
 	self.currentCondition = current;
 
+	BOOL b = false;
+	if (NSDictionary* liPrefs = [NSDictionary dictionaryWithContentsOfFile:lockInfoPrefs])
+		if (NSNumber* e = [liPrefs objectForKey:@"Enabled"])
+			b = e.boolValue;	
+	self.lockInfo = b;
+
 	[self loadTheme];
 }
 
@@ -219,6 +227,26 @@ static WeatherIconController* instance = nil;
 
 	return nil;
 }
+
+-(NSString*) city
+{
+	BOOL overrideLocation = false;
+	if (NSNumber* b = [self.preferences objectForKey:@"OverrideLocation"])
+		overrideLocation = [b boolValue];
+
+	if (!overrideLocation)
+	{
+		NSArray* cities = [self.weatherPreferences objectForKey:@"Cities"];
+		if (cities.count > 0)
+		{
+			NSDictionary* city = [cities objectAtIndex:0];
+			return [city objectForKey:@"Name"];
+		}	
+	}
+
+	return nil;
+}
+
 
 - (BOOL) isCelsius
 {
@@ -473,7 +501,11 @@ qualifiedName:(NSString *)qName
 	}
 	else if ([elementName isEqualToString:@"yweather:location"])
 	{
-		NSString* city = [attributeDict objectForKey:@"city"];
+		NSString* city = self.city;
+
+		if (city == nil)
+			city = [attributeDict objectForKey:@"city"];
+
 		[self.currentCondition setValue:city forKey:@"city"];
 	}
 	else if ([elementName isEqualToString:@"forecast"])
@@ -777,6 +809,8 @@ foundCharacters:(NSString *)string
 
 	[self.currentCondition setValue:iconPath forKey:@"icon"];
 	[self.currentCondition writeToFile:conditionPath atomically:YES];
+
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIWeatherUpdatedNotification" object:self userInfo:self.currentCondition];
 }
 
 - (BOOL) _refresh
@@ -878,9 +912,9 @@ foundCharacters:(NSString *)string
 
 - (void) refresh
 {
-	if (!self.showWeatherIcon && !self.showStatusBarWeather)
+	if (!self.lockInfo && !self.showWeatherIcon && !self.showStatusBarWeather)
 	{
-		NSLog(@"WI: Neither the weather icon or status bar is active.  No refresh.");
+		NSLog(@"WI: No weather views are active.  No refresh.");
 		return;
 	}
 
