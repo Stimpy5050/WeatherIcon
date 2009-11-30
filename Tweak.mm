@@ -32,6 +32,7 @@
 {
 	BOOL refreshing;
 	int failedCount;
+	NSTimer* timer;
 }
 
 	// image caches
@@ -66,12 +67,16 @@
 - (void)refreshNow;
 - (NSTimeInterval)lastUpdateTime;
 
+-(void) stopTimer;
+-(void) startTimer;
+
 - (UIImage*)icon;
 - (UIImage*)statusBarIndicator:(int) mode;
 
 @end
 
 static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
+static Class $SBUIController = objc_getClass("SBUIController");
 static Class $SBIconController = objc_getClass("SBIconController");
 static Class $SBImageCache = objc_getClass("SBImageCache");
 
@@ -136,11 +141,6 @@ static WeatherIconController* instance = nil;
 			return custom;
 
 	return id;
-}
-
-- (BOOL) needsRefresh
-{
-	return (self.nextRefreshTime < [NSDate timeIntervalSinceReferenceDate]);
 }
 
 - (void) loadTheme
@@ -402,6 +402,40 @@ static WeatherIconController* instance = nil;
 	[self loadPreferences];
 
 	return self;
+}
+
+-(void) dealloc
+{
+	[self stopTimer];
+	[super dealloc];
+}
+
+-(void) startTimer
+{
+	@synchronized (self)
+	{
+		if (timer == nil)
+		{
+			NSLog(@"WI:Timer: Starting timer: %f", self.refreshInterval);
+			timer = [[NSTimer alloc] initWithFireDate:[NSDate dateWithTimeIntervalSinceReferenceDate:self.nextRefreshTime] interval:self.refreshInterval target:self selector:@selector(refresh) userInfo:nil repeats:YES];
+			[[NSRunLoop mainRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
+		}
+	}
+}
+
+-(void) stopTimer
+{
+	@synchronized (self)
+	{
+		if (timer != nil)
+		{
+			NSLog(@"WI:Timer: Stop timer.");
+			NSTimer* tmp = timer;
+			timer = nil;
+			[tmp invalidate];
+			[tmp release];
+		}
+	}
 }
 
 - (NSString*) mapImage:(NSString*) prefix code:(NSString*) code night:(BOOL) night
@@ -826,7 +860,6 @@ foundCharacters:(NSString *)string
 
 	// clear the current forecast
 	[self.currentCondition removeObjectForKey:@"forecast"];
-
 	
 	NSLog(@"WI: Refreshing weather for %@...", self.location);
 
@@ -929,15 +962,7 @@ foundCharacters:(NSString *)string
 	if ((self.showWeatherIcon && !self.weatherIcon) || (self.showStatusBarWeather && !self.statusBarIndicator && !self.statusBarIndicatorFSO))
 		[self updateWeatherIcon];
 
-	if ([self needsRefresh])
-	{
-		[self performSelectorInBackground:@selector(refreshInBackground) withObject:nil];
-	}
-	else
-	{
-		NSLog(@"WI: Weather icon doesn't need refreshing right now: %d, %f, %f", refreshing, self.nextRefreshTime, [NSDate timeIntervalSinceReferenceDate]);
-		refreshing = false;
-	}
+	[self performSelectorInBackground:@selector(refreshInBackground) withObject:nil];
 }
 
 - (UIImage*) icon
@@ -1034,10 +1059,16 @@ MSHook(void, undimScreen, SBAwayController *self, SEL sel)
 	// do the unscatter
 	_undimScreen(self, sel);
 
-	NSLog(@"WI: Undimming...");
+	[_controller startTimer];
+}
 
-	// refresh the weather model
-	refreshController(false);
+MSHook(void, dimScreen, SBAwayController *self, SEL sel, BOOL b)
+{
+	// do the unscatter
+	_dimScreen(self, sel, b);
+
+	if (![[$SBUIController sharedInstance] isOnAC])
+		[_controller stopTimer];
 }
 
 MSHook(void, unscatter, SBIconController *self, SEL sel, BOOL b, double time) 
@@ -1211,8 +1242,6 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 		refresh = true;
 	}
 
-	NSLog(@"WI: Refreshing on deactivate of %@: %d", self.displayIdentifier, refresh);
-
 	if (refresh)
 		refreshController(true);
 }
@@ -1299,13 +1328,14 @@ extern "C" void TweakInit() {
 	_controller = [[[WeatherIconController alloc] init] retain];
 
 	// MSHookMessage is what we use to redirect the methods to our own
-	Hook(SBIconController, unscatter:startTime:, unscatter);
+//	Hook(SBIconController, unscatter:startTime:, unscatter);
 	Hook(SBApplication, deactivated, deactivated);
 	Hook(SBApplicationIcon, initWithApplication:, initWithApplication);
 	Hook(SBBookmarkIcon, initWithWebClip:, initWithWebClip);
 	Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
-	Hook(SBAwayView, updateInterface, updateInterface);
-//	Hook(SBAwayController, undimScreen, undimScreen);
+//	Hook(SBAwayView, updateInterface, updateInterface);
+	Hook(SBAwayController, undimScreen, undimScreen);
+	Hook(SBAwayController, dimScreen:, dimScreen);
 	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
 
 	// only hook these in 3.0
