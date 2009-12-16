@@ -6,6 +6,12 @@
 	<array>
 		<dict>
 			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Icon</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSSwitchCell</string>
 			<key>default</key>
 			<integer>1</integer>
@@ -18,7 +24,7 @@
 			<key>set</key>
 			<string>showWeatherIcon:specifier:</string>
 			<key>label</key>
-			<string>Icon Image</string>
+			<string>Show Image</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -32,7 +38,7 @@
 			<key>key</key>
 			<string>ShowWeatherBadge</string>
 			<key>label</key>
-			<string>Icon Badge</string>
+			<string>Show Badge</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -121,6 +127,8 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Status Bar</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -132,7 +140,7 @@
 			<key>key</key>
 			<string>ShowStatusBarImage</string>
 			<key>label</key>
-			<string>Status Bar Image</string>
+			<string>Show Image</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -144,7 +152,7 @@
 			<key>key</key>
 			<string>ShowStatusBarTemp</string>
 			<key>label</key>
-			<string>Status Bar Temp</string>
+			<string>Show Temp</string>
 		</dict>
 		<dict>
 			<key>cell</key>

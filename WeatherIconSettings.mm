@@ -10,7 +10,7 @@ static NSString* CUSTOM = @"Custom";
 
 - (void)dealloc
 {
-	NSLog(@"WI:Debug: Dealloc");
+//	NSLog(@"WI:Debug: Dealloc");
 	[location release];
 	[unit release];
 	[bundleIdentifier release];
@@ -25,7 +25,7 @@ static NSString* CUSTOM = @"Custom";
 	[self setPreferenceValue:value specifier:specifier];
 	
 /*
-	NSLog(@"WI:Debug: showWeatherIcon");
+//	NSLog(@"WI:Debug: showWeatherIcon");
 
 	id custom = [self readPreferenceValue:bundleIdentifier];
 	NSArray* bundleSpecs;
@@ -44,7 +44,7 @@ static NSString* CUSTOM = @"Custom";
 - (void) customBundleIdentifier:(id) value specifier:(id) specifier
 {
 	[self setPreferenceValue:value specifier:specifier];
-	NSLog(@"WI:Debug: custom %@", customBundleIdentifier);
+//	NSLog(@"WI:Debug: custom %@", customBundleIdentifier);
 
 	if ([value isEqualToString:CUSTOM])
 		[self insertSpecifier:customBundleIdentifier afterSpecifierID:@"WeatherBundleIdentifier" animated:YES];
@@ -56,7 +56,7 @@ static NSString* CUSTOM = @"Custom";
 {
 	[self setPreferenceValue:value specifier:specifier];
 	
-	NSLog(@"WI:Debug: showOverride %@, %@", location, unit);
+//	NSLog(@"WI:Debug: showOverride %@, %@", location, unit);
 	NSArray* overrideSpecs = [NSArray arrayWithObjects:location, unit, nil];
 	if ([value boolValue])
 		[self insertContiguousSpecifiers:overrideSpecs afterSpecifierID:@"OverrideLocation" animated:YES];
@@ -70,13 +70,13 @@ static NSString* CUSTOM = @"Custom";
 
 	location = [[self specifierForID:@"Location"] retain];
 	unit = [[self specifierForID:@"Celsius"] retain];
-	NSLog(@"WI:Debug: %@, %@", location, unit);
+//	NSLog(@"WI:Debug: %@, %@", location, unit);
 	PSSpecifier* override = [self specifierForID:@"OverrideLocation"];
 	id value = [self readPreferenceValue:override];
 	if (![value boolValue])
 	{
 		NSArray* overrideSpecs = [NSArray arrayWithObjects:location, unit, nil];
-		NSLog(@"WI:Debug: Removing %@", overrideSpecs);
+//		NSLog(@"WI:Debug: Removing %@", overrideSpecs);
 		[self removeContiguousSpecifiers:overrideSpecs animated:YES];
 	}
 
@@ -85,7 +85,7 @@ static NSString* CUSTOM = @"Custom";
 	weatherIconSeparator = [[self specifierForID:@"WeatherIconSeparator"] retain];
 	weatherIconText = [[self specifierForID:@"WeatherIconText"] retain];
 
-	NSLog(@"WI:Debug: Checking icon");
+//	NSLog(@"WI:Debug: Checking icon");
 /*
 	PSSpecifier* icon = [self specifierForID:@"ShowWeatherIcon"];
 	value = [self readPreferenceValue:icon];
@@ -98,17 +98,17 @@ static NSString* CUSTOM = @"Custom";
 	else
 	{
 */
-		NSLog(@"WI:Debug: Checking custom");
+//		NSLog(@"WI:Debug: Checking custom");
 		PSSpecifier* bundle = [self specifierForID:@"WeatherBundleIdentifier"];
 		value = [self readPreferenceValue:bundle];
 		if (![value isEqualToString:CUSTOM])
 		{
-			NSLog(@"WI:Debug: Removing custom");
+//			NSLog(@"WI:Debug: Removing custom");
 			[self removeSpecifier:customBundleIdentifier animated:YES];
 		}
 //	}
 
-	NSLog(@"WI:Debug: Done with init");
+//	NSLog(@"WI:Debug: Done with init");
 }
 
 - (NSArray*) specifiers

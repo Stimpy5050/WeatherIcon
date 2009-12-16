@@ -7,4 +7,4 @@ Maintainer: David Ashman <dashman@gmail.com>
 Author: David Ashman (Stimpy5050) <dashman@gmail.com>
 Sponsor: 
 Section: LockInfo Addons
-Pre-Depends: com.ashman.weathericon (>= 2.2.27), com.ashman.lockinfo
+Pre-Depends: com.ashman.weathericon (>= 2.3.0), com.ashman.lockinfo

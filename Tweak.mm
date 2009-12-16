@@ -527,11 +527,11 @@ qualifiedName:(NSString *)qName
 		double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
 		self.localWeatherTime = [NSDate dateWithTimeIntervalSince1970:timestamp];
 	}
-	else if (self.showFeelsLike && [elementName isEqualToString:@"yweather:wind"])
+	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
 		self.temp = [attributeDict objectForKey:@"chill"];
-		[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"temp"];
-		NSLog(@"WI: Temp: %@", self.temp);
+		[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"chill"];	
+		NSLog(@"WI: Chill: %@", self.temp);
 	}
 	else if ([elementName isEqualToString:@"yweather:location"])
 	{
@@ -566,7 +566,7 @@ qualifiedName:(NSString *)qName
 		if (arr == nil)
 		{
 			arr = [NSMutableArray arrayWithCapacity:7];
-			[self.currentCondition setObject:arr forKey:@"forecast"];
+			[self.currentCondition setValue:arr forKey:@"forecast"];
 		}
 
 		[arr addObject:forecast];
@@ -666,6 +666,7 @@ foundCharacters:(NSString *)string
 	}
 
 	self.isNight = night;
+	[self.currentCondition setValue:[NSNumber numberWithBool:night] forKey:@"night"];
 	NSLog(@"WI: Night? %d", self.isNight);
 }
 
@@ -840,8 +841,12 @@ foundCharacters:(NSString *)string
 	NSString* iconPath = [self findWeatherImagePath:@"weatherstatus"];
 	if (iconPath == nil)
 		iconPath = [self findWeatherImagePath:@"weather"];
-
 	[self.currentCondition setValue:iconPath forKey:@"icon"];
+
+	if (self.showFeelsLike)
+		if (NSNumber* n = [self.currentCondition objectForKey:@"chill"])
+			[self.currentCondition setValue:n forKey:@"temp"];
+
 	[self.currentCondition writeToFile:conditionPath atomically:YES];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIWeatherUpdatedNotification" object:self userInfo:self.currentCondition];
@@ -945,7 +950,7 @@ foundCharacters:(NSString *)string
 
 - (void) refresh
 {
-	if (!self.lockInfo && !self.showWeatherIcon && !self.showStatusBarWeather)
+	if (!self.lockInfo && !self.showWeatherIcon && !self.showWeatherBadge && !self.showStatusBarWeather)
 	{
 		NSLog(@"WI: No weather views are active.  No refresh.");
 		return;
