@@ -31,7 +31,6 @@
 @interface WeatherIconController : NSObject
 {
 	BOOL refreshing;
-	int failedCount;
 	NSTimer* timer;
 }
 
@@ -392,8 +391,6 @@ static WeatherIconController* instance = nil;
 
 - (id) init
 {
-	failedCount = 0;
-
 	self.temp = defaultTemp;
 	self.code = defaultCode;
 	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate];
@@ -895,22 +892,10 @@ foundCharacters:(NSString *)string
 
 //	NSLog(@"WI:Debug: Done refreshing weather.");
 
-	BOOL success = true;
-	if (self.lastUpdateTime < self.nextRefreshTime)
-	{
-		NSLog(@"WI: Update failed.");
-		success = false;
-		
-		if (failedCount++ < 3)
-			return success;
-	}
-
-	failedCount = 0;
-
 	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate] + self.refreshInterval;
 
 	NSLog(@"WI: Next refresh time: %f", self.nextRefreshTime);
-	return success;
+	return true;
 }
 
 - (void) refreshInBackground
@@ -919,12 +904,9 @@ foundCharacters:(NSString *)string
 	@try
 	{
 		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-		BOOL success = [self _refresh];
-		[pool release];
-
-		// update the weather info
-		if (success)
+		if ([self _refresh])
 			[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
+		[pool release];
 	}
 	@finally
 	{
