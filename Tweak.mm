@@ -519,10 +519,17 @@ qualifiedName:(NSString *)qName
                 self.sunset = [attributeDict objectForKey:@"sunset"];
                 NSLog(@"WI: Sunset: %@", self.sunset);
         }
-	else if (self.useLocalTime && [elementName isEqualToString:@"result"])
+	else if ([elementName isEqualToString:@"result"])
 	{
-		double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
-		self.localWeatherTime = [NSDate dateWithTimeIntervalSince1970:timestamp];
+		if (self.useLocalTime)
+		{
+			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
+			self.localWeatherTime = [NSDate dateWithTimeIntervalSince1970:timestamp];
+			NSLog(@"WI: Weather Time (forecast): %@", self.localWeatherTime);
+		}
+
+		// clear the current forecast
+		[self.currentCondition setObject:[NSMutableArray arrayWithCapacity:6] forKey:@"forecast"];
 	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
@@ -590,11 +597,13 @@ qualifiedName:(NSString *)qName
 
 		if (!self.useLocalTime)
 		{
-			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
-			self.localWeatherTime = [NSDate dateWithTimeIntervalSince1970:timestamp];
+			NSString* str = [attributeDict objectForKey:@"date"];
+			NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
+	                [df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
+       			[df setDateFormat:@"EEE, dd MMM yyyy h:mm a z"];
+			self.localWeatherTime = [df dateFromString:str];
+			NSLog(@"WI: Weather Time (datafeed): %@", self.localWeatherTime);
 		}
-
-		NSLog(@"WI: Local Weather Time: %@", self.localWeatherTime);
 	}
 }
 
@@ -860,9 +869,6 @@ foundCharacters:(NSString *)string
 		return false;
 	}
 
-	// clear the current forecast
-	[self.currentCondition removeObjectForKey:@"forecast"];
-	
 	NSLog(@"WI: Refreshing weather for %@...", self.location);
 
 	NSString* yahooStr = [NSString stringWithFormat:@"http://weather.yahooapis.com/forecastrss?p=%@&u=%@", self.location, (self.isCelsius ? @"c" : @"f")];

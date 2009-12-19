@@ -95,8 +95,8 @@ static LITableView* findTableView(UIView* view)
 	NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
 	if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
 	{
-		if (NSNumber* n = [theme objectForKey:@"ImageScale"])
-			scale = n.doubleValue;
+//		if (NSNumber* n = [theme objectForKey:@"ImageScale"])
+//			scale = n.doubleValue;
 
 		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
 			scale = n.doubleValue;
