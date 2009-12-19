@@ -514,10 +514,10 @@ qualifiedName:(NSString *)qName
 	if ([elementName isEqualToString:@"astronomy"])
         {
                 self.sunrise = [attributeDict objectForKey:@"sunrise"];
-                NSLog(@"WI: Sunrise: %@", self.sunrise);
+//                NSLog(@"WI: Sunrise: %@", self.sunrise);
 
                 self.sunset = [attributeDict objectForKey:@"sunset"];
-                NSLog(@"WI: Sunset: %@", self.sunset);
+//                NSLog(@"WI: Sunset: %@", self.sunset);
         }
 	else if ([elementName isEqualToString:@"result"])
 	{
@@ -525,7 +525,7 @@ qualifiedName:(NSString *)qName
 		{
 			double timestamp = [[attributeDict objectForKey:@"timestamp"] doubleValue];
 			self.localWeatherTime = [NSDate dateWithTimeIntervalSince1970:timestamp];
-			NSLog(@"WI: Weather Time (forecast): %@", self.localWeatherTime);
+//			NSLog(@"WI: Weather Time (forecast): %@", self.localWeatherTime);
 		}
 
 		// clear the current forecast
@@ -535,7 +535,7 @@ qualifiedName:(NSString *)qName
 	{
 		self.temp = [attributeDict objectForKey:@"chill"];
 		[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"chill"];	
-		NSLog(@"WI: Chill: %@", self.temp);
+//		NSLog(@"WI: Chill: %@", self.temp);
 	}
 	else if ([elementName isEqualToString:@"yweather:location"])
 	{
@@ -581,7 +581,7 @@ qualifiedName:(NSString *)qName
 		{
 			self.temp = [attributeDict objectForKey:@"temp"];
 			[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"temp"];
-			NSLog(@"WI: Temp: %@", self.temp);
+//			NSLog(@"WI: Temp: %@", self.temp);
 		}
 
 		self.code = [attributeDict objectForKey:@"code"];
@@ -590,10 +590,10 @@ qualifiedName:(NSString *)qName
 		NSString* desc = [attributeDict objectForKey:@"text"];
 		[self.currentCondition setValue:desc forKey:@"description"];
 
-		NSLog(@"WI: Code: %@", self.code);
+//		NSLog(@"WI: Code: %@", self.code);
 
 		self.lastUpdateTime = [NSDate timeIntervalSinceReferenceDate];
-		NSLog(@"WI: Last Update Time: %f", self.lastUpdateTime);
+//		NSLog(@"WI: Last Update Time: %f", self.lastUpdateTime);
 
 		if (!self.useLocalTime)
 		{
@@ -602,7 +602,7 @@ qualifiedName:(NSString *)qName
 	                [df setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
        			[df setDateFormat:@"EEE, dd MMM yyyy h:mm a z"];
 			self.localWeatherTime = [df dateFromString:str];
-			NSLog(@"WI: Weather Time (datafeed): %@", self.localWeatherTime);
+//			NSLog(@"WI: Weather Time (datafeed): %@", self.localWeatherTime);
 		}
 	}
 }
@@ -666,14 +666,14 @@ foundCharacters:(NSString *)string
 		NSDate* sunriseDate = [df dateFromString:sunriseFullDateStr];
 		NSDate* sunsetDate = [df dateFromString:sunsetFullDateStr];
 
-		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
+//		NSLog(@"WI: Sunset/Sunrise:%@, %@", sunriseDate, sunsetDate);
 		night = ([weatherDate compare:sunriseDate] == NSOrderedAscending ||
 				[weatherDate compare:sunsetDate] == NSOrderedDescending);
 	}
 
 	self.isNight = night;
 	[self.currentCondition setValue:[NSNumber numberWithBool:night] forKey:@"night"];
-	NSLog(@"WI: Night? %d", self.isNight);
+//	NSLog(@"WI: Night? %d", self.isNight);
 }
 
 - (UIImage*) createIndicator:(int) mode
@@ -783,7 +783,7 @@ foundCharacters:(NSString *)string
 			}
 		}
 
-		NSLog(@"WI: Done refreshing icon.");
+//		NSLog(@"WI: Done refreshing icon.");
 	}
 }
 
@@ -807,7 +807,7 @@ foundCharacters:(NSString *)string
 			[statusBarController removeStatusBarItem:@"WeatherIcon"];
 			[statusBarController addStatusBarItem:@"WeatherIcon"];
 		}
-		NSLog(@"WI: Done refreshing indicator.");
+//		NSLog(@"WI: Done refreshing indicator.");
 	}
 }
 
@@ -900,7 +900,8 @@ foundCharacters:(NSString *)string
 
 	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate] + self.refreshInterval;
 
-	NSLog(@"WI: Next refresh time: %f", self.nextRefreshTime);
+//	NSLog(@"WI: Current Condition: %@", self.currentCondition);
+	NSLog(@"WI: Next refresh time: %@", [NSDate dateWithTimeIntervalSinceReferenceDate:self.nextRefreshTime]);
 	return true;
 }
 
@@ -962,7 +963,7 @@ foundCharacters:(NSString *)string
 {
 	if (self.weatherIcon == nil)
 	{
-		NSLog(@"WI: Creating temporary icon.");
+//		NSLog(@"WI: Creating temporary icon.");
 		return [self createIcon];
 	}
 
@@ -1008,12 +1009,12 @@ static void refreshController(BOOL now)
 
 	if (SBTelephonyManager* mgr = [$SBTelephonyManager sharedTelephonyManager])
 	{
-		NSLog(@"WI: Telephony: %d, %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists, mgr.outgoingCallExists);
+//		NSLog(@"WI: Telephony: %d, %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists, mgr.outgoingCallExists);
 		refresh = (!mgr.inCall && !mgr.incomingCallExists && !mgr.activeCallExists && !mgr.outgoingCallExists);
 	}
 	else
 	{
-		NSLog(@"WI: No telephony manager.");
+//		NSLog(@"WI: No telephony manager.");
 	}
 
 	if (refresh && !_controller.isRefreshing)
@@ -1040,7 +1041,7 @@ MSHook(void, updateInterface, SBAwayView *self, SEL sel)
 		refresh = [sbui isOnAC];
 	}
 
-	NSLog(@"WI: Updating interface: %d", refresh);
+//	NSLog(@"WI: Updating interface: %d", refresh);
 
 //	NSLog(@"WI: Refreshing? %d", refresh);
 	if (refresh)
@@ -1069,7 +1070,7 @@ MSHook(void, unscatter, SBIconController *self, SEL sel, BOOL b, double time)
 	// do the unscatter
 	_unscatter(self, sel, b, time);
 
-	NSLog(@"WI: Unscattering...");
+//	NSLog(@"WI: Unscattering...");
 
 	// refresh the weather model
 	if (_controller.lastUpdateTime <= 0)
@@ -1098,7 +1099,7 @@ static void updateWeatherView(SBStatusBarContentsView* self)
 		SBStatusBarContentView* weatherView = (mode == 0 ? _sb0 : _sb1);
 		if (weatherView == nil)
 		{
-			NSLog(@"WI: Creating new weather indicator view for mode %d", mode);
+//			NSLog(@"WI: Creating new weather indicator view for mode %d", mode);
 			Class sbClass = objc_getClass("SBStatusBarContentView");
 			weatherView = [[[sbClass alloc] initWithContentsView:self] autorelease];
 			weatherView.tag = -1;
@@ -1186,7 +1187,7 @@ MSHook(void, reloadIndicators, SBStatusBarIndicatorsView *self, SEL sel)
 	int mode = [self effectiveModeForImages];
 	UIImage* indicator = [_controller statusBarIndicator:mode];
 
-	NSLog(@"WI: Reloading indicators");
+//	NSLog(@"WI: Reloading indicators");
 	if (indicator)
 	{
 		UIImageView* weatherView = [[UIImageView alloc] initWithImage:indicator];
@@ -1245,7 +1246,7 @@ MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app)
 
 	if ([_controller isWeatherIcon:self.displayIdentifier])
 	{
-		NSLog(@"WI: Replacing icon for %@.", self.displayIdentifier);
+		NSLog(@"WI: Application: %@.", self.displayIdentifier);
 		if ([self class] == objc_getClass("SBInstalledApplicationIcon"))
 			object_setClass(self, $WIInstalledApplicationIcon);
 		else
@@ -1271,7 +1272,7 @@ MSHook(id, initWithWebClip, SBBookmarkIcon *self, SEL sel, id clip)
 
 	if ([_controller isWeatherIcon:self.displayIdentifier])
 	{
-		NSLog(@"WI: Replacing icon for %@.", self.displayIdentifier);
+		NSLog(@"WI: Application: %@.", self.displayIdentifier);
 		object_setClass(self, $WIBookmarkIcon);
 	}
 
