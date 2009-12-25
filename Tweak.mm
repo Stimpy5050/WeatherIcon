@@ -31,7 +31,7 @@
 @interface WeatherIconController : NSObject
 {
 	BOOL refreshing;
-	NSTimer* timer;
+	BOOL scheduled;
 }
 
 	// image caches
@@ -60,14 +60,11 @@
 
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
-- (void)setNeedsRefresh;
 - (BOOL)isRefreshing;
 - (void)refresh;
-- (void)refreshNow;
 - (NSTimeInterval)lastUpdateTime;
 
--(void) stopTimer;
--(void) startTimer;
+-(void) scheduleRefresh:(BOOL) force;
 
 - (UIImage*)icon;
 - (UIImage*)statusBarIndicator:(int) mode;
@@ -78,6 +75,8 @@ static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $SBUIController = objc_getClass("SBUIController");
 static Class $SBIconController = objc_getClass("SBIconController");
 static Class $SBImageCache = objc_getClass("SBImageCache");
+static Class $SBTelephonyManager = objc_getClass("SBTelephonyManager");
+static Class $SBAwayController = objc_getClass("SBAwayController");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 static NSString* lockInfoPrefs = @"/var/mobile/Library/Preferences/com.ashman.lockinfo.WeatherIconPlugin.plist";
@@ -398,39 +397,31 @@ static WeatherIconController* instance = nil;
 
 	[self loadPreferences];
 
+	// schedule the first refresh
+	[self scheduleRefresh:YES];
+
 	return self;
 }
 
--(void) dealloc
+-(void) scheduleRefreshOnMainThread
 {
-	[self stopTimer];
-	[super dealloc];
+	// figure out timing
+	NSTimeInterval delay = self.nextRefreshTime - [NSDate timeIntervalSinceReferenceDate];
+	if (delay < 30)
+		delay = 30;
+
+	NSLog(@"WI: Scheduling refresh for %@.", [NSDate dateWithTimeIntervalSinceNow:delay]);
+	[self performSelector:@selector(refresh) withObject:nil afterDelay:delay];
+	scheduled = true;	
 }
 
--(void) startTimer
+-(void) scheduleRefresh:(BOOL) force
 {
 	@synchronized (self)
 	{
-		if (timer == nil)
+		if (force || !scheduled)
 		{
-			NSLog(@"WI:Timer: Starting timer: %f", self.refreshInterval);
-			timer = [[NSTimer alloc] initWithFireDate:[NSDate dateWithTimeIntervalSinceReferenceDate:self.nextRefreshTime] interval:self.refreshInterval target:self selector:@selector(refresh) userInfo:nil repeats:YES];
-			[[NSRunLoop mainRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
-		}
-	}
-}
-
--(void) stopTimer
-{
-	@synchronized (self)
-	{
-		if (timer != nil)
-		{
-			NSLog(@"WI:Timer: Stop timer.");
-			NSTimer* tmp = timer;
-			timer = nil;
-			[tmp invalidate];
-			[tmp release];
+			[self performSelectorOnMainThread:@selector(scheduleRefreshOnMainThread) withObject:nil waitUntilDone:YES];
 		}
 	}
 }
@@ -900,8 +891,9 @@ foundCharacters:(NSString *)string
 
 	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate] + self.refreshInterval;
 
-//	NSLog(@"WI: Current Condition: %@", self.currentCondition);
-	NSLog(@"WI: Next refresh time: %@", [NSDate dateWithTimeIntervalSinceReferenceDate:self.nextRefreshTime]);
+	if (![[$SBAwayController sharedAwayController] isDimmed] || [[$SBUIController sharedInstance] isOnAC])
+		[self scheduleRefresh:YES];
+
 	return true;
 }
 
@@ -921,20 +913,9 @@ foundCharacters:(NSString *)string
 	}
 }
 
-- (void) setNeedsRefresh
-{
-	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate] - 1;
-}
-
 - (BOOL) isRefreshing
 {
 	return refreshing;
-}
-
-- (void) refreshNow
-{
-	[self setNeedsRefresh];
-	[self refresh];
 }
 
 - (void) refresh
@@ -945,10 +926,22 @@ foundCharacters:(NSString *)string
 		return;
 	}
 
+	if (SBTelephonyManager* mgr = [$SBTelephonyManager sharedTelephonyManager])
+	{
+		if (mgr.inCall || mgr.incomingCallExists || mgr.activeCallExists || mgr.outgoingCallExists)
+		{
+			NSLog(@"WI: On a call.  Skipping refresh.");
+			return;
+		}
+	}
+
 	@synchronized (self)
 	{
 		if (self.isRefreshing)
+		{
+			NSLog(@"WI: Already refreshing.  Skipping refresh.");
 			return;
+		}
 
 		refreshing = true;
 	}
@@ -958,6 +951,7 @@ foundCharacters:(NSString *)string
 
 	[self performSelectorInBackground:@selector(refreshInBackground) withObject:nil];
 }
+
 
 - (UIImage*) icon
 {
@@ -991,7 +985,6 @@ static Class $WIInstalledApplicationIcon;
 static Class $WIApplicationIcon;
 static Class $WIBookmarkIcon;
 static Class $SBStatusBarContentsView;
-static Class $SBTelephonyManager;
 
 static WeatherIconController* _controller;
 static SBStatusBarContentView* _sb0;
@@ -1003,78 +996,12 @@ static NSTimeInterval lastPrefsUpdate = 0;
 -(BOOL) isVisible;
 @end
 
-static void refreshController(BOOL now)
-{
-	BOOL refresh = true;
-
-	if (SBTelephonyManager* mgr = [$SBTelephonyManager sharedTelephonyManager])
-	{
-//		NSLog(@"WI: Telephony: %d, %d, %d, %d", mgr.inCall, mgr.incomingCallExists, mgr.activeCallExists, mgr.outgoingCallExists);
-		refresh = (!mgr.inCall && !mgr.incomingCallExists && !mgr.activeCallExists && !mgr.outgoingCallExists);
-	}
-	else
-	{
-//		NSLog(@"WI: No telephony manager.");
-	}
-
-	if (refresh && !_controller.isRefreshing)
-	{
-		if (now)
-			[_controller refreshNow];
-		else
-			[_controller refresh];
-	}
-}
-
-MSHook(void, updateInterface, SBAwayView *self, SEL sel)
-{
-	_updateInterface(self, sel);
-
-	// refresh the weather model
-	BOOL refresh = !self.dimmed;
-
-	if (!refresh)
-	{
-		// check AC
-		Class cls = objc_getClass("SBUIController");
-		SBUIController* sbui = [cls sharedInstance];
-		refresh = [sbui isOnAC];
-	}
-
-//	NSLog(@"WI: Updating interface: %d", refresh);
-
-//	NSLog(@"WI: Refreshing? %d", refresh);
-	if (refresh)
-		refreshController(false);
-}
-
 MSHook(void, undimScreen, SBAwayController *self, SEL sel)
 {
 	// do the unscatter
 	_undimScreen(self, sel);
 
-	[_controller startTimer];
-}
-
-MSHook(void, dimScreen, SBAwayController *self, SEL sel, BOOL b)
-{
-	// do the unscatter
-	_dimScreen(self, sel, b);
-
-	if (![[$SBUIController sharedInstance] isOnAC])
-		[_controller stopTimer];
-}
-
-MSHook(void, unscatter, SBIconController *self, SEL sel, BOOL b, double time) 
-{
-	// do the unscatter
-	_unscatter(self, sel, b, time);
-
-//	NSLog(@"WI: Unscattering...");
-
-	// refresh the weather model
-	if (_controller.lastUpdateTime <= 0)
-		refreshController(false);
+	[_controller scheduleRefresh:NO];
 }
 
 static float findStart(SBStatusBarContentsView* self, const char* varName, const char* visibleVarName, float currentStart)
@@ -1237,7 +1164,7 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 	}
 
 	if (refresh)
-		refreshController(true);
+		[_controller refresh];
 }
 
 MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app) 
@@ -1305,7 +1232,6 @@ extern "C" void TweakInit() {
 	class_replaceMethod($WIBookmarkIcon, @selector(icon), (IMP)&weatherIcon, "@@:");
 	objc_registerClassPair($WIBookmarkIcon);
 
-	Class $SBAwayController = objc_getClass("SBAwayController");
 	Class $SBAwayView = objc_getClass("SBAwayView");
 	Class $SBIconModel = objc_getClass("SBIconModel");
 	Class $SBIconController = objc_getClass("SBIconController");
@@ -1317,19 +1243,15 @@ extern "C" void TweakInit() {
 	Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
 	Class $SBStatusBarIndicatorsView = objc_getClass("SBStatusBarIndicatorsView");
 	$SBStatusBarContentsView = objc_getClass("SBStatusBarContentsView");
-	$SBTelephonyManager = objc_getClass("SBTelephonyManager");
 	
 	_controller = [[[WeatherIconController alloc] init] retain];
 
 	// MSHookMessage is what we use to redirect the methods to our own
-//	Hook(SBIconController, unscatter:startTime:, unscatter);
 	Hook(SBApplication, deactivated, deactivated);
 	Hook(SBApplicationIcon, initWithApplication:, initWithApplication);
 	Hook(SBBookmarkIcon, initWithWebClip:, initWithWebClip);
 	Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
-//	Hook(SBAwayView, updateInterface, updateInterface);
 	Hook(SBAwayController, undimScreen, undimScreen);
-	Hook(SBAwayController, dimScreen:, dimScreen);
 	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
 
 	// only hook these in 3.0
