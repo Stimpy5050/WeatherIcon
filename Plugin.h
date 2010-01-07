@@ -9,6 +9,7 @@ static NSString* LIUndimScreenNotification = @"com.ashman.LockInfo.screenUndimme
 static NSString* LITimerNotification = @"com.ashman.LockInfo.timerFired";
 static NSString* LIUpdateViewNotification = @"com.ashman.LockInfo.updateView";
 static NSString* LIViewReadyNotification = @"com.ashman.LockInfo.viewReady";
+static NSString* LIManualRefreshNotification = @".refreshRequested";
 static NSString* LIPrefsUpdatedNotification = @".prefsUpdated";
 static NSString* LIBadgeChangedNotification = @".badgeChanged";
 static NSString* LIApplicationDeactivatedNotification = @".applicationDeactivated";
@@ -54,13 +55,12 @@ static BOOL isTomorrow(NSDate* date)
 @property (nonatomic, retain) id<UITableViewDataSource> tableViewDataSource;
 
 - (BOOL) enabled;
+- (BOOL) native;
 - (NSString*) bundleIdentifier;
 - (NSBundle*) bundle;
 - (NSDictionary*) preferences;
+- (NSDictionary*) globalPreferences;
 - (NSArray*) managedBundles;
-- (void) updateView:(NSDictionary*) data;
-
-- (id) lock;
 
 @end
 
@@ -125,7 +125,18 @@ static BOOL isTomorrow(NSDate* date)
 -(LITimeView*) timeViewWithFrame:(CGRect) frame;
 -(LILabel*) labelWithFrame:(CGRect) frame;
 
+-(UIImage*) sectionSubheader;
+
 - (CGFloat)defaultHeightForHeader;
+- (CGFloat)defaultHeightForRow;
+
+@end
+
+@protocol LITableViewDataSource <UITableViewDataSource>
+
+@optional
+-(NSInteger) tableView:(LITableView*)tableView numberOfItemsInSection:(NSInteger)section;
+-(NSInteger) tableView:(LITableView*)tableView totalNumberOfItemsInSection:(NSInteger)section;
 
 @end
 

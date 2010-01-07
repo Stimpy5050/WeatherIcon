@@ -11,7 +11,7 @@
 "Drizzle"="Pioggerella";
 "Freezing Rain"="Pioggia gelata";
 "Rain"="Pioggia";
-"Showers"="Docce";
+"Showers"="Pioggia";
 "Snow Flurries"="Polvere di neve";
 "Light Snow Showers"="Nevicate";
 "Blowing Snow"="Neve";
@@ -28,9 +28,9 @@
 "Cloudy"="Poco nuvoloso";
 "Mostly Cloudy"="Molto nuvoloso";
 "Partly Cloudy"="Parzialmente nuvoloso";
-"Clear"="Chiaro";
+"Clear"="Sereno";
 "Sunny"="Soleggiato";
-"Fair"="Chiaro";
+"Fair"="Sereno";
 "Mixed Rain and Hail"="Mista pioggia e grandine";
 "Hot"="Caldo";
 "Isolated Thunderstorms"="Isolati temporali";

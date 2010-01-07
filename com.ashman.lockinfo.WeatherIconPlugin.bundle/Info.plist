@@ -30,5 +30,7 @@
 	<string>2.2</string>
 	<key>NSPrincipalClass</key>
 	<string>WeatherIconPlugin</string>
+	<key>LISupportsManualRefresh</key>
+	<true/>
 </dict>
 </plist>

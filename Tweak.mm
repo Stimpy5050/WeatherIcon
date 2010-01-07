@@ -31,8 +31,9 @@
 @interface WeatherIconController : NSObject
 {
 	BOOL refreshing;
-	BOOL scheduled;
 }
+
+@property (nonatomic, retain) NSTimer* timer;
 
 	// image caches
 @property (nonatomic, retain) UIImage* statusBarIndicator;
@@ -51,6 +52,7 @@
 @property (nonatomic) NSTimeInterval nextRefreshTime;
 @property (nonatomic) NSTimeInterval lastUpdateTime;
 
+		
 
 @property (nonatomic, retain) NSDictionary* theme;
 @property (nonatomic, retain) NSDictionary* weatherPreferences;
@@ -60,11 +62,10 @@
 
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
-- (BOOL)isRefreshing;
-- (void)refresh;
 - (NSTimeInterval)lastUpdateTime;
 
--(void) scheduleRefresh:(BOOL) force;
+-(void) manualRefresh;
+-(void) scheduleRefresh;
 
 - (UIImage*)icon;
 - (UIImage*)statusBarIndicator:(int) mode;
@@ -114,9 +115,9 @@ static NSString* defaultCode = @"3200";
 
 static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TUE", @"WED", @"THU", @"FRI", @"SAT", nil];
 
-static WeatherIconController* instance = nil;
-
 @implementation WeatherIconController
+
+@synthesize timer;
 
 // image cache
 @synthesize statusBarIndicator, statusBarIndicatorFSO, weatherIcon;
@@ -179,12 +180,6 @@ static WeatherIconController* instance = nil;
 		weather = [NSDictionary dictionary];
 
 	self.weatherPreferences = weather;
-
-	NSMutableDictionary* current = [NSMutableDictionary dictionaryWithContentsOfFile:conditionPath];
-	if (current == nil)
-		current = [NSMutableDictionary dictionaryWithCapacity:5];
-	
-	self.currentCondition = current;
 
 	BOOL b = false;
 	if (NSDictionary* liPrefs = [NSDictionary dictionaryWithContentsOfFile:lockInfoPrefs])
@@ -392,38 +387,71 @@ static WeatherIconController* instance = nil;
 {
 	self.temp = defaultTemp;
 	self.code = defaultCode;
-	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate];
 	refreshing = false;
+
+	if (self.currentCondition = [NSMutableDictionary dictionaryWithContentsOfFile:conditionPath])
+	{
+		if (NSNumber* n = [self.currentCondition objectForKey:@"temp"])
+			self.temp = n.stringValue;
+
+		if (NSNumber* n = [self.currentCondition objectForKey:@"code"])
+			self.code = n.stringValue;
+
+		NSLog(@"WI:Init: Current condition set to temp (%@), code (%@)", self.temp, self.code);
+	}
+	else
+	{
+		self.currentCondition = [NSMutableDictionary dictionaryWithCapacity:5];
+	}
 
 	[self loadPreferences];
 
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(manualRefresh) name:@"WIRefreshNotification" object:nil];
+
 	// schedule the first refresh
-	[self scheduleRefresh:YES];
+	[self scheduleRefresh];
 
 	return self;
 }
 
--(void) scheduleRefreshOnMainThread
+-(void) scheduleRefreshOnMainThread:(NSNumber*) delay
 {
-	// figure out timing
-	NSTimeInterval delay = self.nextRefreshTime - [NSDate timeIntervalSinceReferenceDate];
-	if (delay < 30)
-		delay = 30;
-
-	NSLog(@"WI: Scheduling refresh for %@.", [NSDate dateWithTimeIntervalSinceNow:delay]);
-	[self performSelector:@selector(refresh) withObject:nil afterDelay:delay];
-	scheduled = true;	
+	self.timer = [[NSTimer scheduledTimerWithTimeInterval:delay.doubleValue target:self selector:@selector(refreshFromTimer:) userInfo:nil repeats:NO] retain];
+	NSLog(@"WI:Timer: Scheduling next refresh for %@.", self.timer.fireDate);
 }
 
--(void) scheduleRefresh:(BOOL) force
+-(void) scheduleRefresh
 {
-	@synchronized (self)
+	if (!self.timer.isValid)
+		[self performSelectorOnMainThread:@selector(scheduleRefreshOnMainThread:) withObject:[NSNumber numberWithInt:1] waitUntilDone:NO];
+	else
+		NSLog(@"WI:Timer: Next refresh already scheduled for %@.", self.timer.fireDate);		
+}
+
+-(void) scheduleNextRefresh
+{
+	if (![[$SBAwayController sharedAwayController] isDimmed] || [[$SBUIController sharedInstance] isOnAC])
+		[self performSelectorOnMainThread:@selector(scheduleRefreshOnMainThread:) withObject:[NSNumber numberWithInt:self.refreshInterval] waitUntilDone:NO];
+	else
+		NSLog(@"WI:Timer: Not scheduling next refresh because device is asleep.");
+}
+
+-(void) refreshFromTimer:(NSTimer*) timer
+{
+	[self refresh];
+	[self scheduleNextRefresh];
+}
+
+-(void) manualRefresh
+{
+	if (self.timer.isValid)
 	{
-		if (force || !scheduled)
-		{
-			[self performSelectorOnMainThread:@selector(scheduleRefreshOnMainThread) withObject:nil waitUntilDone:YES];
-		}
+		NSLog(@"WI:Timer: Manual refresh requested.  Invalidating timer scheduled for %@.", self.timer.fireDate);
+		[self.timer invalidate];
 	}
+
+	[self refresh];
+	[self scheduleNextRefresh];
 }
 
 - (NSString*) mapImage:(NSString*) prefix code:(NSString*) code night:(BOOL) night
@@ -521,12 +549,13 @@ qualifiedName:(NSString *)qName
 
 		// clear the current forecast
 		[self.currentCondition setObject:[NSMutableArray arrayWithCapacity:6] forKey:@"forecast"];
+		NSLog(@"WI: Successfully loaded forecast.");
 	}
 	else if ([elementName isEqualToString:@"yweather:wind"])
 	{
-		self.temp = [attributeDict objectForKey:@"chill"];
-		[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"chill"];	
-//		NSLog(@"WI: Chill: %@", self.temp);
+		NSString* chill = [attributeDict objectForKey:@"chill"];
+		[self.currentCondition setValue:[NSNumber numberWithInt:[chill intValue]] forKey:@"chill"];	
+//		NSLog(@"WI: Chill: %@", chill);
 	}
 	else if ([elementName isEqualToString:@"yweather:location"])
 	{
@@ -568,12 +597,9 @@ qualifiedName:(NSString *)qName
 	}
 	else if ([elementName isEqualToString:@"yweather:condition"])
 	{
-		if (!self.showFeelsLike)
-		{
-			self.temp = [attributeDict objectForKey:@"temp"];
-			[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"temp"];
-//			NSLog(@"WI: Temp: %@", self.temp);
-		}
+		self.temp = [attributeDict objectForKey:@"temp"];
+		[self.currentCondition setValue:[NSNumber numberWithInt:[self.temp intValue]] forKey:@"temp"];
+//		NSLog(@"WI: Temp: %@", self.temp);
 
 		self.code = [attributeDict objectForKey:@"code"];
 		[self.currentCondition setValue:[NSNumber numberWithInt:[self.code intValue]] forKey:@"code"];
@@ -595,6 +621,8 @@ qualifiedName:(NSString *)qName
 			self.localWeatherTime = [df dateFromString:str];
 //			NSLog(@"WI: Weather Time (datafeed): %@", self.localWeatherTime);
 		}
+
+		NSLog(@"WI: Successfully loaded current condition.");
 	}
 }
 
@@ -840,10 +868,6 @@ foundCharacters:(NSString *)string
 		iconPath = [self findWeatherImagePath:@"weather"];
 	[self.currentCondition setValue:iconPath forKey:@"icon"];
 
-	if (self.showFeelsLike)
-		if (NSNumber* n = [self.currentCondition objectForKey:@"chill"])
-			[self.currentCondition setValue:n forKey:@"temp"];
-
 	[self.currentCondition writeToFile:conditionPath atomically:YES];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIWeatherUpdatedNotification" object:self userInfo:self.currentCondition];
@@ -887,12 +911,14 @@ foundCharacters:(NSString *)string
 	[parser parse];
 	[parser release];
 
-//	NSLog(@"WI:Debug: Done refreshing weather.");
-
-	self.nextRefreshTime = [NSDate timeIntervalSinceReferenceDate] + self.refreshInterval;
-
-	if (![[$SBAwayController sharedAwayController] isDimmed] || [[$SBUIController sharedInstance] isOnAC])
-		[self scheduleRefresh:YES];
+	if (self.showFeelsLike)
+	{
+		if (NSNumber* n = [self.currentCondition objectForKey:@"chill"])
+		{
+			self.temp = n.stringValue;
+			[self.currentCondition setValue:n forKey:@"temp"];
+		}
+	}
 
 	return true;
 }
@@ -911,11 +937,6 @@ foundCharacters:(NSString *)string
 	{
 		refreshing = false;
 	}
-}
-
-- (BOOL) isRefreshing
-{
-	return refreshing;
 }
 
 - (void) refresh
@@ -937,7 +958,7 @@ foundCharacters:(NSString *)string
 
 	@synchronized (self)
 	{
-		if (self.isRefreshing)
+		if (refreshing)
 		{
 			NSLog(@"WI: Already refreshing.  Skipping refresh.");
 			return;
@@ -1001,7 +1022,7 @@ MSHook(void, undimScreen, SBAwayController *self, SEL sel)
 	// do the unscatter
 	_undimScreen(self, sel);
 
-	[_controller scheduleRefresh:NO];
+	[_controller scheduleRefresh];
 }
 
 static float findStart(SBStatusBarContentsView* self, const char* varName, const char* visibleVarName, float currentStart)
@@ -1164,7 +1185,7 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 	}
 
 	if (refresh)
-		[_controller refresh];
+		[_controller manualRefresh];
 }
 
 MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app) 
@@ -1211,6 +1232,12 @@ static id weatherIcon(SBIcon *self, SEL sel)
 	return _controller.icon;
 }
 
+static void undimScreenOnNotif(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
+{
+//	NSLog(@"WI:Display: undim");
+	[_controller scheduleRefresh];
+}
+
 #define Hook(cls, sel, imp) \
         _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
@@ -1251,7 +1278,6 @@ extern "C" void TweakInit() {
 	Hook(SBApplicationIcon, initWithApplication:, initWithApplication);
 	Hook(SBBookmarkIcon, initWithWebClip:, initWithWebClip);
 	Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
-	Hook(SBAwayController, undimScreen, undimScreen);
 	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
 
 	// only hook these in 3.0
@@ -1261,6 +1287,19 @@ extern "C" void TweakInit() {
 		Hook(SBStatusBarBluetoothView, setFrame:, btSetFrame);
 		Hook(SBStatusBarBluetoothBatteryView, setFrame:, btbSetFrame);
 		Hook(SBStatusBarContentsView, reflowContentViewsNow, reflowContentViewsNow);
+
+	        CFNotificationCenterAddObserver(
+       	        	CFNotificationCenterGetDarwinNotifyCenter(), //center
+	                NULL, // observer
+	                undimScreenOnNotif, // callback
+	                (CFStringRef)@"SBDidTurnOnDisplayNotification",
+	                NULL, // object
+	                CFNotificationSuspensionBehaviorHold);
+
+	}
+	else
+	{
+		Hook(SBAwayController, undimScreen, undimScreen);
 	}
 	
 	[pool release];

@@ -67,6 +67,7 @@
 				<string>Outside</string>
 				<string>AccuWeather.com</string>
 				<string>Fizz Weather</string>
+				<string>Fizz Traveller</string>
 				<string>WeatherEye</string>
 				<string>My Weather</string>
 				<string>Oz Weather</string>
@@ -85,6 +86,7 @@
 				<string>com.icelantern.Outside</string>
 				<string>com.yourcompany.TestWithCustomTabs</string>
 				<string>fizzsoftware.com.fizzweather</string>
+				<string>fizzsoftware.com.fizztraveller</string>
 				<string>com.theweathernetwork.weathereye</string>
 				<string>com.MyWeather.MyWeather</string>
 				<string>com.ajnaware.ozweather</string>
