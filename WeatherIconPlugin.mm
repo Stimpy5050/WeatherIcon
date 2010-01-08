@@ -43,27 +43,9 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	@"Scattered Showers", @"Heavy Snow", @"Scattered Snow Showers", @"Heavy Snow", @"Partly Cloudy",
 	@"Thunderstorms", @"Snow Showers", @"Isolated Thunderstorms", nil] retain];
 
-static LITableView* findTableView(UIView* view)
-{
-	LITableView* table = nil;
-	while (true)
-	{
-		view = view.superview;
-		if (view == nil)
-			break;	
-
-		if ([view isKindOfClass:[UITableView class]])
-		{
-			table = (LITableView*)view;
-			break;
-		}
-	}
-
-	return table;
-}
-
 @interface WIForecastView : UIView
 
+@property (nonatomic, retain) LITheme* theme;
 @property (nonatomic, retain) NSArray* icons;
 @property (nonatomic, retain) NSArray* forecast;
 
@@ -71,7 +53,7 @@ static LITableView* findTableView(UIView* view)
 
 @implementation WIForecastView
 
-@synthesize forecast, icons;
+@synthesize forecast, icons, theme;
 
 @end
 
@@ -124,29 +106,28 @@ static LITableView* findTableView(UIView* view)
 -(void) drawRect:(struct CGRect) rect
 {
 	int width = (rect.size.width / 6);
-	LITableView* table = findTableView(self);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, (width / 2), 11);
-        	[table.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	CGRect r = CGRectMake(rect.origin.x + (width * i) - 5, rect.origin.y + 1, (width / 2) + 5, theme.detailStyle.font.pointSize);
+        	[theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
         	r.origin.y -= 1;
-        	[table.theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[theme.summaryStyle.textColor set];
+		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width, rect.origin.y + 1, (width / 2), 11);
-        	[table.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width - 5, rect.origin.y + 1, (width / 2) + 5, theme.detailStyle.font.pointSize);
+        	[theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 
         	r.origin.y -= 1;
-        	[table.theme.detailStyle.textColor set];
-		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[theme.detailStyle.textColor set];
+		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 }
 
@@ -160,20 +141,19 @@ static LITableView* findTableView(UIView* view)
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
 
 	int width = (rect.size.width / 6);
-	LITableView* table = findTableView(self);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, 13);
-        	[table.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, theme.detailStyle.font.pointSize + 2);
+        	[theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[table.theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:table.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[theme.summaryStyle.textColor set];
+		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
@@ -296,12 +276,12 @@ static LITableView* findTableView(UIView* view)
 	return nil;
 }
 
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+- (CGFloat)tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return (indexPath.row == 1 ? 30 : 17);
+	return (indexPath.row == 1 ? 30 : tableView.theme.detailStyle.font.pointSize + 6);
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+- (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [weather objectForKey:@"forecast"];
@@ -332,13 +312,13 @@ static LITableView* findTableView(UIView* view)
 		switch (indexPath.row)
 		{
 			case 0:
-				fcv = [[[WIForecastDaysView alloc] initWithFrame:CGRectMake(10, 2, 300, 15)] autorelease];
+				fcv = [[[WIForecastDaysView alloc] init] autorelease];
 				break;
 			case 1:
-				fcv = [[[WIForecastIconView alloc] initWithFrame:CGRectMake(10, 0, 300, 30)] autorelease];
+				fcv = [[[WIForecastIconView alloc] init] autorelease];
 				break;
 			case 2:
-				fcv = [[[WIForecastTempView alloc] initWithFrame:CGRectMake(10, 0, 300, 15)] autorelease];
+				fcv = [[[WIForecastTempView alloc] init] autorelease];
 				break;
 		}
 
@@ -348,6 +328,9 @@ static LITableView* findTableView(UIView* view)
 	}
 
 	WIForecastView* fcv = [fc viewWithTag:42];
+	fcv.theme = tableView.theme;
+	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), 310, (indexPath.row == 1 ? 30 : fcv.theme.detailStyle.font.pointSize + 4));
+
 	NSArray* forecastCopy = [forecast copy];
 	fcv.forecast = forecastCopy;
 	[forecastCopy release];
