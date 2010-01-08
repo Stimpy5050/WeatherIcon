@@ -183,7 +183,7 @@ static LITableView* findTableView(UIView* view)
 
 @property (nonatomic, retain) LIPlugin* plugin;
 @property (nonatomic, retain) NSMutableDictionary* iconCache;
-@property (nonatomic, retain) NSDictionary* dataCache;
+@property (nonatomic, retain) NSMutableDictionary* dataCache;
 
 @end
 
@@ -378,13 +378,13 @@ static LITableView* findTableView(UIView* view)
 {
 	self = [super init];
 	self.plugin = plugin;
+	self.dataCache = [NSMutableDictionary dictionaryWithCapacity:10];
 	self.iconCache = [NSMutableDictionary dictionaryWithCapacity:10];
 
 	plugin.tableViewDataSource = self;
 	plugin.tableViewDelegate = self;
 
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-//        [center addObserver:self selector:@selector(update:) name:LITimerNotification object:nil];
         [center addObserver:self selector:@selector(update:) name:LIViewReadyNotification object:nil];
         [center addObserver:self selector:@selector(updateOnUpdate:) name:@"WIWeatherUpdatedNotification" object:nil];
         [center addObserver:self selector:@selector(refreshWeather:) name:[plugin.bundleIdentifier stringByAppendingString:LIManualRefreshNotification] object:nil];
@@ -394,14 +394,9 @@ static LITableView* findTableView(UIView* view)
 
 -(void) updateWeather:(NSDictionary*) weather
 {
-	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:1];
-	[dict setValue:weather forKey:@"weather"];
-
-	if (![dict isEqualToDictionary:self.dataCache])
-	{
-		[self performSelectorOnMainThread:@selector(setDataCache:) withObject:dict waitUntilDone:YES];
-		[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
-	}
+	NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
+	[self.dataCache performSelectorOnMainThread:@selector(setDictionary:) withObject:dict waitUntilDone:YES];
+	[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
 }
 
 -(void) refreshWeather:(NSNotification*) notif
