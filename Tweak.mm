@@ -867,6 +867,7 @@ foundCharacters:(NSString *)string
 	if (iconPath == nil)
 		iconPath = [self findWeatherImagePath:@"weather"];
 	[self.currentCondition setValue:iconPath forKey:@"icon"];
+	[self.currentCondition setValue:self.localWeatherTime.timeIntervalSince1970 forKey:@"timestamp"];
 
 	[self.currentCondition writeToFile:conditionPath atomically:YES];
 
