@@ -327,21 +327,18 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	self.tempView.forecast = forecast;
 	[forecast release];
 
-	if (indexPath.row == 1)
+	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
+	for (int i = 0; i < forecast.count && i < 6; i++)
 	{
-		NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
-		for (int i = 0; i < forecast.count && i < 6; i++)
-		{
-			NSDictionary* day = [forecast objectAtIndex:i];
-			UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+		NSDictionary* day = [forecast objectAtIndex:i];
+		UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
 
-			if (icon == nil)
-				icon = [self defaultIcon:[day objectForKey:@"code"]];
+		if (icon == nil)
+			icon = [self defaultIcon:[day objectForKey:@"code"]];
 
-			[arr addObject:(icon == nil ? [NSNull null] : icon)];
-		}
-		self.iconView.icons = arr;
+		[arr addObject:(icon == nil ? [NSNull null] : icon)];
 	}
+	self.iconView.icons = arr;
 
 	self.tempView.timestamp = [weather objectForKey:@"timestamp"];
 
@@ -353,25 +350,7 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-/*
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	NSArray* forecast = [weather objectForKey:@"forecast"];
-*/
-        	
-	NSString* reuse;
-	switch (indexPath.row)
-	{
-		case 0:
-			reuse = @"ForecastDays";
-			break;
-		case 1:
-			reuse = @"ForecastIcon";
-			break;
-		case 2:
-			reuse = @"ForecastTemp";
-			break;
-	}
-
+	NSString* reuse = [NSString stringWithFormat:@"Forecast%d", indexPath.row];
 	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:reuse];
 
 	if (fc == nil)
@@ -380,7 +359,6 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 		fc.backgroundColor = [UIColor clearColor];
 		
 		WIForecastView* fcv = nil;
-
 		switch (indexPath.row)
 		{
 			case 0:
@@ -402,28 +380,6 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	WIForecastView* fcv = [fc viewWithTag:42];
 	fcv.theme = tableView.theme;
 	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), 310, (indexPath.row == 1 ? 30 : fcv.theme.detailStyle.font.pointSize + 4));
-
-/*
-	NSArray* forecastCopy = [forecast copy];
-	fcv.forecast = forecastCopy;
-	[forecastCopy release];
-
-	if (indexPath.row == 1)
-	{
-		NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
-		for (int i = 0; i < forecast.count && i < 6; i++)
-		{
-			NSDictionary* day = [forecast objectAtIndex:i];
-			UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
-
-			if (icon == nil)
-				icon = [self defaultIcon:[day objectForKey:@"code"]];
-
-			[arr addObject:(icon == nil ? [NSNull null] : icon)];
-		}
-		fcv.icons = arr;
-	}
-*/
 
 	// mark dirty
 	[fcv setNeedsDisplay];
@@ -458,6 +414,7 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
 	[self.dataCache performSelectorOnMainThread:@selector(setDictionary:) withObject:dict waitUntilDone:YES];
 	[self updateWeatherViews];
+	[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
 }
 
 -(void) refreshWeather:(NSNotification*) notif
@@ -486,7 +443,6 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	{
 //		NSLog(@"LI:Weather: Updating when view is ready");
 		[self updateWeather:current];
-//		[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
 	}
 
 	[pool release];
