@@ -2,7 +2,7 @@ CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-gc
 CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-g++-4.0.1
 LD=$(CC)
 
-SDKVER=2.0
+SDKVER=3.0
 SDK=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
 LDFLAGS=	-framework Foundation \
 		-framework UIKit \

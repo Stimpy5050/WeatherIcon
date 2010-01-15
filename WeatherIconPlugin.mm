@@ -67,6 +67,7 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 
 @interface WIForecastTempView : WIForecastView
 
+@property (nonatomic, retain) NSString* updatedString;
 @property (nonatomic, retain) NSNumber* timestamp;
 	
 @end
@@ -110,7 +111,7 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 
 @implementation WIForecastTempView
 
-@synthesize timestamp;
+@synthesize timestamp, updatedString;
 
 -(void) drawRect:(struct CGRect) rect
 {
@@ -141,17 +142,18 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	if (self.timestamp)
 	{
 		NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
-		df.dateStyle = NSDateFormatterNoStyle;
+		df.dateStyle = NSDateFormatterShortStyle;
 		df.timeStyle = NSDateFormatterShortStyle;
-		NSString* str = [NSString stringWithFormat:@"Updated at %@", [df stringFromDate:[NSDate dateWithTimeIntervalSince1970:self.timestamp.doubleValue]]];
+		NSString* str = [NSString stringWithFormat:@"%@ %@", self.updatedString, [df stringFromDate:[NSDate dateWithTimeIntervalSince1970:self.timestamp.doubleValue]]];
 
-		CGRect r = CGRectMake(0, rect.origin.y + theme.detailStyle.font.pointSize + 4, rect.size.width, theme.detailStyle.font.pointSize);
+		UIFont* font = [UIFont boldSystemFontOfSize:(theme.detailStyle.font.pointSize - 2)];
+		CGRect r = CGRectMake(0, rect.origin.y + theme.detailStyle.font.pointSize + 8, rect.size.width, font.pointSize);
         	[theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[theme.detailStyle.textColor set];
+		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
@@ -313,39 +315,8 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 		case 1:
 			return 30;
 		case 2:
-			return (2 * tableView.theme.detailStyle.font.pointSize) + 9;
+			return (2 * tableView.theme.detailStyle.font.pointSize) + 12;
 	}
-}
-
--(void) updateWeatherViews
-{
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-
-	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
-	self.daysView.forecast = forecast;
-	self.iconView.forecast = forecast;
-	self.tempView.forecast = forecast;
-	[forecast release];
-
-	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
-	for (int i = 0; i < forecast.count && i < 6; i++)
-	{
-		NSDictionary* day = [forecast objectAtIndex:i];
-		UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
-
-		if (icon == nil)
-			icon = [self defaultIcon:[day objectForKey:@"code"]];
-
-		[arr addObject:(icon == nil ? [NSNull null] : icon)];
-	}
-	self.iconView.icons = arr;
-
-	self.tempView.timestamp = [weather objectForKey:@"timestamp"];
-
-	// mark dirty
-	[self.daysView setNeedsDisplay];
-	[self.iconView setNeedsDisplay];
-	[self.tempView setNeedsDisplay];
 }
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -379,7 +350,32 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 
 	WIForecastView* fcv = [fc viewWithTag:42];
 	fcv.theme = tableView.theme;
-	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), 310, (indexPath.row == 1 ? 30 : fcv.theme.detailStyle.font.pointSize + 4));
+	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
+	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), 310, height);
+
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
+	fcv.forecast = forecast;
+	[forecast release];
+
+	if (indexPath.row == 1)
+	{
+		NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
+		for (int i = 0; i < forecast.count && i < 6; i++)
+		{
+			NSDictionary* day = [forecast objectAtIndex:i];
+			UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+	
+			if (icon == nil)
+				icon = [self defaultIcon:[day objectForKey:@"code"]];
+	
+			[arr addObject:(icon == nil ? [NSNull null] : icon)];
+		}
+		self.iconView.icons = arr;
+	}
+
+	self.tempView.updatedString = localize(@"Updated");
+	self.tempView.timestamp = [weather objectForKey:@"timestamp"];
 
 	// mark dirty
 	[fcv setNeedsDisplay];
@@ -413,7 +409,6 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 {
 	NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
 	[self.dataCache performSelectorOnMainThread:@selector(setDictionary:) withObject:dict waitUntilDone:YES];
-	[self updateWeatherViews];
 	[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
 }
 
