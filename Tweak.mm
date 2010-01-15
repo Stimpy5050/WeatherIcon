@@ -34,7 +34,7 @@
 }
 
 @property (nonatomic, retain) NSTimer* timer;
-@property (nonatomic, retain) NSNumber* nextRefresh;
+@property (nonatomic, retain) NSDate* nextRefresh;
 
 	// image caches
 @property (nonatomic, retain) UIImage* statusBarIndicator;
@@ -407,11 +407,10 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 	return self;
 }
 
--(void) scheduleRefreshOnMainThread:(NSNumber*) delay
+-(void) scheduleRefreshOnMainThread:(NSDate*) next
 {
-	self.nextRefresh = delay;
-	self.timer = [[NSTimer scheduledTimerWithTimeInterval:delay.doubleValue target:self selector:@selector(refreshFromTimer:) userInfo:nil repeats:NO] retain];
-	NSLog(@"WI:Timer: Scheduling next refresh for %@.", self.timer.fireDate);
+	NSLog(@"WI:Timer: Starting refresh timer for %@.", next);
+	self.timer = [[NSTimer scheduledTimerWithTimeInterval:next.timeIntervalSinceNow target:self selector:@selector(refreshFromTimer:) userInfo:nil repeats:NO] retain];
 }
 
 -(void) stopTimer
@@ -427,8 +426,9 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 -(void) scheduleNextRefresh
 {
+	self.nextRefresh = [NSDate dateWithTimeIntervalSinceNow:self.refreshInterval];
 	if (![[$SBAwayController sharedAwayController] isDimmed] || [[$SBUIController sharedInstance] isOnAC])
-		[self performSelectorOnMainThread:@selector(scheduleRefreshOnMainThread:) withObject:[NSNumber numberWithInt:self.refreshInterval] waitUntilDone:NO];
+		[self performSelectorOnMainThread:@selector(scheduleRefreshOnMainThread:) withObject:self.nextRefresh waitUntilDone:NO];
 	else
 		NSLog(@"WI:Timer: Not scheduling next refresh because device is asleep.");
 }
