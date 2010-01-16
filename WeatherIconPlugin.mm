@@ -315,7 +315,12 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 		case 1:
 			return 30;
 		case 2:
-			return (2 * tableView.theme.detailStyle.font.pointSize) + 12;
+			BOOL show = false;
+			if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
+				show = n.boolValue;
+
+			float height = tableView.theme.detailStyle.font.pointSize + 6;
+			return (show ? 2 * height : height);
 	}
 }
 
@@ -374,8 +379,12 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 		self.iconView.icons = arr;
 	}
 
+	BOOL show = false;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
+		show = n.boolValue;
+
 	self.tempView.updatedString = localize(@"Updated");
-	self.tempView.timestamp = [weather objectForKey:@"timestamp"];
+	self.tempView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
 
 	// mark dirty
 	[fcv setNeedsDisplay];
