@@ -380,6 +380,7 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 {
 	self.temp = defaultTemp;
 	self.code = defaultCode;
+	self.nextRefresh = [NSDate date];
 	refreshing = false;
 
 	if (self.currentCondition = [NSMutableDictionary dictionaryWithContentsOfFile:conditionPath])
