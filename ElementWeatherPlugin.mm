@@ -78,23 +78,23 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 	[view addSubview:iv];
 
 	view.icon = [self tableView:tableView iconForHeaderInSection:section];
-	view.icon.frame = CGRectMake(137, 10, 70, 70);
+	view.icon.frame = CGRectMake(140, 10, 70, 70);
 	[view addSubview:view.icon];
 
-	view.city = [[[UILabel alloc] initWithFrame:CGRectMake(207, 13, 110, 14)] autorelease];
+	view.city = [[[UILabel alloc] initWithFrame:CGRectMake(207, 15, 110, 14)] autorelease];
 	view.city.font = [UIFont boldSystemFontOfSize:14];
 	view.city.textColor = [UIColor lightGrayColor];
 	view.city.backgroundColor = [UIColor clearColor];
 	[view addSubview:view.city];
 	
-	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(207, 30, 110, 30)] autorelease];
+	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(207, 31, 110, 30)] autorelease];
 	view.temp.font = [UIFont systemFontOfSize:30];
 	view.temp.textColor = [UIColor whiteColor];
 	view.temp.backgroundColor = [UIColor clearColor];
 	[view addSubview:view.temp];
 	
-	view.hilo = [[[UILabel alloc] initWithFrame:CGRectMake(207, 64, 110, 14)] autorelease];
-	view.hilo.font = [UIFont boldSystemFontOfSize:14];
+	view.hilo = [[[UILabel alloc] initWithFrame:CGRectMake(207, 63, 110, 13)] autorelease];
+	view.hilo.font = [UIFont boldSystemFontOfSize:13];
 	view.hilo.textColor = [UIColor lightGrayColor];
 	view.hilo.backgroundColor = [UIColor clearColor];
 	[view addSubview:view.hilo];
@@ -117,14 +117,14 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 
 	[weather release];
 
-	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(5, 13, 125, 50)] autorelease];
-	view.time.font = [UIFont systemFontOfSize:50];
+	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(5, 15, 125, 45)] autorelease];
+	view.time.font = [UIFont systemFontOfSize:45];
 	view.time.textAlignment = UITextAlignmentCenter;
 	view.time.textColor = [UIColor whiteColor];
 	view.time.backgroundColor = [UIColor clearColor];
 	[view addSubview:view.time];
 
-	view.date = [[[UILabel alloc] initWithFrame:CGRectMake(5, 65, 125, 13)] autorelease];
+	view.date = [[[UILabel alloc] initWithFrame:CGRectMake(5, 63, 125, 13)] autorelease];
 	view.date.font = [UIFont boldSystemFontOfSize:13];
 	view.date.textAlignment = UITextAlignmentCenter;
 	view.date.textColor = [UIColor whiteColor];
