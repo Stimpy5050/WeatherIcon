@@ -1,5 +1,4 @@
-#include "Plugin.h"
-#include <Foundation/Foundation.h>
+#include "WeatherIconPlugin.h"
 #include <UIKit/UIKit.h>
 
 #define localize(str) \
@@ -43,33 +42,10 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 	@"Scattered Showers", @"Heavy Snow", @"Scattered Snow Showers", @"Heavy Snow", @"Partly Cloudy",
 	@"Thunderstorms", @"Snow Showers", @"Isolated Thunderstorms", nil] retain];
 
-@interface WIForecastView : UIView
-
-@property (nonatomic, retain) LITheme* theme;
-@property (nonatomic, retain) NSArray* forecast;
-
-@end
-
 @implementation WIForecastView
 
 @synthesize forecast, theme;
 
-@end
-
-@interface WIForecastDaysView : WIForecastView
-@end
-
-@interface WIForecastIconView : WIForecastView
-
-@property (nonatomic, retain) NSArray* icons;
-
-@end
-
-@interface WIForecastTempView : WIForecastView
-
-@property (nonatomic, retain) NSString* updatedString;
-@property (nonatomic, retain) NSNumber* timestamp;
-	
 @end
 
 @implementation WIForecastIconView
@@ -83,12 +59,12 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 
 	NSBundle* bundle = [NSBundle mainBundle];
 	NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
-	if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
+	if (NSDictionary* thm = [NSDictionary dictionaryWithContentsOfFile:path])
 	{
-//		if (NSNumber* n = [theme objectForKey:@"ImageScale"])
+//		if (NSNumber* n = [thm objectForKey:@"ImageScale"])
 //			scale = n.doubleValue;
 
-		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
+		if (NSNumber* n = [thm objectForKey:@"LockInfoImageScale"])
 			scale = n.doubleValue;
 	}
 
@@ -97,7 +73,8 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 		id image = [self.icons objectAtIndex:i];
 		if (image != [NSNull null])
 		{
-			CGSize s = [image size];
+			UIImage* realImage = (UIImage*) image;
+			CGSize s = realImage.size;
 			s.width *= scale;
 			s.height *= scale;
 
@@ -185,17 +162,7 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 
 @end
 
-@interface WeatherIconPlugin : NSObject <LIPluginController, LITableViewDelegate, UITableViewDataSource>
-
-@property (nonatomic, retain) LIPlugin* plugin;
-@property (nonatomic, retain) NSMutableDictionary* iconCache;
-@property (nonatomic, retain) NSMutableDictionary* dataCache;
-
-@property (nonatomic, retain) WIForecastDaysView* daysView;
-@property (nonatomic, retain) WIForecastIconView* iconView;
-@property (nonatomic, retain) WIForecastTempView* tempView;
-
-@end
+extern "C" UIImage *_UIImageWithName(NSString *);
 
 @implementation WeatherIconPlugin
 
@@ -217,17 +184,6 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
         return 3;
-}
-
-- (NSString *)tableView:(LITableView *)tableView titleForHeaderInSection:(NSInteger)section
-{
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	NSString* city = [weather objectForKey:@"city"];
-	NSRange r = [city rangeOfString:@","];
-	if (r.location != NSNotFound)
-		city = [city substringToIndex:r.location];
-
-	return [NSString stringWithFormat:@"%@: %d\u00B0", city, [[weather objectForKey:@"temp"] intValue]];
 }
 
 - (NSString *)tableView:(LITableView *)tableView detailForHeaderInSection:(NSInteger)section
@@ -270,7 +226,7 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 }
 
 
-- (UIImage *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
+- (UIImageView *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
 {
 	double scale = 0.33;
 
@@ -322,6 +278,17 @@ static NSArray* descriptions = [[NSArray arrayWithObjects:
 			float height = tableView.theme.detailStyle.font.pointSize + 6;
 			return (show ? 2 * height : height);
 	}
+}
+
+- (NSString *)tableView:(LITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	NSString* city = [weather objectForKey:@"city"];
+	NSRange r = [city rangeOfString:@","];
+	if (r.location != NSNotFound)
+		city = [city substringToIndex:r.location];
+
+	return [NSString stringWithFormat:@"%@: %d\u00B0", city, [[weather objectForKey:@"temp"] intValue]];
 }
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath

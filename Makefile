@@ -36,6 +36,10 @@ WeatherIconPlugin: WeatherIconPlugin.o
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S WeatherIconPlugin
 
+ElementWeatherPlugin: WeatherIconPlugin.o ElementWeatherPlugin.o
+		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
+		ldid -S ElementWeatherPlugin
+
 $(Target):	Tweak.o
 		$(LD) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
@@ -47,6 +51,16 @@ clean:
 		rm -f *.o $(Target) WeatherIconSettings WeatherIconPlugin
 		rm -rf package
 
+element: ElementWeatherPlugin
+	mkdir -p package/element/DEBIAN
+	mkdir -p package/element/Library/LockInfo/Plugins
+	cp -r com.ashman.lockinfo.ElementWeatherPlugin.bundle package/element/Library/LockInfo/Plugins
+	cp com.ashman.lockinfo.WeatherIconPlugin.bundle/*.png package/element/Library/LockInfo/Plugins/com.ashman.lockinfo.ElementWeatherPlugin.bundle/.
+	cp ElementWeatherPlugin package/element/Library/LockInfo/Plugins/com.ashman.lockinfo.ElementWeatherPlugin.bundle
+	cp element-control package/element/DEBIAN/control
+	find package/element -name .svn -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/element ElementWeatherPlugin_$(shell grep ^Version: element-control | cut -d ' ' -f 2).deb
+
 lockinfo: WeatherIconPlugin
 	mkdir -p package/lockinfo/DEBIAN
 	mkdir -p package/lockinfo/Library/LockInfo/Plugins
@@ -56,7 +70,7 @@ lockinfo: WeatherIconPlugin
 	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/lockinfo WeatherIconPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
 
-package:	$(Target) WeatherIconSettings lockinfo
+package:	$(Target) WeatherIconSettings lockinfo element
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences

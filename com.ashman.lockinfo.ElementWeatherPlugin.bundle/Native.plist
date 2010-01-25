@@ -1,0 +1,37 @@
+<plist>
+<dict>
+	<key>items</key>
+        <array>
+                <dict>
+                        <key>cell</key>
+                        <string>PSGroupCell</string>
+                </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.ElementWeatherPlugin</string>
+                        <key>key</key>
+                        <string>Collapsed</string>
+                        <key>label</key>
+                        <string>Collapsed By Default</string>
+                </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.ElementWeatherPlugin</string>
+                        <key>key</key>
+                        <string>ShowUpdateTime</string>
+                        <key>label</key>
+                        <string>Show Update Time</string>
+                </dict>
+        </array>
+	<key>title</key>
+        <string>WeatherIcon</string>
+</dict>
+</plist>
