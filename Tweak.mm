@@ -410,8 +410,12 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 -(void) scheduleRefreshOnMainThread:(NSDate*) next
 {
-	NSLog(@"WI:Timer: Starting refresh timer for %@.", next);
-	self.timer = [[NSTimer scheduledTimerWithTimeInterval:next.timeIntervalSinceNow target:self selector:@selector(refreshFromTimer:) userInfo:nil repeats:NO] retain];
+	NSTimeInterval i = next.timeIntervalSinceNow;
+	if (i < 0)
+		i = 0;
+
+	self.timer = [[NSTimer scheduledTimerWithTimeInterval:i target:self selector:@selector(refreshFromTimer:) userInfo:nil repeats:NO] retain];
+	NSLog(@"WI:Timer: Starting refresh timer for %@.", self.timer.fireDate);
 }
 
 -(void) stopTimer
