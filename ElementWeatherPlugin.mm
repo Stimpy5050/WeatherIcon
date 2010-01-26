@@ -1,5 +1,7 @@
 #include "WeatherIconPlugin.h"
 #include <SpringBoard/SBAwayDateView.h>
+#include <SpringBoard/SBStatusBarController.h>
+#include <SpringBoard/SBStatusBarTimeView.h>
 #include <UIKit/UIKit.h>
 #include <substrate.h>
 
@@ -38,12 +40,15 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
         NSDate* now = [NSDate date];
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 
-//        df.dateFormat = (NSString*)UIDateFormatStringForFormatType(CFSTR("UIWeekdayNoYearDateFormat"));
         df.dateFormat = [NSString stringWithFormat:@"cccc, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))];
-        self.date.text = [df stringFromDate:now];
+	NSString* dateStr = [df stringFromDate:now];
+	if (![dateStr isEqualToString:self.time.text])
+	        self.date.text = [df stringFromDate:now];
 
         df.dateFormat = (NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat"));
-        self.time.text = [df stringFromDate:now];
+	NSString* timeStr = [df stringFromDate:now];
+	if (![timeStr isEqualToString:self.date.text])
+	        self.time.text = [df stringFromDate:now];
 
 	[pool release];
 }
@@ -62,6 +67,23 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
         [cachedView updateTime];
 	[cachedView release];
 }
+
+MSHook(void, significantTimeChange, SBStatusBarController *self, SEL sel)
+{
+        _significantTimeChange(self, sel);
+	[cachedView retain];
+        [cachedView updateTime];
+	[cachedView release];
+}
+
+MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
+{
+        _sbDrawRect(self, sel, rect);
+	[cachedView retain];
+        [cachedView updateTime];
+	[cachedView release];
+}
+
 
 @implementation ElementWeatherPlugin
 
@@ -84,7 +106,7 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 	iv.image = image;
 	[view addSubview:iv];
 
-	UIView* timeDate = [[[UIView alloc] initWithFrame:CGRectMake(5, 9, 185, 73)] autorelease];
+	UIView* timeDate = [[[UIView alloc] initWithFrame:CGRectMake(5, 9, 175, 73)] autorelease];
 	timeDate.backgroundColor = [UIColor clearColor];
 	[view addSubview:timeDate];
 
@@ -104,7 +126,7 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 
 	[view updateTime];
 
-	UIView* weatherView = [[[UIView alloc] initWithFrame:CGRectMake(195, 14, 120, 68)] autorelease];
+	UIView* weatherView = [[[UIView alloc] initWithFrame:CGRectMake(185, 14, 130, 68)] autorelease];
 	weatherView.backgroundColor = [UIColor clearColor];
 	[view addSubview:weatherView];
 
@@ -156,6 +178,10 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 {
         Class $SBAwayDateView = objc_getClass("SBAwayDateView");
         Hook(SBAwayDateView, updateClock, updateClock);
+	Class $SBStatusBarController = objc_getClass("SBStatusBarController");
+        Hook(SBStatusBarController, signicantTimeChange, significantTimeChange);
+        Class $SBStatusBarTimeView = objc_getClass("SBStatusBarTimeView");
+        Hook(SBStatusBarTimeView, drawRect:, sbDrawRect);
 
 	return [super initWithPlugin:plugin];
 }
