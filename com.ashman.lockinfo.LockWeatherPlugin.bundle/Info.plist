@@ -5,15 +5,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleDisplayName</key>
-	<string>Element Weather</string>
+	<string>Lock Weather</string>
 	<key>CFBundleExecutable</key>
-	<string>ElementWeatherPlugin</string>
+	<string>LockWeatherPlugin</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.ashman.lockinfo.ElementWeatherPlugin</string>
+	<string>com.ashman.lockinfo.LockWeatherPlugin</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>ElementWeatherPlugin</string>
+	<string>LockWeatherPlugin</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
@@ -29,7 +29,7 @@
 	<key>MinimumOSVersion</key>
 	<string>2.2</string>
 	<key>NSPrincipalClass</key>
-	<string>ElementWeatherPlugin</string>
+	<string>LockWeatherPlugin</string>
 	<key>LISupportsManualRefresh</key>
 	<true/>
 </dict>

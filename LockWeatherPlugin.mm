@@ -20,7 +20,8 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 @property (nonatomic, retain) UIImageView* icon;
 @property (nonatomic, retain) UILabel* city;
 @property (nonatomic, retain) UILabel* temp;
-@property (nonatomic, retain) UILabel* description;
+@property (nonatomic, retain) UILabel* high;
+@property (nonatomic, retain) UILabel* low;
 
 @property (nonatomic, retain) UILabel* time;
 @property (nonatomic, retain) UILabel* date;
@@ -31,7 +32,7 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
 @implementation WIHeaderView
 
-@synthesize icon, city, temp, description, time, date;
+@synthesize icon, city, temp, time, date, high, low;
 
 -(void) updateTime
 {
@@ -40,7 +41,8 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
         NSDate* now = [NSDate date];
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 
-        df.dateFormat = [NSString stringWithFormat:@"cccc, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))];
+        df.dateFormat = [NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))];
+//        df.dateFormat = [NSString stringWithFormat:@"cccc, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))];
 	NSString* dateStr = [df stringFromDate:now];
 	if (![dateStr isEqualToString:self.time.text])
 	        self.date.text = [df stringFromDate:now];
@@ -55,7 +57,7 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
 @end
 
-@interface ElementWeatherPlugin : WeatherIconPlugin
+@interface LockWeatherPlugin : WeatherIconPlugin
 @end
 
 static WIHeaderView* cachedView;
@@ -85,7 +87,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 }
 
 
-@implementation ElementWeatherPlugin
+@implementation LockWeatherPlugin
 
 -(CGFloat) tableView:(UITableView*) tableView heightForHeaderInSection:(NSInteger) section
 {
@@ -96,62 +98,61 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 {
 	WIHeaderView* view = [[[WIHeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 96)] autorelease];
 
-	UIImage* image = nil;
-	if (NSString* path = [self.plugin.bundle pathForResource:@"LIElementHeader" ofType:@"png"])
-		image = [UIImage imageWithContentsOfFile:path];
-	else
-		image = _UIImageWithName(@"UILCDBackground.png");
-
+	UIImage* image = _UIImageWithName(@"UILCDBackground.png");
 	UIImageView* iv = [[[UIImageView alloc] initWithFrame:view.bounds] autorelease];
 	iv.image = image;
 	[view addSubview:iv];
 
-	UIView* timeDate = [[[UIView alloc] initWithFrame:CGRectMake(5, 9, 175, 73)] autorelease];
-	timeDate.backgroundColor = [UIColor clearColor];
-	[view addSubview:timeDate];
-
-	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 0, timeDate.frame.size.width, 59)] autorelease];
-	view.time.font = [UIFont fontWithName:@"LockClock-Light" size:59];
+	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 5, view.frame.size.width, 47)] autorelease];
+	view.time.font = [UIFont fontWithName:@"LockClock-Light" size:47];
 	view.time.textAlignment = UITextAlignmentCenter;
 	view.time.textColor = [UIColor whiteColor];
 	view.time.backgroundColor = [UIColor clearColor];
-	[timeDate addSubview:view.time];
+	[view addSubview:view.time];
 
-	view.date = [[[UILabel alloc] initWithFrame:CGRectMake(0, 55, timeDate.frame.size.width, 18)] autorelease];
+	view.date = [[[UILabel alloc] initWithFrame:CGRectMake(5, 56, 120, 18)] autorelease];
 	view.date.font = [UIFont boldSystemFontOfSize:14];
-	view.date.textAlignment = UITextAlignmentCenter;
+	view.date.textAlignment = UITextAlignmentRight;
 	view.date.textColor = [UIColor whiteColor];
 	view.date.backgroundColor = [UIColor clearColor];
-	[timeDate addSubview:view.date];
+	[view addSubview:view.date];
 
-	[view updateTime];
-
-	UIView* weatherView = [[[UIView alloc] initWithFrame:CGRectMake(185, 14, 130, 68)] autorelease];
-	weatherView.backgroundColor = [UIColor clearColor];
-	[view addSubview:weatherView];
-
-	view.icon = [self tableView:tableView iconForHeaderInSection:section];
-	view.icon.frame = CGRectMake(0, 0, 50, 50);
-	[weatherView addSubview:view.icon];
-
-	view.city = [[[UILabel alloc] initWithFrame:CGRectMake(0, 0, weatherView.frame.size.width, 18)] autorelease];
-	[weatherView addSubview:view.city];
+	view.city = [[[UILabel alloc] initWithFrame:CGRectMake(5, 73, 120, 18)] autorelease];
+	[view addSubview:view.city];
 	view.city.font = [UIFont boldSystemFontOfSize:14];
+	view.city.textAlignment = UITextAlignmentRight;
 	view.city.textColor = [UIColor lightGrayColor];
 	view.city.backgroundColor = [UIColor clearColor];
 
-	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(0, 19, weatherView.frame.size.width, 30)] autorelease];
-	[weatherView addSubview:view.temp];
-	view.temp.font = [UIFont fontWithName:@"LockClock-Light" size:30];
+	[view updateTime];
+
+	view.icon = [self tableView:tableView iconForHeaderInSection:section];
+	CGRect ir = view.icon.frame;
+	ir.size.width *= 2.75;
+	ir.size.height *= 2.75;
+	view.icon.frame = ir;
+	view.icon.center = CGPointMake(160, 73);
+	[view addSubview:view.icon];
+
+	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 36)] autorelease];
+	[view addSubview:view.temp];
+	view.temp.font = [UIFont systemFontOfSize:36];
+//	view.temp.font = [UIFont fontWithName:@"LockClock-Light" size:36];
 	view.temp.textColor = [UIColor whiteColor];
 	view.temp.backgroundColor = [UIColor clearColor];
 
-	view.description = [[[UILabel alloc] initWithFrame:CGRectMake(0, 50, weatherView.frame.size.width, 18)] autorelease];
-	[weatherView addSubview:view.description];
-	view.description.font = [UIFont boldSystemFontOfSize:14];
-	view.description.textColor = [UIColor lightGrayColor];
-	view.description.backgroundColor = [UIColor clearColor];
-	
+	view.high = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 18)] autorelease];
+	[view addSubview:view.high];
+	view.high.font = [UIFont boldSystemFontOfSize:14];
+	view.high.textColor = [UIColor lightGrayColor];
+	view.high.backgroundColor = [UIColor clearColor];
+
+	view.low = [[[UILabel alloc] initWithFrame:CGRectMake(195, 73, 120, 18)] autorelease];
+	[view addSubview:view.low];
+	view.low.font = [UIFont boldSystemFontOfSize:14];
+	view.low.textColor = [UIColor lightGrayColor];
+	view.low.backgroundColor = [UIColor clearColor];
+
 	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
 	NSString* city = [weather objectForKey:@"city"];
 	NSRange r = [city rangeOfString:@","];
@@ -159,11 +160,27 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 		city = [city substringToIndex:r.location];
 	view.city.text = city;
 
+	if (NSArray* forecast = [weather objectForKey:@"forecast"])
+	{
+		if (forecast.count > 0)
+		{
+			NSDictionary* today = [forecast objectAtIndex:0];
+			view.high.text = [NSString stringWithFormat:@"H %d\u00B0", [[today objectForKey:@"high"] intValue]];
+			view.low.text = [NSString stringWithFormat:@"L %d\u00B0", [[today objectForKey:@"low"] intValue]];
+		}
+	}
+
 	view.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
-	view.description.text = [self tableView:tableView detailForHeaderInSection:section];
 
 	CGSize ts = [view.temp.text sizeWithFont:view.temp.font];
-	view.icon.center = CGPointMake(ts.width + 17, view.temp.frame.origin.y + 16);
+
+	CGRect tr = view.high.frame;
+	tr.origin.x = view.temp.frame.origin.x + ts.width + 8;
+	view.high.frame = tr;
+
+	tr = view.low.frame;
+	tr.origin.x = view.temp.frame.origin.x + ts.width + 8;
+	view.low.frame = tr;
 
 	[weather release];
 

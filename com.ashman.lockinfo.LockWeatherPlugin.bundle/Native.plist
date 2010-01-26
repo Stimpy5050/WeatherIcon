@@ -12,7 +12,7 @@
                         <key>default</key>
                         <false/>
                         <key>defaults</key>
-                        <string>com.ashman.lockinfo.ElementWeatherPlugin</string>
+                        <string>com.ashman.lockinfo.LockWeatherPlugin</string>
                         <key>key</key>
                         <string>Collapsed</string>
                         <key>label</key>
@@ -24,7 +24,7 @@
                         <key>default</key>
                         <false/>
                         <key>defaults</key>
-                        <string>com.ashman.lockinfo.ElementWeatherPlugin</string>
+                        <string>com.ashman.lockinfo.LockWeatherPlugin</string>
                         <key>key</key>
                         <string>ShowUpdateTime</string>
                         <key>label</key>

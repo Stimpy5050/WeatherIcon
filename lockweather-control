@@ -1,5 +1,5 @@
-Package: com.ashman.lockinfoelementweather
-Name: Element-based Weather Plugin for LockInfo (Native)
+Package: com.ashman.lockinfolockweather
+Name: Lock Weather Plugin for LockInfo (Native)
 Version: 1.0.0-0
 Architecture: iphoneos-arm
 Description: Adds WeatherIcon to your LockInfo screen including a six day forecast.
