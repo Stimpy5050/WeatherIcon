@@ -11,6 +11,8 @@
 #define Hook(cls, sel, imp) \
         _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
+static NSString* dateFormat;
+static NSString* timeFormat;
 
 extern "C" UIImage *_UIImageWithName(NSString *);
 extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
@@ -41,13 +43,12 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
         NSDate* now = [NSDate date];
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 
-        df.dateFormat = [NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))];
-//        df.dateFormat = [NSString stringWithFormat:@"cccc, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))];
+        df.dateFormat = dateFormat;
 	NSString* dateStr = [df stringFromDate:now];
 	if (![dateStr isEqualToString:self.time.text])
 	        self.date.text = [df stringFromDate:now];
 
-        df.dateFormat = (NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat"));
+        df.dateFormat = timeFormat;
 	NSString* timeStr = [df stringFromDate:now];
 	if (![timeStr isEqualToString:self.date.text])
 	        self.time.text = [df stringFromDate:now];
@@ -103,8 +104,8 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	iv.image = image;
 	[view addSubview:iv];
 
-	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 5, view.frame.size.width, 47)] autorelease];
-	view.time.font = [UIFont fontWithName:@"LockClock-Light" size:47];
+	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 4, view.frame.size.width, 50)] autorelease];
+	view.time.font = [UIFont fontWithName:@"LockClock-Light" size:50];
 	view.time.textAlignment = UITextAlignmentCenter;
 	view.time.textColor = [UIColor whiteColor];
 	view.time.backgroundColor = [UIColor clearColor];
@@ -134,9 +135,9 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	view.icon.center = CGPointMake(160, 73);
 	[view addSubview:view.icon];
 
-	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 36)] autorelease];
+	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(195, 55, 120, 37)] autorelease];
 	[view addSubview:view.temp];
-	view.temp.font = [UIFont systemFontOfSize:36];
+	view.temp.font = [UIFont systemFontOfSize:37];
 //	view.temp.font = [UIFont fontWithName:@"LockClock-Light" size:36];
 	view.temp.textColor = [UIColor whiteColor];
 	view.temp.backgroundColor = [UIColor clearColor];
@@ -199,6 +200,9 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
         Hook(SBStatusBarController, signicantTimeChange, significantTimeChange);
         Class $SBStatusBarTimeView = objc_getClass("SBStatusBarTimeView");
         Hook(SBStatusBarTimeView, drawRect:, sbDrawRect);
+
+	dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
+        timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
 
 	return [super initWithPlugin:plugin];
 }

@@ -383,6 +383,9 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 -(void) updateWeather:(NSDictionary*) weather
 {
+	if (!self.plugin.enabled)
+		return;
+
 	NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
 	[self.dataCache performSelectorOnMainThread:@selector(setDictionary:) withObject:dict waitUntilDone:YES];
 	[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
