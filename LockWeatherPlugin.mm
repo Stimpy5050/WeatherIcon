@@ -135,12 +135,13 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	view.icon.center = CGPointMake(160, 73);
 	[view addSubview:view.icon];
 
-	view.temp = [[[UILabel alloc] initWithFrame:CGRectMake(195, 55, 120, 37)] autorelease];
+	view.temp = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
 	[view addSubview:view.temp];
 	view.temp.font = [UIFont systemFontOfSize:37];
 //	view.temp.font = [UIFont fontWithName:@"LockClock-Light" size:36];
 	view.temp.textColor = [UIColor whiteColor];
 	view.temp.backgroundColor = [UIColor clearColor];
+	view.temp.frame = CGRectMake(195, 52, 120, 37);
 
 	view.high = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 18)] autorelease];
 	[view addSubview:view.high];
@@ -174,14 +175,25 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	view.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
 
 	CGSize ts = [view.temp.text sizeWithFont:view.temp.font];
+	CGRect tr = view.temp.frame;
+	tr.size.width = ts.width;
+	tr.size.height = ts.height;
+	view.temp.frame = tr;
+	view.temp.center = CGPointMake(195 + (int)(tr.size.width / 2), 74);
 
-	CGRect tr = view.high.frame;
+	tr = view.high.frame;
 	tr.origin.x = view.temp.frame.origin.x + ts.width + 8;
 	view.high.frame = tr;
 
 	tr = view.low.frame;
 	tr.origin.x = view.temp.frame.origin.x + ts.width + 8;
 	view.low.frame = tr;
+
+	ts = [view.time.text sizeWithFont:view.time.font];
+	tr = view.time.frame;
+	tr.size.height = ts.height;
+	view.time.frame = tr;
+	view.time.center = CGPointMake(160, 29);
 
 	[weather release];
 

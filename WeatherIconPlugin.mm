@@ -376,7 +376,6 @@ extern "C" UIImage *_UIImageWithName(NSString *);
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
         [center addObserver:self selector:@selector(update:) name:LIViewReadyNotification object:nil];
         [center addObserver:self selector:@selector(updateOnUpdate:) name:@"WIWeatherUpdatedNotification" object:nil];
-        [center addObserver:self selector:@selector(refreshWeather:) name:[plugin.bundleIdentifier stringByAppendingString:LIManualRefreshNotification] object:nil];
 
 	return self;
 }
@@ -391,11 +390,9 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
 }
 
--(void) refreshWeather:(NSNotification*) notif
+- (NSString *)tableView:(LITableView *)tableView reloadDataInSection:(NSInteger)section
 {
-	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIRefreshNotification" object:nil];
-	[pool release];
 }
 
 -(void) updateOnUpdate:(NSNotification*) notif

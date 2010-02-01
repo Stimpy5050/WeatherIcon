@@ -1,10 +1,10 @@
 Package: com.ashman.lockinfolockweather
 Name: Lock Weather Plugin for LockInfo (Native)
-Version: 1.0.0-0
+Version: 1.0.1.0
 Architecture: iphoneos-arm
-Description: Adds WeatherIcon to your LockInfo screen including a six day forecast.
-Homepage: http://modmyi.com/info/lockinfoweathericon.php
-Depiction: http://modmyi.com/info/lockinfoweathericon.d.php
+Description: Adds Weather to your LockInfo screen including a six day forecast.
+Homepage: http://modmyi.com/info/lockinfolockweather.php
+Depiction: http://modmyi.com/info/lockinfolockweather.d.php
 Maintainer: poetic_folly <poetic_folly@modmyi.com>
 Author: David Ashman (Stimpy5050) <dashman@gmail.com>
 Sponsor: ModMyi.com <http://modmyi.com/forums/index.php?styleid=31>
