@@ -30,7 +30,7 @@
 
 @interface WeatherIconController : NSObject
 {
-	BOOL refreshing;
+	NSConditionLock* lock;
 }
 
 @property (nonatomic, retain) NSTimer* timer;
@@ -54,7 +54,7 @@
 @property (nonatomic, retain) NSDictionary* weatherPreferences;
 @property (nonatomic, retain) NSMutableDictionary* preferences;
 @property (nonatomic, retain) NSMutableDictionary* currentCondition;
-@property BOOL lockInfo;
+//@property BOOL lockInfo;
 
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
@@ -76,7 +76,7 @@ static Class $SBTelephonyManager = objc_getClass("SBTelephonyManager");
 static Class $SBAwayController = objc_getClass("SBAwayController");
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
-static NSString* lockInfoPrefs = @"/var/mobile/Library/Preferences/com.ashman.lockinfo.WeatherIconPlugin.plist";
+//static NSString* lockInfoPrefs = @"/var/mobile/Library/Preferences/com.ashman.lockinfo.WeatherIconPlugin.plist";
 static NSString* conditionPath = @"/var/mobile/Library/Caches/com.ashman.WeatherIcon.cache.plist";
 static NSString* weatherPrefsPath = @"/var/mobile/Library/Preferences/com.apple.weather.plist";
 static NSString* defaultStatusBarTempStyleFSO(@""
@@ -122,7 +122,7 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 @synthesize temp, code, sunrise, sunset, localWeatherTime, isNight;
 
 // preferences
-@synthesize theme, lockInfo, weatherPreferences, preferences, currentCondition;
+@synthesize theme, weatherPreferences, preferences, currentCondition;
 
 - (NSString*) bundleIdentifier
 {
@@ -174,11 +174,13 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 	self.weatherPreferences = weather;
 
+/*
 	BOOL b = false;
 	if (NSDictionary* liPrefs = [NSDictionary dictionaryWithContentsOfFile:lockInfoPrefs])
 		if (NSNumber* e = [liPrefs objectForKey:@"Enabled"])
 			b = e.boolValue;	
 	self.lockInfo = b;
+*/
 
 	[self loadTheme];
 }
@@ -327,8 +329,19 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 	return 1;
 }
 
+- (BOOL) enabled
+{
+	if (NSNumber* v = [self.preferences objectForKey:@"Enabled"])
+		return [v boolValue];
+
+	return true;
+}
+
 - (BOOL) showWeatherIcon
 {
+	if (!self.enabled)
+		return false;
+
 	if (NSNumber* n = [self.theme objectForKey:@"ShowWeatherIcon"])
 		return [n boolValue];
 
@@ -340,6 +353,9 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 - (BOOL) showWeatherBadge
 {
+	if (!self.enabled)
+		return false;
+
 	if (NSNumber* n = [self.theme objectForKey:@"ShowWeatherBadge"])
 		return [n boolValue];
 
@@ -351,6 +367,9 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 - (BOOL) showStatusBarImage
 {
+	if (!self.enabled)
+		return false;
+
 	if (NSNumber* n = [self.theme objectForKey:@"ShowStatusBarImage"])
 		return [n boolValue];
 
@@ -362,6 +381,9 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 - (BOOL) showStatusBarTemp
 {
+	if (!self.enabled)
+		return false;
+
 	if (NSNumber* n = [self.theme objectForKey:@"ShowStatusBarTemp"])
 		return [n boolValue];
 
@@ -376,12 +398,19 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 	return [self.theme objectForKey:@"Mappings"];
 }
 
+-(void) dealloc
+{
+	[lock release];
+	[super dealloc];
+}
+
 - (id) init
 {
 	self.temp = defaultTemp;
 	self.code = defaultCode;
 	self.nextRefresh = [NSDate date];
-	refreshing = false;
+
+	lock = [[NSConditionLock alloc] init];
 
 	if (self.currentCondition = [NSMutableDictionary dictionaryWithContentsOfFile:conditionPath])
 	{
@@ -923,27 +952,37 @@ foundCharacters:(NSString *)string
 
 - (void) refreshInBackground
 {
-	// mark as refreshing
-	@try
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+	if ([lock tryLock])
 	{
-		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 		if ([self _refresh])
 			[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
-		[pool release];
+		[lock unlock];
 	}
-	@finally
+	else
 	{
-		refreshing = false;
+		NSLog(@"LI:Weather: Already refreshing.");
 	}
+
+	[pool release];
 }
 
 - (void) refresh
 {
+	if (!self.enabled)
+	{
+		NSLog(@"WI: Disabled.  No refresh.");
+		return;
+	}
+
+/*
 	if (!self.lockInfo && !self.showWeatherIcon && !self.showWeatherBadge && !self.showStatusBarWeather)
 	{
 		NSLog(@"WI: No weather views are active.  No refresh.");
 		return;
 	}
+*/
 
 	if (SBTelephonyManager* mgr = [$SBTelephonyManager sharedTelephonyManager])
 	{
@@ -954,19 +993,8 @@ foundCharacters:(NSString *)string
 		}
 	}
 
-	@synchronized (self)
-	{
-		if (refreshing)
-		{
-			NSLog(@"WI: Already refreshing.  Skipping refresh.");
-			return;
-		}
-
-		refreshing = true;
-	}
-
 	if ((self.showWeatherIcon && !self.weatherIcon) || (self.showStatusBarWeather && !self.statusBarIndicator && !self.statusBarIndicatorFSO))
-		[self updateWeatherIcon];
+		[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
 
 	[self performSelectorInBackground:@selector(refreshInBackground) withObject:nil];
 }
@@ -1178,6 +1206,7 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
                                 {
 					lastPrefsUpdate = [modDate timeIntervalSinceReferenceDate];
 					refresh = true;
+					[_controller loadPreferences];
 				}
 			}
 		}
@@ -1245,6 +1274,12 @@ static void undimScreenOnNotif(CFNotificationCenterRef center, void *observer, C
 }
 
 static void dimScreenOnNotif(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
+{
+//	NSLog(@"WI:Display: undim");
+	[_controller stopTimer];
+}
+
+static void updatePrefs(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
 //	NSLog(@"WI:Display: undim");
 	[_controller stopTimer];
