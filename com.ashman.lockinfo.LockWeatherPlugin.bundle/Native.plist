@@ -30,6 +30,44 @@
                         <key>label</key>
                         <string>Show Update Time</string>
                 </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.LockWeatherPlugin</string>
+                        <key>key</key>
+                        <string>ShowDescription</string>
+                        <key>label</key>
+                        <string>Show Description</string>
+                </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSLinkListCell</string>
+                        <key>default</key>
+                        <integer>0</integer>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.LockWeatherPlugin</string>
+                        <key>detail</key>
+                        <string>PSListItemsController</string>
+                        <key>key</key>
+                        <string>Detail</string>
+                        <key>label</key>
+                        <string>Detail</string>
+                        <key>validTitles</key>
+                        <array>
+                                <string>Forecast</string>
+                                <string>Calendar</string>
+                                <string>Both</string>
+                        </array>
+                        <key>validValues</key>
+                        <array>
+                                <integer>0</integer>
+                                <integer>1</integer>
+                                <integer>2</integer>
+                        </array>
+                </dict>
         </array>
 	<key>title</key>
         <string>WeatherIcon</string>
