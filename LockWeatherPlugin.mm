@@ -17,6 +17,90 @@ static NSString* timeFormat;
 extern "C" UIImage *_UIImageWithName(NSString *);
 extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
+@interface CalendarView : UIView
+
+@property (nonatomic, retain) LIStyle* headerStyle;
+@property (nonatomic, retain) LIStyle* dayStyle;
+@property (nonatomic, retain) UIImage* marker;
+
+@end
+
+static BOOL showCalendar = false;
+static CalendarView* calendarView;
+
+@implementation CalendarView
+
+@synthesize headerStyle, dayStyle, marker;
+
+-(void) drawRect:(CGRect) rect
+{
+        int width = rect.size.width / 7;
+        NSCalendar* cal = [NSCalendar currentCalendar];
+        NSDate* now = [NSDate date];
+
+        NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
+	df.dateFormat = @"MMMM";
+        CGRect r = CGRectMake(0, 2, rect.size.width, self.headerStyle.font.pointSize);
+        NSString* s = [[df stringFromDate:now] uppercaseString];
+        [self.dayStyle.textColor set];
+        [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+
+        [self.headerStyle.textColor set];
+	r.size.width = width;
+	r.origin.y += self.headerStyle.font.pointSize + 3;
+
+        int firstWeekday = cal.firstWeekday;
+
+        NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
+        for (int i = 0; i < 7; i++)
+        {
+                r.origin.x = i * width;
+                int index = (i + firstWeekday - 1);
+                NSString* s = [[weekdays objectAtIndex:(index >= weekdays.count ? index - weekdays.count : index)] uppercaseString];
+                [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        }
+
+        NSRange dayRange = [cal rangeOfUnit:NSDayCalendarUnit inUnit:NSMonthCalendarUnit forDate:now];
+        NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:now];
+        int today = comp.day;
+
+        comp.day = 1;
+        NSDate* first = [cal dateFromComponents:comp];
+        comp = [cal components:NSWeekdayCalendarUnit fromDate:first];
+
+        for (int i = 0; i < dayRange.length; i++)
+        {
+                int day = i + comp.weekday - (firstWeekday - 1);
+                int week = (day - 1) / 7;
+                int index = (day - 1) % 7;
+                r.origin.x = (index * width);
+                r.origin.y = (week * (self.dayStyle.font.pointSize + 6)) + (self.headerStyle.font.pointSize * 2) + 9;
+                NSString* s = [[NSNumber numberWithInt:i + 1] stringValue];
+
+                if (self.dayStyle.shadowColor)
+		{
+                        [self.dayStyle.shadowColor set];
+
+                        [s drawInRect:CGRectOffset(r, self.dayStyle.shadowOffset.width, self.dayStyle.shadowOffset.height) withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+                }
+
+                if (today == i + 1)
+                {
+                        CGRect rr = CGRectMake(r.origin.x + (r.size.width / 2) - (self.marker.size.width / 2), r.origin.y + (r.size.height / 2) - ((self.dayStyle.font.pointSize + 4) / 2), self.marker.size.width, self.dayStyle.font.pointSize + 5);
+                        [self.marker drawInRect:rr];
+                        [self.headerStyle.textColor set];
+                }
+                else
+                {
+                        [self.dayStyle.textColor set];
+                }
+
+                [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        }
+}
+
+@end
+
 @interface WIHeaderView : UIView
 
 @property (nonatomic, retain) UIImageView* icon;
@@ -36,6 +120,14 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
 @synthesize icon, city, temp, time, date, high, low;
 
+-(void) touchesBegan:(NSSet*) touches withEvent:(UIEvent*) event
+{
+	UITouch* touch = [touches anyObject];
+	CGPoint p = [touch locationInView:self];
+	showCalendar = (p.x < 160);
+	return [self.nextResponder touchesBegan:touches withEvent:event];
+}
+
 -(void) updateTime
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
@@ -46,7 +138,10 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
         df.dateFormat = dateFormat;
 	NSString* dateStr = [df stringFromDate:now];
 	if (![dateStr isEqualToString:self.time.text])
+	{
 	        self.date.text = [df stringFromDate:now];
+		[calendarView setNeedsDisplay];
+	}
 
         df.dateFormat = timeFormat;
 	NSString* timeStr = [df stringFromDate:now];
@@ -93,6 +188,95 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 -(CGFloat) tableView:(UITableView*) tableView heightForHeaderInSection:(NSInteger) section
 {
 	return 96;
+}
+
+-(BOOL) showCalendar
+{
+	int detail = 0;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"Detail"])
+		detail = n.intValue;
+
+	if (detail == 2)
+		return showCalendar;
+
+	return (detail == 1);
+}
+        
+- (CGFloat) tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	if (self.showCalendar)
+	{
+		if (indexPath.row > 0)
+			return 0;
+
+	        // calculate the number of weeks in the month
+	        NSCalendar* cal = [NSCalendar currentCalendar];
+	        NSDate* now = [NSDate date];
+	        NSRange dayRange = [cal rangeOfUnit:NSDayCalendarUnit inUnit:NSMonthCalendarUnit forDate:now];
+	        NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:now];
+
+	        comp.day = 1;
+	        NSDate* first = [cal dateFromComponents:comp];
+	        comp = [cal components:NSWeekdayCalendarUnit fromDate:first];
+
+	        int total = (comp.weekday - 1) + dayRange.length;
+	        int weeks = (int)(total / 7);
+	        if (total % 7 > 0)
+	                weeks++;
+
+	       	 return (weeks * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
+	}
+
+	return [super tableView:tableView heightForRowAtIndexPath:indexPath];
+}
+
+- (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	if (self.showCalendar)
+	{
+		if (indexPath.row > 0)
+		{
+			UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"LWBlankCell"];
+       			if (cell == nil)
+			{
+	                	cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"LWBlankCell"] autorelease];
+			}
+			return cell;
+		}
+
+		UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"LWCalendarCell"];
+
+       		if (cell == nil)
+		{
+	                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"LWCalendarCell"] autorelease];
+
+	                if (calendarView == nil)
+	                {
+	                        calendarView = [[CalendarView alloc] initWithFrame:CGRectMake(20, 0, 280, 20)];
+	                        calendarView.tag = 1010;
+	                        calendarView.backgroundColor = [UIColor clearColor];
+	                        calendarView.marker = [UIImage imageWithContentsOfFile:[self.plugin.bundle pathForResource:@"LIClockTodayMarker" ofType:@"png"]];
+	                }
+
+	                [cell.contentView addSubview:calendarView];
+	        }
+
+	        int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
+	        calendarView.frame = CGRectMake(20, 0, 280, height);
+
+	        BOOL update = (calendarView.headerStyle.font.pointSize != tableView.theme.summaryStyle.font.pointSize ||
+	                        calendarView.dayStyle.font.pointSize != tableView.theme.detailStyle.font.pointSize);
+
+	        calendarView.headerStyle = tableView.theme.summaryStyle;
+	        calendarView.dayStyle = tableView.theme.detailStyle;
+
+	        if (update)
+	                [calendarView setNeedsDisplay];
+
+	        return cell;
+	}
+	
+	return [super tableView:tableView cellForRowAtIndexPath:indexPath];
 }
 
 -(UIView*) tableView:(LITableView*) tableView viewForHeaderInSection:(NSInteger) section
@@ -156,11 +340,23 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	view.low.backgroundColor = [UIColor clearColor];
 
 	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
-	NSString* city = [weather objectForKey:@"city"];
-	NSRange r = [city rangeOfString:@","];
-	if (r.location != NSNotFound)
-		city = [city substringToIndex:r.location];
-	view.city.text = city;
+
+	BOOL showDescription = false;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowDescription"])
+		showDescription = n.boolValue;
+
+	if (showDescription)
+	{
+		view.city.text = [weather objectForKey:@"description"];
+	}
+	else
+	{
+		NSString* city = [weather objectForKey:@"city"];
+		NSRange r = [city rangeOfString:@","];
+		if (r.location != NSNotFound)
+			city = [city substringToIndex:r.location];
+		view.city.text = city;
+	}
 
 	if (NSArray* forecast = [weather objectForKey:@"forecast"])
 	{
