@@ -1,4 +1,5 @@
 #include "Plugin.h"
+#include "Constants.h"
 #include <Foundation/Foundation.h>
 
 @interface WIForecastView : UIView
