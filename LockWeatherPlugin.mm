@@ -347,7 +347,19 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 	if (showDescription)
 	{
-		view.city.text = [weather objectForKey:@"description"];
+		NSString* description = nil;
+		if (NSNumber* code = [weather objectForKey:@"code"])
+	        {
+                	if (code.intValue >= 0 && code.intValue < descriptions.count)
+	                {
+	                        description = localize([descriptions objectAtIndex:code.intValue]);
+	                }
+	        }
+
+		if (description == nil)
+			description = localize([weather objectForKey:@"description"]);
+
+		view.city.text = description;
 	}
 	else
 	{
