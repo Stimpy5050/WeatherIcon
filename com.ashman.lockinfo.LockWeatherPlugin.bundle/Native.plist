@@ -67,6 +67,8 @@
                                 <integer>1</integer>
                                 <integer>2</integer>
                         </array>
+			<key>staticTextMessage</key>
+			<string>With "Both" selected, tapping the left side will show the calendar and tapping the right side will show the forecast.</string>
                 </dict>
         </array>
 	<key>title</key>
