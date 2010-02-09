@@ -56,6 +56,7 @@ lockweather: LockWeatherPlugin
 	mkdir -p package/lock/Library/LockInfo/Plugins
 	cp -r com.ashman.lockinfo.LockWeatherPlugin.bundle package/lock/Library/LockInfo/Plugins
 	cp com.ashman.lockinfo.WeatherIconPlugin.bundle/*.png package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
+	cp -r com.ashman.lockinfo.WeatherIconPlugin.bundle/*.lproj package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
 	cp LockWeatherPlugin package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle
 	cp lockweather-control package/lock/DEBIAN/control
 	find package/lock -name .svn -print0 | xargs -0 rm -rf
@@ -82,6 +83,7 @@ package:	$(Target) WeatherIconSettings lockinfo lockweather
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle
 	cp *.png package/weathericon/System/Library/CoreServices/SpringBoard.app
+	cp -r DEB/* package/weathericon
 	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/weathericon WeatherIcon_$(shell grep ^Version: control | cut -d ' ' -f 2).deb
