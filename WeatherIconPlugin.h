@@ -36,4 +36,6 @@
 @property (nonatomic, retain) WIForecastIconView* iconView;
 @property (nonatomic, retain) WIForecastTempView* tempView;
 
+@property (retain) NSCondition* reloadCondition;
+
 @end

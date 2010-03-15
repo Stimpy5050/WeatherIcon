@@ -130,7 +130,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 @implementation WeatherIconPlugin
 
-@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView;
+@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView, reloadCondition;
 
 -(id) loadIcon:(NSString*) path
 {
@@ -340,6 +340,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	self.iconView = [[[WIForecastIconView alloc] init] autorelease];
 	self.tempView = [[[WIForecastTempView alloc] init] autorelease];
 
+	self.reloadCondition = [[[NSCondition alloc] init] autorelease];
+
 	plugin.tableViewDataSource = self;
 	plugin.tableViewDelegate = self;
 
@@ -363,13 +365,16 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 - (NSString *)tableView:(LITableView *)tableView reloadDataInSection:(NSInteger)section
 {
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIRefreshNotification" object:nil];
+	[self.reloadCondition lock];
+	[self.reloadCondition wait];
+	[self.reloadCondition unlock];
 }
 
 -(void) updateOnUpdate:(NSNotification*) notif
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-//	NSLog(@"LI:Weather: Updating from WI update");
 	[self updateWeather:notif.userInfo];
+	[self.reloadCondition broadcast];
 	[pool release];
 }
 

@@ -26,6 +26,7 @@
 #import <UIKit/UIStringDrawing.h>
 #import <UIKit/UIKit.h>
 #import <Foundation/NSObjCRuntime.h>
+#include "Constants.h"
 
 
 @interface WeatherIconController : NSObject
@@ -74,6 +75,8 @@ static Class $SBIconController = objc_getClass("SBIconController");
 static Class $SBImageCache = objc_getClass("SBImageCache");
 static Class $SBTelephonyManager = objc_getClass("SBTelephonyManager");
 static Class $SBAwayController = objc_getClass("SBAwayController");
+
+static NSBundle* weatherIconBundle;
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
 //static NSString* lockInfoPrefs = @"/var/mobile/Library/Preferences/com.ashman.lockinfo.WeatherIconPlugin.plist";
@@ -137,13 +140,14 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 
 - (void) loadTheme
 {
-	NSDictionary* dict = nil;
+	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:10];
+
+	if (NSString* themePrefs = [weatherIconBundle pathForResource:@"Theme" ofType:@"plist"])
+		[dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
+
 	NSBundle* bundle = [NSBundle mainBundle];
 	if (NSString* themePrefs = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"])
-		dict = [NSDictionary dictionaryWithContentsOfFile:themePrefs];
-
-	if (dict == nil)
-		dict = [NSDictionary dictionary];
+		[dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
 
 	self.theme = dict;
 }
@@ -515,6 +519,18 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 	return nil;
 }
 
+-(NSString*) defaultImagePath:(NSNumber*) code night:(BOOL) night
+{
+        if (code)
+        {
+                NSArray* icons = (night ? defaultNightIcons : defaultIcons);
+                if (code.intValue >= 0 && code.intValue < icons.count)
+                        return [weatherIconBundle pathForResource:[icons objectAtIndex:code.intValue] ofType:@"png"];
+        }
+
+        return nil;
+}
+
 - (NSString*) findWeatherImagePath:(NSString*) prefix code:(NSString*) code night:(BOOL) night
 {
 	NSString* suffix = (night ? @"_night" : @"_day");	
@@ -537,6 +553,7 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 	if (NSString* img = [self findImage:bundle name:prefix])
 		return img;
 
+//	return [self defaultImagePath:code night:night];
 	return nil;
 }
 
@@ -957,7 +974,7 @@ foundCharacters:(NSString *)string
 	if ([lock tryLock])
 	{
 		if ([self _refresh])
-			[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
+			[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:YES];
 		[lock unlock];
 	}
 	else
@@ -994,7 +1011,7 @@ foundCharacters:(NSString *)string
 	}
 
 	if ((self.showWeatherIcon && !self.weatherIcon) || (self.showStatusBarWeather && !self.statusBarIndicator && !self.statusBarIndicatorFSO))
-		[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
+		[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:YES];
 
 	[self performSelectorInBackground:@selector(refreshInBackground) withObject:nil];
 }
@@ -1293,6 +1310,8 @@ extern "C" void TweakInit() {
 
 	if (objc_getClass("SpringBoard") == nil)
 		return;
+
+	weatherIconBundle = [NSBundle bundleWithPath:@"/Library/WeatherIcon"];
 
 	$WIApplicationIcon = objc_allocateClassPair(objc_getClass("SBApplicationIcon"), "WIApplicationIcon", 0);
 	class_replaceMethod($WIApplicationIcon, @selector(icon), (IMP)&weatherIcon, "@@:");
