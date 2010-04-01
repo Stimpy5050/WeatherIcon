@@ -83,8 +83,8 @@ static BOOL isTomorrow(NSDate* date)
 
 @interface LILabel : UIView
 {
-        LIStyle* style;
-        UILabel* label;
+	LIStyle* style;
+	UILabel* label;
 }
 
 @property (nonatomic, retain) LIStyle* style;
@@ -97,9 +97,9 @@ static BOOL isTomorrow(NSDate* date)
 
 @interface LITimeView : UIView
 {
-        BOOL is24Hour;
-        NSDate* date;
-        NSString* text;
+	BOOL is24Hour;
+	NSDate* date;
+	NSString* text;
 }
 
 @property (nonatomic) BOOL relative;
