@@ -2,7 +2,6 @@
 #include "Constants.h"
 #include <Foundation/Foundation.h>
 
-
 @interface WIForecastView : UIView
 
 @property (nonatomic, retain) LITheme* theme;
@@ -36,5 +35,7 @@
 @property (nonatomic, retain) WIForecastDaysView* daysView;
 @property (nonatomic, retain) WIForecastIconView* iconView;
 @property (nonatomic, retain) WIForecastTempView* tempView;
+
+@property (retain) NSCondition* reloadCondition;
 
 @end

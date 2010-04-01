@@ -110,6 +110,40 @@ Note: This will NOT change the size of the icons that appear in the weather fore
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>City Font Size</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<integer>18</integer>
+			<key>defaults</key>
+			<string>com.ashman.lockinfo.HTCPlugin</string>
+			<key>key</key>
+			<string>CitySize</string>
+			<key>label</key>
+			<string>City Size</string>
+			<key>max</key>
+			<integer>24</integer>
+			<key>min</key>
+			<integer>14</integer>
+			<key>showValue</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>50</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Adjust to change the size of the city font.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
 		</dict>
 		<dict>
 			<key>cell</key>

@@ -55,20 +55,27 @@ static BOOL twelveHour = false;
 	
     df.dateFormat = dateFormat;
 	NSString* dateStr = [df stringFromDate:now];
-	self.date.text = [df stringFromDate:now];
-	
-	self.minuteNumber = [NSNumber numberWithInt:[timeComponents minute]];
-	
+	if (![dateStr isEqualToString:self.date.text])
+	{
+		self.date.text = [df stringFromDate:now];
+		[calendarView setNeedsDisplay];
+	}
+		
 	int h = [timeComponents hour];
+	int m = [timeComponents minute];
 	
 	if (twelveHour && h > 12)
 	{
 		h = h - 12;
 	}
 	
-	self.hourNumber = [NSNumber numberWithInt:h];
+	if (h != self.hourNumber.intValue || m != self.minuteNumber.intValue)
+	{
+		self.hourNumber = [NSNumber numberWithInt:h];
+		self.minuteNumber = [NSNumber numberWithInt:m];
 	
-	[self updateDigits];
+		[self updateDigits];
+	}
 	
 	[pool release];
 }
@@ -144,9 +151,14 @@ static BOOL twelveHour = false;
 	view.date.backgroundColor = [UIColor clearColor];
 	[view addSubview:view.date];
 	
+	int cityfontsize = 18;
+	
+	if (NSNumber* f = [self.plugin.preferences objectForKey:@"CitySize"])
+		cityfontsize = f.intValue;
+	
 	view.city = [[[UILabel alloc] initWithFrame:CGRectMake(29, 106, 90, 22)] autorelease];
 	[view addSubview:view.city];
-	view.city.font = [UIFont boldSystemFontOfSize:18];
+	view.city.font = [UIFont boldSystemFontOfSize:cityfontsize];
 	view.city.textAlignment = UITextAlignmentLeft;
 	view.city.textColor = [UIColor orangeColor];
 	view.city.backgroundColor = [UIColor clearColor];
