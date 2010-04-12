@@ -1,6 +1,12 @@
 #include "LockWeatherPlugin.h"
 #include <Preferences/PSListController.h>
 
+@interface autoScaleText : NSObject
+
+-(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font withMaxWidth:(CGFloat)maxWidth withMaxHeight:(CGFloat)maxHeight withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines;		
+
+@end
+
 @interface imageCacheController : NSObject
 
 @property (nonatomic, retain) NSMutableDictionary* imageCache;
@@ -15,12 +21,6 @@
 @end
 
 @interface LockWeatherPlugin (ExtendLW)
-@end
-
-@interface WIHeaderView (HTCUpdater)
-
--(void) updateTime;
-
 @end
 
 @interface HTCHeaderView : UIView

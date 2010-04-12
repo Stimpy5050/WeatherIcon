@@ -17,6 +17,7 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
 static HTCHeaderView* HTCView = [[HTCHeaderView alloc] init];
 static imageCacheController* imageCacheControl = [[imageCacheController alloc] init];
+static autoScaleText* autoScaler = [[autoScaleText alloc] init];
 
 static BOOL twelveHour = false;
 static BOOL spaceSave = false;
@@ -24,6 +25,39 @@ static BOOL removeExtra = false;
 
 @implementation HTCSettingsController
 @end
+
+@implementation autoScaleText
+
+-(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font withMaxWidth:(CGFloat)maxWidth withMaxHeight:(CGFloat)maxHeight withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines
+{		
+	int i = maxSize;
+	
+	UIFont* newFont = font;
+	CGSize constraintSize = CGSizeMake(maxWidth, MAXFLOAT);
+	
+	for(i; i >= minSize; i=i-2)
+	{
+		newFont = [newFont fontWithSize:i];
+		
+		if (moreLines)
+		{
+			CGSize labelSize = [text sizeWithFont:newFont constrainedToSize:constraintSize lineBreakMode:UILineBreakModeWordWrap];
+			if (labelSize.height <= maxHeight)
+				break;
+			
+		} else {
+			CGSize labelSize = [text sizeWithFont:newFont];
+			if (labelSize.width <= maxWidth)
+				break;
+			
+		}			
+	}
+	
+	return newFont;
+}
+
+@end
+
 
 @implementation imageCacheController
 
@@ -35,7 +69,7 @@ static BOOL removeExtra = false;
 	
 	int i=0;
 	int x=0;
-	NSBundle* bundle = [NSBundle bundleWithIdentifier:@"com.ashman.lockinfo.HTCPlugin"];
+	NSBundle* bundle = [NSBundle bundleWithIdentifier:@"com.burgch.lockinfo.HTCPlugin"];
 
 	for (i; i<10; i++)
 	{		
@@ -71,27 +105,17 @@ static BOOL removeExtra = false;
 -(UIImage*) getDigit:(int)digit
 {	
 	NSString* digitName = [digits objectAtIndex:digit];
-	
 	UIImage* returnDigit = [self.imageCache objectForKey:digitName];
-	if (returnDigit)
-	{
-		return returnDigit;
-	} else {
-		return nil;
-	}
+
+	return returnDigit;
 }
 
 -(UIImage*) getBackground:(int)background
 {	
 	NSString* backgroundName = [backgrounds objectAtIndex:background];
-	
 	UIImage* returnBackground = [self.imageCache objectForKey:backgroundName];
-	if (returnBackground)
-	{
-		return returnBackground;
-	} else {
-		return nil;
-	}
+
+	return returnBackground;
 }
 
 @end
@@ -108,40 +132,14 @@ static BOOL removeExtra = false;
 
 @end
 
-@implementation WIHeaderView (HTCUpdater)
-
--(void) updateTime
-{
-	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-	
-	NSDate* now = [NSDate date];
-	NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
-	
-	df.dateFormat = dateFormat;
-	NSString* dateStr = [df stringFromDate:now];
-	if (![dateStr isEqualToString:self.time.text])
-	{
-		self.date.text = [df stringFromDate:now];
-		[calendarView setNeedsDisplay];
-	}
-	
-	df.dateFormat = timeFormat;
-	NSString* timeStr = [df stringFromDate:now];
-	if (![timeStr isEqualToString:self.date.text])
-	{
-		self.time.text = [df stringFromDate:now];
-	}
-	
-	[HTCView updateTimeHTC];
-	
-	[pool release];
-}
-
-@end
-
 MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 {
     _updateClock(self, sel);
+	
+	[HTCView retain];
+	[HTCView updateTimeHTC];
+	[HTCView release];
+	
 	[cachedView retain];
 	[cachedView updateTime];
 	[cachedView release];
@@ -150,6 +148,11 @@ MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 MSHook(void, significantTimeChange, SBStatusBarController *self, SEL sel)
 {
     _significantTimeChange(self, sel);
+	
+	[HTCView retain];
+	[HTCView updateTimeHTC];
+	[HTCView release];
+		
 	[cachedView retain];
     [cachedView updateTime];
 	[cachedView release];
@@ -158,6 +161,11 @@ MSHook(void, significantTimeChange, SBStatusBarController *self, SEL sel)
 MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 {
     _sbDrawRect(self, sel, rect);
+	
+	[HTCView retain];
+	[HTCView updateTimeHTC];
+	[HTCView release];
+	
 	[cachedView retain];
     [cachedView updateTime];
 	[cachedView release];
@@ -221,7 +229,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	{
 		h = h - 12;
 	}
-	
+
 	if (h != self.hourNumber.intValue || m != self.minuteNumber.intValue)
 	{
 		self.hourNumber = [NSNumber numberWithInt:h];
@@ -249,34 +257,6 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	else if (colourInt == 7) {return [UIColor orangeColor];}
 	else if (colourInt == 8) {return [UIColor purpleColor];}
 	else {return [UIColor lightGrayColor];}
-}
-
--(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font withMaxWidth:(CGFloat)maxWidth withMaxHeight:(CGFloat)maxHeight withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines
-{		
-	int i = maxSize;
-	
-	UIFont* newFont = font;
-	CGSize constraintSize = CGSizeMake(maxWidth, MAXFLOAT);
-	
-	for(i; i >= minSize; i=i-2)
-	{
-		newFont = [newFont fontWithSize:i];
-		
-		if (moreLines)
-		{
-			CGSize labelSize = [text sizeWithFont:newFont constrainedToSize:constraintSize lineBreakMode:UILineBreakModeWordWrap];
-			if (labelSize.height <= maxHeight)
-				break;
-			
-		} else {
-			CGSize labelSize = [text sizeWithFont:newFont];
-			if (labelSize.width <= maxWidth)
-				break;
-				
-		}			
-	}
-	
-	return newFont;
 }
 
 -(CGFloat) tableView:(UITableView*) tableView heightForHeaderInSection:(NSInteger) section
@@ -482,7 +462,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	view.date.backgroundColor = [UIColor clearColor];
 	if (spaceSave)
 	{
-		view.date.frame = CGRectMake(205, 38, 95, 22);
+		view.date.frame = CGRectMake(204, 38, 95, 22);
 	} else {
 		view.date.frame = CGRectMake(190, 105, 100, 22);
 	}
@@ -585,11 +565,11 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	NSString* city = [weather objectForKey:@"city"];
 	NSRange r = [city rangeOfString:@","];
 	if (r.location != NSNotFound)
-		city = [city substringToIndex:r.location];
+	city = [city substringToIndex:r.location];
 	view.city.text = city;
 		
 	UIFont* tmpCityFont = view.city.font;
-	view.city.font = [self fontToFitText:view.city.text withFont:tmpCityFont withMaxWidth:view.city.frame.size.width withMaxHeight:view.city.frame.size.height withMinSize:cityminsize withMaxSize:citymaxsize allowMoreLines:cityTwoLine];
+	view.city.font = [autoScaler fontToFitText:view.city.text withFont:tmpCityFont withMaxWidth:view.city.frame.size.width withMaxHeight:view.city.frame.size.height withMinSize:cityminsize withMaxSize:citymaxsize allowMoreLines:cityTwoLine];
 	
 	if (showDescription)
 	{
@@ -609,7 +589,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	}
 	
 	UIFont* tmpDescriptionFont = view.description.font;
-	view.description.font = [self fontToFitText:view.description.text withFont:tmpDescriptionFont withMaxWidth:view.description.frame.size.width withMaxHeight:view.description.frame.size.height withMinSize:descriptionminsize withMaxSize:descriptionmaxsize allowMoreLines:descriptionTwoLine];
+	view.description.font = [autoScaler fontToFitText:view.description.text withFont:tmpDescriptionFont withMaxWidth:view.description.frame.size.width withMaxHeight:view.description.frame.size.height withMinSize:descriptionminsize withMaxSize:descriptionmaxsize allowMoreLines:descriptionTwoLine];
 	
 	int descriptionBottom = 97;
 	int cityTop = 102;
@@ -640,11 +620,11 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	
 	if (spaceSave)
 	{
-		view.description.center = CGPointMake(15 + (int)(dr.size.width / 2), descriptionBottom - (int)(dr.size.height / 2));
-		view.city.center = CGPointMake(15 + (int)(cr.size.width / 2), descriptionBottom - (2 + dr.size.height + (int)(cr.size.height / 2)));
+		view.description.center = CGPointMake(15 + (dr.size.width / 2), descriptionBottom - (dr.size.height / 2));
+		view.city.center = CGPointMake(15 + (cr.size.width / 2), descriptionBottom - (2 + dr.size.height + (cr.size.height / 2)));
 	} else {
-		view.city.center = CGPointMake(29 + (int)(cr.size.width / 2), cityTop + (int)(cr.size.height / 2));
-		view.description.center = CGPointMake(29 + (int)(dr.size.width / 2), cityTop + cr.size.height + 2 + (int)(dr.size.height / 2));
+		view.city.center = CGPointMake(29 + (cr.size.width / 2), cityTop + (cr.size.height / 2));
+		view.description.center = CGPointMake(29 + (dr.size.width / 2), cityTop + cr.size.height + 2 + (dr.size.height / 2));
 	}
 
 	if (NSArray* forecast = [weather objectForKey:@"forecast"])

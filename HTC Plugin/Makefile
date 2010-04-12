@@ -4,6 +4,7 @@ LD=$(CC)
 platform=/Developer/Platforms/iPhoneOS.platform
 allocate=${platform}/Developer/usr/bin/codesign_allocate
 export CODESIGN_ALLOCATE=${allocate}
+export COPYFILE_DISABLE=TRUE
 
 SDKVER=3.0
 SDK=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
@@ -47,6 +48,19 @@ clean:
 
 HTC: HTCPlugin
 	cp HTCPlugin ../../Plugin
+
+HTC-DEB: HTCPlugin
+	mkdir -p package/lock/DEBIAN
+	mkdir -p package/lock/Library/LockInfo/Plugins
+	cp -r com.burgch.lockinfo.HTCPlugin.bundle package/lock/Library/LockInfo/Plugins
+	cp HTCPlugin package/lock/Library/LockInfo/Plugins/com.burgch.lockinfo.HTCPlugin.bundle
+	cp HTC-control package/lock/DEBIAN/control
+	find package/lock -name .svn -print0 | xargs -0 rm -rf
+	find package/lock -name .DS_Store -print0 | xargs -0 rm -rf
+	find package/lock -name Thumbs.db -print0 | xargs -0 rm -rf
+	find package/lock -name pspbrwse.jbf -print0 | xargs -0 rm -rf
+	find package/lock -name *.pspimage -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/lock HTCPlugin_$(shell grep ^Version: HTC-control | cut -d ' ' -f 2).deb
 	
 LW: LockWeatherPlugin
 	cp LockWeatherPlugin ../../Plugin
