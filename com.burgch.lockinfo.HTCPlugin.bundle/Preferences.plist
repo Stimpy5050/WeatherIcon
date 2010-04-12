@@ -1,0 +1,15 @@
+{
+	items = (
+		{
+			cell = PSGroupCell;
+		},
+		{
+			cell = PSSwitchCell;
+			default = YES;
+			defaults = "com.burgch.lockinfo.HTCPlugin";
+			key = Enabled;
+			label = Enabled;
+		},
+	);
+	title = "HTC Plugin";
+}
