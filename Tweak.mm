@@ -55,7 +55,6 @@
 @property (nonatomic, retain) NSDictionary* weatherPreferences;
 @property (nonatomic, retain) NSMutableDictionary* preferences;
 @property (nonatomic, retain) NSMutableDictionary* currentCondition;
-//@property BOOL lockInfo;
 
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
@@ -72,6 +71,7 @@
 static Class $SBStatusBarController = objc_getClass("SBStatusBarController");
 static Class $SBUIController = objc_getClass("SBUIController");
 static Class $SBIconController = objc_getClass("SBIconController");
+static Class $SBIconModel = objc_getClass("SBIconModel");
 static Class $SBImageCache = objc_getClass("SBImageCache");
 static Class $SBTelephonyManager = objc_getClass("SBTelephonyManager");
 static Class $SBAwayController = objc_getClass("SBAwayController");
@@ -177,14 +177,6 @@ static NSArray* dayCodes = [[NSArray alloc] initWithObjects:@"SUN", @"MON", @"TU
 		weather = [NSDictionary dictionary];
 
 	self.weatherPreferences = weather;
-
-/*
-	BOOL b = false;
-	if (NSDictionary* liPrefs = [NSDictionary dictionaryWithContentsOfFile:lockInfoPrefs])
-		if (NSNumber* e = [liPrefs objectForKey:@"Enabled"])
-			b = e.boolValue;	
-	self.lockInfo = b;
-*/
 
 	[self loadTheme];
 }
@@ -813,40 +805,6 @@ foundCharacters:(NSString *)string
 	return icon;
 }
 
-- (void) updateIcon
-{
-	self.weatherIcon = [self createIcon];
-
-	SBIconController* iconController = [$SBIconController sharedInstance];
-	if (self.weatherIcon != nil && iconController)
-	{
-		NSLog(@"WI: Refreshing icon...");
-
-	        // now force the icon to refresh
-	        if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
-		{
-			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier])
-			{
-		        	[model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
-	
-				if ($SBImageCache != nil)
-			        	if (SBImageCache* cache = MSHookIvar<SBImageCache*>(model, "_iconImageCache"))
-						if ([cache respondsToSelector:@selector(removeImageForKey:)])
-							[cache removeImageForKey:self.bundleIdentifier];
-
-				if (UIImageView* imageView = MSHookIvar<UIImageView*>(applicationIcon, "_image"))
-				{
-					imageView.bounds = CGRectMake(0, 0, self.weatherIcon.size.width, self.weatherIcon.size.height);
-					imageView.image = self.weatherIcon;
-					[imageView setNeedsDisplay];
-				}
-			}
-		}
-
-//		NSLog(@"WI: Done refreshing icon.");
-	}
-}
-
 - (void) updateIndicator
 {
 	self.statusBarIndicator = [self createIndicator:0];
@@ -876,29 +834,26 @@ foundCharacters:(NSString *)string
 	[self updateNightSetting];
 
 	if (self.showWeatherIcon)
-		[self updateIcon];
+		self.weatherIcon = [self createIcon];
 
 	// now the status bar image
 	if (self.showStatusBarWeather)
 		[self updateIndicator];
 
-	if (SBIconController* iconController = [$SBIconController sharedInstance])
+	if (SBIconModel* model = [$SBIconModel sharedInstance])
 	{
-		if (SBIconModel* model = MSHookIvar<SBIconModel*>(iconController, "_iconModel"))
+		if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier])
 		{
-			if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier])
+			if (self.showWeatherBadge)
 			{
-				if (self.showWeatherBadge)
-				{
-					[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
-				}
-				else
-				{
-			        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
-			        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
-							if ([badgeStr hasSuffix:@"\u00B0"])
-								[applicationIcon setBadge:nil];
-				}
+				[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
+			}
+			else
+			{
+		        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
+		        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
+						if ([badgeStr hasSuffix:@"\u00B0"])
+							[applicationIcon setBadge:nil];
 			}
 		}
 	}
@@ -914,7 +869,9 @@ foundCharacters:(NSString *)string
 
 	[self.currentCondition writeToFile:conditionPath atomically:YES];
 
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIWeatherUpdatedNotification" object:self userInfo:self.currentCondition];
+	NSDictionary* cp = [self.currentCondition copy];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIWeatherUpdatedNotification" object:self userInfo:cp];
+	[cp release];
 }
 
 - (BOOL) _refresh
@@ -992,14 +949,6 @@ foundCharacters:(NSString *)string
 		NSLog(@"WI: Disabled.  No refresh.");
 		return;
 	}
-
-/*
-	if (!self.lockInfo && !self.showWeatherIcon && !self.showWeatherBadge && !self.showStatusBarWeather)
-	{
-		NSLog(@"WI: No weather views are active.  No refresh.");
-		return;
-	}
-*/
 
 	if (SBTelephonyManager* mgr = [$SBTelephonyManager sharedTelephonyManager])
 	{
