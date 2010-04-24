@@ -834,7 +834,12 @@ foundCharacters:(NSString *)string
 	[self updateNightSetting];
 
 	if (self.showWeatherIcon)
+	{
+		BOOL reload = (self.weatherIcon != nil);
 		self.weatherIcon = [self createIcon];
+		if (reload)
+			[[$SBIconModel sharedInstance] reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
+	}
 
 	// now the status bar image
 	if (self.showStatusBarWeather)
@@ -951,13 +956,13 @@ foundCharacters:(NSString *)string
 	}
 
 	if (SBTelephonyManager* mgr = [$SBTelephonyManager sharedTelephonyManager])
-	{
-		if (mgr.inCall || mgr.incomingCallExists || mgr.activeCallExists || mgr.outgoingCallExists)
-		{
-			NSLog(@"WI: On a call.  Skipping refresh.");
-			return;
-		}
-	}
+        {                
+		if (mgr.inCall || mgr.incomingCallExists)
+                {
+                        NSLog(@"WI: No data connection available.");
+                        return;
+                }
+        }
 
 	if ((self.showWeatherIcon && !self.weatherIcon) || (self.showStatusBarWeather && !self.statusBarIndicator && !self.statusBarIndicatorFSO))
 		[self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:YES];
@@ -1021,8 +1026,8 @@ MSHook(void, dimScreen, SBAwayController *self, SEL sel, BOOL b)
 {
 	// do the unscatter
 	_dimScreen(self, sel, b);
-
-	[_controller stopTimer];
+	if (![[$SBUIController sharedInstance] isOnAC])
+		[_controller stopTimer];
 }
 
 static float findStart(SBStatusBarContentsView* self, const char* varName, const char* visibleVarName, float currentStart)
@@ -1242,12 +1247,12 @@ static void undimScreenOnNotif(CFNotificationCenterRef center, void *observer, C
 static void dimScreenOnNotif(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
 //	NSLog(@"WI:Display: undim");
-	[_controller stopTimer];
+	if (![[$SBUIController sharedInstance] isOnAC])
+		[_controller stopTimer];
 }
 
 static void updatePrefs(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
-//	NSLog(@"WI:Display: undim");
 	[_controller stopTimer];
 }
 
