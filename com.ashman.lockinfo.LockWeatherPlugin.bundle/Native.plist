@@ -42,6 +42,10 @@
                         <key>label</key>
                         <string>Show Description</string>
                 </dict>
+                <dict>
+                        <key>cell</key>
+                        <string>PSGroupCell</string>
+                </dict>
 		<dict>
                         <key>cell</key>
                         <string>PSLinkListCell</string>
@@ -69,6 +73,18 @@
                         </array>
 			<key>staticTextMessage</key>
 			<string>With "Both" selected, tapping the left side will show the calendar and tapping the right side will show the forecast.</string>
+                </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.LockWeatherPlugin</string>
+                        <key>key</key>
+                        <string>ShowCalendarWeeks</string>
+                        <key>label</key>
+                        <string>Calendar Weeks</string>
                 </dict>
         </array>
 	<key>title</key>

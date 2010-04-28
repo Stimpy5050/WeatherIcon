@@ -19,6 +19,8 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
 @interface CalendarView : UIView
 
+@property BOOL showWeeks;
+@property (nonatomic, retain) NSDate* date;
 @property (nonatomic, retain) LIStyle* headerStyle;
 @property (nonatomic, retain) LIStyle* dayStyle;
 @property (nonatomic, retain) UIImage* marker;
@@ -26,22 +28,93 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 @end
 
 static BOOL showCalendar = false;
-static CalendarView* calendarView;
+
+@interface NSDate (LICalendar)
+
+-(NSDate*) lastMonth;
+-(NSDate*) nextMonth;
+
+@end
+
+@implementation NSDate (LICalendar)
+
+-(NSDate*) lastMonth
+{
+	NSCalendar* cal = [NSCalendar currentCalendar];
+	NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:self];
+	comp.month -= 1;
+	return [cal dateFromComponents:comp];
+}
+
+-(NSDate*) nextMonth
+{
+	NSCalendar* cal = [NSCalendar currentCalendar];
+	NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:self];
+	comp.month += 1;
+	return [cal dateFromComponents:comp];
+}
+
+@end
+
+@interface CalendarScrollView : UIScrollView <UIScrollViewDelegate>
+
+@property (nonatomic, retain) CalendarView* lastMonth;
+@property (nonatomic, retain) CalendarView* currentMonth;
+@property (nonatomic, retain) CalendarView* nextMonth;
+
+@end
+
+@implementation CalendarScrollView
+
+@synthesize lastMonth, nextMonth, currentMonth;
+
+-(void) scrollViewDidEndDecelerating:(UIScrollView*) view
+{
+	if (view.contentOffset.x == 320)
+		return;
+
+	CGPoint offset = view.contentOffset;
+
+	if (offset.x == 0)
+	{
+		self.currentMonth.date = self.lastMonth.date;
+		[self.currentMonth setNeedsDisplay];
+		offset.x = 319;
+	}
+	else
+	{
+		self.currentMonth.date = self.nextMonth.date;
+		[self.currentMonth setNeedsDisplay];
+		offset.x = 321;
+	}
+
+	view.contentOffset = offset;
+
+	self.lastMonth.date = [self.currentMonth.date lastMonth];
+	[self.lastMonth setNeedsDisplay];
+
+	self.nextMonth.date = [self.currentMonth.date nextMonth];
+	[self.nextMonth setNeedsDisplay];
+}
+
+@end
+
 
 @implementation CalendarView
 
-@synthesize headerStyle, dayStyle, marker;
+@synthesize headerStyle, dayStyle, marker, date, showWeeks;
 
--(void) drawRect:(CGRect) rect
+-(void) drawRect:(CGRect) viewRect
 {
+	CGRect rect = CGRectMake(viewRect.origin.x + (self.showWeeks ? 40 : 20), viewRect.origin.y, viewRect.size.width - 40, viewRect.size.height);
+	
         int width = rect.size.width / 7;
         NSCalendar* cal = [NSCalendar currentCalendar];
-        NSDate* now = [NSDate date];
 
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
-	df.dateFormat = @"MMMM";
-        CGRect r = CGRectMake(0, 2, rect.size.width, self.headerStyle.font.pointSize);
-        NSString* s = [[df stringFromDate:now] uppercaseString];
+	df.dateFormat = @"MMMM yyyy";
+        CGRect r = CGRectMake(viewRect.origin.x, 2, viewRect.size.width, self.headerStyle.font.pointSize);
+        NSString* s = [[df stringFromDate:self.date] uppercaseString];
         [self.dayStyle.textColor set];
         [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
@@ -54,27 +127,37 @@ static CalendarView* calendarView;
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
         for (int i = 0; i < 7; i++)
         {
-                r.origin.x = i * width;
+                r.origin.x = rect.origin.x + (i * width);
                 int index = (i + firstWeekday - 1);
                 NSString* s = [[weekdays objectAtIndex:(index >= weekdays.count ? index - weekdays.count : index)] uppercaseString];
                 [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
         }
 
-        NSRange dayRange = [cal rangeOfUnit:NSDayCalendarUnit inUnit:NSMonthCalendarUnit forDate:now];
-        NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:now];
+        NSRange dayRange = [cal rangeOfUnit:NSDayCalendarUnit inUnit:NSMonthCalendarUnit forDate:self.date];
+        NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:self.date];
         int today = comp.day;
 
         comp.day = 1;
         NSDate* first = [cal dateFromComponents:comp];
-        comp = [cal components:NSWeekdayCalendarUnit fromDate:first];
+        comp = [cal components:NSWeekdayCalendarUnit | NSWeekCalendarUnit fromDate:first];
 
         for (int i = 0; i < dayRange.length; i++)
         {
                 int day = i + comp.weekday - (firstWeekday - 1);
                 int week = (day - 1) / 7;
                 int index = (day - 1) % 7;
-                r.origin.x = (index * width);
+
+                r.origin.x = rect.origin.x + (index * width);
                 r.origin.y = (week * (self.dayStyle.font.pointSize + 6)) + (self.headerStyle.font.pointSize * 2) + 9;
+
+		if (self.showWeeks && (index == 0 || i == 0))
+		{
+        		[self.headerStyle.textColor set];
+                	NSString* s = [NSString stringWithFormat:@"W%d", comp.week + week];
+			CGRect wr = CGRectMake(5, r.origin.y, 40, r.size.height);
+	                [s drawInRect:wr withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+		}
+
                 NSString* s = [[NSNumber numberWithInt:i + 1] stringValue];
 
                 if (self.dayStyle.shadowColor)
@@ -84,11 +167,20 @@ static CalendarView* calendarView;
                         [s drawInRect:CGRectOffset(r, self.dayStyle.shadowOffset.width, self.dayStyle.shadowOffset.height) withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
                 }
 
+		BOOL showMarker = NO;
                 if (today == i + 1)
                 {
-                        CGRect rr = CGRectMake(r.origin.x + (r.size.width / 2) - (self.marker.size.width / 2), r.origin.y + (r.size.height / 2) - ((self.dayStyle.font.pointSize + 4) / 2), self.marker.size.width, self.dayStyle.font.pointSize + 5);
-                        [self.marker drawInRect:rr];
-                        [self.headerStyle.textColor set];
+			// check the month too
+        		NSDateComponents* thisComps = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:self.date];
+        		NSDateComponents* nowComps = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:[NSDate date]];
+			showMarker = (nowComps.month == thisComps.month && nowComps.year == thisComps.year);
+		}
+
+		if (showMarker)
+		{
+	        	CGRect rr = CGRectMake(r.origin.x + (r.size.width / 2) - (self.marker.size.width / 2), r.origin.y + (r.size.height / 2) - ((self.dayStyle.font.pointSize + 4) / 2), self.marker.size.width, self.dayStyle.font.pointSize + 5);
+       	               	[self.marker drawInRect:rr];
+			[self.headerStyle.textColor set];
                 }
                 else
                 {
@@ -111,6 +203,7 @@ static CalendarView* calendarView;
 
 @property (nonatomic, retain) UILabel* time;
 @property (nonatomic, retain) UILabel* date;
+
 
 -(void) updateTime;
 
@@ -140,7 +233,6 @@ static CalendarView* calendarView;
 	if (![dateStr isEqualToString:self.time.text])
 	{
 	        self.date.text = [df stringFromDate:now];
-		[calendarView setNeedsDisplay];
 	}
 
         df.dateFormat = timeFormat;
@@ -154,36 +246,39 @@ static CalendarView* calendarView;
 @end
 
 @interface LockWeatherPlugin : WeatherIconPlugin
-@end
 
-static WIHeaderView* cachedView;
+@property (nonatomic, retain) WIHeaderView* headerView;
+@property (nonatomic, retain) NSDate* calendarDate;
+
+@end
 
 MSHook(void, updateClock, SBAwayDateView *self, SEL sel)
 {
         _updateClock(self, sel);
-	[cachedView retain];
-        [cachedView updateTime];
-	[cachedView release];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"LWPUpdateTimeNotification" object:nil];
 }
 
 MSHook(void, significantTimeChange, SBStatusBarController *self, SEL sel)
 {
         _significantTimeChange(self, sel);
-	[cachedView retain];
-        [cachedView updateTime];
-	[cachedView release];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"LWPUpdateTimeNotification" object:nil];
 }
 
 MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 {
         _sbDrawRect(self, sel, rect);
-	[cachedView retain];
-        [cachedView updateTime];
-	[cachedView release];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"LWPUpdateTimeNotification" object:nil];
 }
 
 
 @implementation LockWeatherPlugin
+
+@synthesize headerView, calendarDate;
+
+-(void) updateTime
+{
+        [self.headerView updateTime];
+}
 
 -(CGFloat) tableView:(UITableView*) tableView heightForHeaderInSection:(NSInteger) section
 {
@@ -209,22 +304,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 		if (indexPath.row > 0)
 			return 0;
 
-	        // calculate the number of weeks in the month
-	        NSCalendar* cal = [NSCalendar currentCalendar];
-	        NSDate* now = [NSDate date];
-	        NSRange dayRange = [cal rangeOfUnit:NSDayCalendarUnit inUnit:NSMonthCalendarUnit forDate:now];
-	        NSDateComponents* comp = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:now];
-
-	        comp.day = 1;
-	        NSDate* first = [cal dateFromComponents:comp];
-	        comp = [cal components:NSWeekdayCalendarUnit fromDate:first];
-
-	        int total = (comp.weekday - 1) + dayRange.length;
-	        int weeks = (int)(total / 7);
-	        if (total % 7 > 0)
-	                weeks++;
-
-	       	 return (weeks * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
+	       	 return (6 * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
 	}
 
 	return [super tableView:tableView heightForRowAtIndexPath:indexPath];
@@ -250,28 +330,67 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 		{
 	                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"LWCalendarCell"] autorelease];
 
-	                if (calendarView == nil)
-	                {
-	                        calendarView = [[CalendarView alloc] initWithFrame:CGRectMake(20, 0, 280, 20)];
-	                        calendarView.tag = 1010;
-	                        calendarView.backgroundColor = [UIColor clearColor];
-	                        calendarView.marker = [UIImage imageWithContentsOfFile:[self.plugin.bundle pathForResource:@"LIClockTodayMarker" ofType:@"png"]];
-	                }
+	        	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
+			CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, 320, height)] autorelease];
+			scroll.backgroundColor = [UIColor clearColor];
+			scroll.delegate = scroll;
+			scroll.pagingEnabled = YES;
+			scroll.tag = 9494;
+			scroll.contentSize = CGSizeMake(960, scroll.frame.size.height);
 
-	                [cell.contentView addSubview:calendarView];
+	        	UIImage* marker = [UIImage imageWithContentsOfFile:[self.plugin.bundle pathForResource:@"LIClockTodayMarker" ofType:@"png"]];
+
+	                CalendarView* c1 = [[CalendarView alloc] initWithFrame:CGRectMake(0, 0, 320, height)];
+			c1.backgroundColor = [UIColor clearColor];
+	        	c1.marker = marker;
+			scroll.lastMonth = c1;
+			[scroll addSubview:c1];
+
+	                CalendarView* c2 = [[CalendarView alloc] initWithFrame:CGRectMake(320, 0, 320, height)];
+			c2.backgroundColor = [UIColor clearColor];
+	        	c2.marker = marker;
+			scroll.currentMonth = c2;
+			[scroll addSubview:c2];
+
+	                CalendarView* c3 = [[CalendarView alloc] initWithFrame:CGRectMake(640, 0, 320, height)];
+			c3.backgroundColor = [UIColor clearColor];
+	        	c3.marker = marker;
+			scroll.nextMonth = c3;
+			[scroll addSubview:c3];
+
+	                [cell.contentView addSubview:scroll];
 	        }
 
-	        int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-	        calendarView.frame = CGRectMake(20, 0, 280, height);
+		CalendarScrollView* scroll = [cell.contentView viewWithTag:9494];
+		scroll.contentOffset = CGPointMake(320, 0);
 
-	        BOOL update = (calendarView.headerStyle.font.pointSize != tableView.theme.summaryStyle.font.pointSize ||
-	                        calendarView.dayStyle.font.pointSize != tableView.theme.detailStyle.font.pointSize);
+		scroll.currentMonth.date = [NSDate date];
+		scroll.lastMonth.date = [scroll.currentMonth.date lastMonth];
+		scroll.nextMonth.date = [scroll.currentMonth.date nextMonth];
 
-	        calendarView.headerStyle = tableView.theme.summaryStyle;
-	        calendarView.dayStyle = tableView.theme.detailStyle;
+		BOOL showWeeks = NO;
+		if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowCalendarWeeks"])
+			showWeeks = n.boolValue;
 
-	        if (update)
-	                [calendarView setNeedsDisplay];
+		scroll.currentMonth.showWeeks = showWeeks;
+		scroll.nextMonth.showWeeks = showWeeks;
+		scroll.lastMonth.showWeeks = showWeeks;
+
+		for (CalendarView* calendarView in scroll.subviews)
+		{
+			if ([calendarView isKindOfClass:[CalendarView class]])
+			{
+			        BOOL update = true;
+//			        BOOL update = (calendarView.headerStyle.font.pointSize != tableView.theme.summaryStyle.font.pointSize ||
+//			                        calendarView.dayStyle.font.pointSize != tableView.theme.detailStyle.font.pointSize);
+	
+			        calendarView.headerStyle = tableView.theme.summaryStyle;
+			        calendarView.dayStyle = tableView.theme.detailStyle;
+	
+			        if (update)
+			                [calendarView setNeedsDisplay];
+			}
+		}
 
 	        return cell;
 	}
@@ -405,9 +524,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 	[weather release];
 
-	id tmp = cachedView;
-	cachedView = [view retain];
-	[tmp release];
+	self.headerView = view;
 
 	return view;
 }
@@ -423,6 +540,8 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 	dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
         timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
+
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateTime) name:@"LWPUpdateTimeNotification" object:nil];
 
 	return [super initWithPlugin:plugin];
 }

@@ -298,7 +298,6 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
 	fcv.forecast = forecast;
-	[forecast release];
 
 	if (indexPath.row == 1)
 	{
@@ -315,6 +314,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 		}
 		self.iconView.icons = arr;
 	}
+
+	[forecast release];
 
 	BOOL show = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
