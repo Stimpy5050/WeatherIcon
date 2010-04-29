@@ -68,7 +68,19 @@ static BOOL showCalendar = false;
 
 @synthesize lastMonth, nextMonth, currentMonth;
 
--(void) scrollViewDidEndDecelerating:(UIScrollView*) view
+-(void) setDate:(NSDate*) date
+{
+	self.currentMonth.date = date;
+	[self.currentMonth setNeedsDisplay];
+
+	self.lastMonth.date = [self.currentMonth.date lastMonth];
+	[self.lastMonth setNeedsDisplay];
+
+	self.nextMonth.date = [self.currentMonth.date nextMonth];
+	[self.nextMonth setNeedsDisplay];
+}
+
+-(void) updateMonths:(UIScrollView*) view adjustment:(int) adj
 {
 	if (view.contentOffset.x == 320)
 		return;
@@ -77,24 +89,50 @@ static BOOL showCalendar = false;
 
 	if (offset.x == 0)
 	{
-		self.currentMonth.date = self.lastMonth.date;
-		[self.currentMonth setNeedsDisplay];
-		offset.x = 319;
+		[self setDate:self.lastMonth.date];
+		offset.x = 320 - adj;
 	}
 	else
 	{
-		self.currentMonth.date = self.nextMonth.date;
-		[self.currentMonth setNeedsDisplay];
-		offset.x = 321;
+		[self setDate:self.nextMonth.date];
+		offset.x = 320 + adj;
 	}
 
 	view.contentOffset = offset;
+}
 
-	self.lastMonth.date = [self.currentMonth.date lastMonth];
-	[self.lastMonth setNeedsDisplay];
+-(void) scrollViewDidEndDecelerating:(UIScrollView*) view
+{
+	[self updateMonths:view adjustment:1];
+}
 
-	self.nextMonth.date = [self.currentMonth.date nextMonth];
-	[self.nextMonth setNeedsDisplay];
+-(void) scrollViewDidEndScrollingAnimation:(UIScrollView*) view
+{
+	[self updateMonths:view adjustment:-1];
+}
+
+-(void) resetDate
+{
+	NSDate* now = [NSDate date];
+	NSCalendar* cal = [NSCalendar currentCalendar];
+        NSDateComponents* nowComps = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit fromDate:now];
+        NSDateComponents* dateComps = [cal components:NSYearCalendarUnit | NSMonthCalendarUnit fromDate:self.currentMonth.date];
+
+	int nowMonths = (nowComps.year * 12) + nowComps.month;
+	int dateMonths = (dateComps.year * 12) + dateComps.month;
+
+	if (nowMonths < dateMonths)
+	{
+		self.lastMonth.date = now;
+		[self.lastMonth setNeedsDisplay];
+		[self setContentOffset:CGPointMake(0, 0) animated:YES];
+	}
+	else if (nowMonths > dateMonths)
+	{
+		self.nextMonth.date = now;
+		[self.nextMonth setNeedsDisplay];
+		[self setContentOffset:CGPointMake(640, 0) animated:YES];
+	}
 }
 
 @end
@@ -248,7 +286,6 @@ static BOOL showCalendar = false;
 @interface LockWeatherPlugin : WeatherIconPlugin
 
 @property (nonatomic, retain) WIHeaderView* headerView;
-@property (nonatomic, retain) NSDate* calendarDate;
 
 @end
 
@@ -273,7 +310,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 @implementation LockWeatherPlugin
 
-@synthesize headerView, calendarDate;
+@synthesize headerView;
 
 -(void) updateTime
 {
@@ -331,42 +368,49 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"LWCalendarCell"] autorelease];
 
 	        	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-			CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, 320, height)] autorelease];
+			CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, tableView.bounds.size.width, height)] autorelease];
 			scroll.backgroundColor = [UIColor clearColor];
+			scroll.showsHorizontalScrollIndicator = NO;
 			scroll.delegate = scroll;
 			scroll.pagingEnabled = YES;
 			scroll.tag = 9494;
-			scroll.contentSize = CGSizeMake(960, scroll.frame.size.height);
+			scroll.contentSize = CGSizeMake(tableView.bounds.size.width * 3, scroll.frame.size.height);
 
 	        	UIImage* marker = [UIImage imageWithContentsOfFile:[self.plugin.bundle pathForResource:@"LIClockTodayMarker" ofType:@"png"]];
 
-	                CalendarView* c1 = [[CalendarView alloc] initWithFrame:CGRectMake(0, 0, 320, height)];
+	                CalendarView* c1 = [[CalendarView alloc] initWithFrame:CGRectMake(0, 0, tableView.bounds.size.width, height)];
 			c1.backgroundColor = [UIColor clearColor];
 	        	c1.marker = marker;
 			scroll.lastMonth = c1;
 			[scroll addSubview:c1];
 
-	                CalendarView* c2 = [[CalendarView alloc] initWithFrame:CGRectMake(320, 0, 320, height)];
+	                CalendarView* c2 = [[CalendarView alloc] initWithFrame:CGRectMake(tableView.bounds.size.width, 0, tableView.bounds.size.width, height)];
 			c2.backgroundColor = [UIColor clearColor];
 	        	c2.marker = marker;
 			scroll.currentMonth = c2;
 			[scroll addSubview:c2];
 
-	                CalendarView* c3 = [[CalendarView alloc] initWithFrame:CGRectMake(640, 0, 320, height)];
+	                CalendarView* c3 = [[CalendarView alloc] initWithFrame:CGRectMake(tableView.bounds.size.width * 2, 0, tableView.bounds.size.width, height)];
 			c3.backgroundColor = [UIColor clearColor];
 	        	c3.marker = marker;
 			scroll.nextMonth = c3;
 			[scroll addSubview:c3];
 
+			[scroll setDate:[NSDate date]];
 	                [cell.contentView addSubview:scroll];
+
+			UIImage* img = [UIImage imageWithContentsOfFile:[self.plugin.bundle pathForResource:@"LWCurrentMonth" ofType:@"png"]];
+			UIButton* b = [UIButton buttonWithType:UIButtonTypeCustom];
+			b.frame = CGRectMake(tableView.bounds.size.width - 40, 0, 40, 40);
+			b.imageEdgeInsets = UIEdgeInsetsMake(3, b.frame.size.width - img.size.width - 5, b.frame.size.height - img.size.height - 3, 5);
+			b.showsTouchWhenHighlighted = YES;
+			[b setImage:img forState:UIControlStateNormal];
+			[b addTarget:scroll action:@selector(resetDate) forControlEvents:UIControlEventTouchUpInside];
+			[cell.contentView addSubview:b];
 	        }
 
 		CalendarScrollView* scroll = [cell.contentView viewWithTag:9494];
 		scroll.contentOffset = CGPointMake(320, 0);
-
-		scroll.currentMonth.date = [NSDate date];
-		scroll.lastMonth.date = [scroll.currentMonth.date lastMonth];
-		scroll.nextMonth.date = [scroll.currentMonth.date nextMonth];
 
 		BOOL showWeeks = NO;
 		if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowCalendarWeeks"])
@@ -376,21 +420,17 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 		scroll.nextMonth.showWeeks = showWeeks;
 		scroll.lastMonth.showWeeks = showWeeks;
 
-		for (CalendarView* calendarView in scroll.subviews)
-		{
-			if ([calendarView isKindOfClass:[CalendarView class]])
-			{
-			        BOOL update = true;
-//			        BOOL update = (calendarView.headerStyle.font.pointSize != tableView.theme.summaryStyle.font.pointSize ||
-//			                        calendarView.dayStyle.font.pointSize != tableView.theme.detailStyle.font.pointSize);
-	
-			        calendarView.headerStyle = tableView.theme.summaryStyle;
-			        calendarView.dayStyle = tableView.theme.detailStyle;
-	
-			        if (update)
-			                [calendarView setNeedsDisplay];
-			}
-		}
+		scroll.currentMonth.headerStyle = tableView.theme.summaryStyle;
+		scroll.currentMonth.dayStyle = tableView.theme.detailStyle;
+		[scroll.currentMonth setNeedsDisplay];
+
+		scroll.nextMonth.headerStyle = tableView.theme.summaryStyle;
+		scroll.nextMonth.dayStyle = tableView.theme.detailStyle;
+		[scroll.nextMonth setNeedsDisplay];
+
+		scroll.lastMonth.headerStyle = tableView.theme.summaryStyle;
+		scroll.lastMonth.dayStyle = tableView.theme.detailStyle;
+		[scroll.lastMonth setNeedsDisplay];
 
 	        return cell;
 	}
