@@ -1,40 +1,4 @@
-#include "WeatherIconPlugin.h"
-#include <SpringBoard/SBAwayDateView.h>
-#include <SpringBoard/SBStatusBarController.h>
-#include <SpringBoard/SBStatusBarTimeView.h>
-#include <UIKit/UIKit.h>
-#include <substrate.h>
-
-#define localize(str) \
-        [self.plugin.bundle localizedStringForKey:str value:str table:nil]
-
-#define Hook(cls, sel, imp) \
-        _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
-
-static NSString* dateFormat;
-static NSString* timeFormat;
-
-extern "C" UIImage *_UIImageWithName(NSString *);
-extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
-
-@interface CalendarView : UIView
-
-@property BOOL showWeeks;
-@property (nonatomic, retain) NSDate* date;
-@property (nonatomic, retain) LIStyle* headerStyle;
-@property (nonatomic, retain) LIStyle* dayStyle;
-@property (nonatomic, retain) UIImage* marker;
-
-@end
-
-static BOOL showCalendar = false;
-
-@interface NSDate (LICalendar)
-
--(NSDate*) lastMonth;
--(NSDate*) nextMonth;
-
-@end
+#include "LockWeatherPlugin.h"
 
 @implementation NSDate (LICalendar)
 
@@ -53,14 +17,6 @@ static BOOL showCalendar = false;
 	comp.month += 1;
 	return [cal dateFromComponents:comp];
 }
-
-@end
-
-@interface CalendarScrollView : UIScrollView <UIScrollViewDelegate>
-
-@property (nonatomic, retain) CalendarView* lastMonth;
-@property (nonatomic, retain) CalendarView* currentMonth;
-@property (nonatomic, retain) CalendarView* nextMonth;
 
 @end
 
@@ -231,31 +187,85 @@ static BOOL showCalendar = false;
 
 @end
 
-@interface WIHeaderView : UIView
+@implementation LWHeaderView
 
-@property (nonatomic, retain) UIImageView* icon;
-@property (nonatomic, retain) UILabel* city;
-@property (nonatomic, retain) UILabel* temp;
-@property (nonatomic, retain) UILabel* high;
-@property (nonatomic, retain) UILabel* low;
+@synthesize background, icon, description, city, temp, time, date, high, low;
+@synthesize dateFormat, timeFormat;
+@synthesize showCalendar;
 
-@property (nonatomic, retain) UILabel* time;
-@property (nonatomic, retain) UILabel* date;
+-(id) initWithFrame:(CGRect) frame
+{
+	self = [super initWithFrame:frame];
 
+	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
+        self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
 
--(void) updateTime;
+	UIImage* image = _UIImageWithName(@"UILCDBackground.png");
+	UIImageView* iv = [[[UIImageView alloc] initWithFrame:self.bounds] autorelease];
+	iv.image = image;
+	self.background = iv;
+	[self addSubview:iv];
 
-@end
+	self.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 4, self.frame.size.width, 50)] autorelease];
+	self.time.font = [UIFont fontWithName:@"LockClock-Light" size:50];
+	self.time.textAlignment = UITextAlignmentCenter;
+	self.time.textColor = [UIColor whiteColor];
+	self.time.backgroundColor = [UIColor clearColor];
+	[self addSubview:self.time];
 
-@implementation WIHeaderView
+	self.date = [[[UILabel alloc] initWithFrame:CGRectMake(5, 56, 120, 18)] autorelease];
+	self.date.font = [UIFont boldSystemFontOfSize:14];
+	self.date.textAlignment = UITextAlignmentRight;
+	self.date.textColor = [UIColor whiteColor];
+	self.date.backgroundColor = [UIColor clearColor];
+	[self addSubview:self.date];
 
-@synthesize icon, city, temp, time, date, high, low;
+	self.city = [[[UILabel alloc] initWithFrame:CGRectMake(5, 73, 120, 18)] autorelease];
+	[self addSubview:self.city];
+	self.city.font = [UIFont boldSystemFontOfSize:14];
+	self.city.textAlignment = UITextAlignmentRight;
+	self.city.textColor = [UIColor lightGrayColor];
+	self.city.backgroundColor = [UIColor clearColor];
+
+	self.description = [[[UILabel alloc] initWithFrame:CGRectMake(5, 73, 120, 18)] autorelease];
+	[self addSubview:self.description];
+	self.description.font = [UIFont boldSystemFontOfSize:14];
+	self.description.textAlignment = UITextAlignmentRight;
+	self.description.textColor = [UIColor lightGrayColor];
+	self.description.backgroundColor = [UIColor clearColor];
+
+	[self updateTime];
+
+	self.icon = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
+	[self addSubview:self.icon];
+
+	self.temp = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
+	[self addSubview:self.temp];
+	self.temp.font = [UIFont systemFontOfSize:37];
+	self.temp.textColor = [UIColor whiteColor];
+	self.temp.backgroundColor = [UIColor clearColor];
+	self.temp.frame = CGRectMake(195, 52, 120, 37);
+
+	self.high = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 18)] autorelease];
+	[self addSubview:self.high];
+	self.high.font = [UIFont boldSystemFontOfSize:14];
+	self.high.textColor = [UIColor lightGrayColor];
+	self.high.backgroundColor = [UIColor clearColor];
+
+	self.low = [[[UILabel alloc] initWithFrame:CGRectMake(195, 73, 120, 18)] autorelease];
+	[self addSubview:self.low];
+	self.low.font = [UIFont boldSystemFontOfSize:14];
+	self.low.textColor = [UIColor lightGrayColor];
+	self.low.backgroundColor = [UIColor clearColor];
+
+	return self;
+}
 
 -(void) touchesBegan:(NSSet*) touches withEvent:(UIEvent*) event
 {
 	UITouch* touch = [touches anyObject];
 	CGPoint p = [touch locationInView:self];
-	showCalendar = (p.x < 160);
+	self.showCalendar = (p.x < 160);
 	return [self.nextResponder touchesBegan:touches withEvent:event];
 }
 
@@ -266,26 +276,20 @@ static BOOL showCalendar = false;
         NSDate* now = [NSDate date];
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
 
-        df.dateFormat = dateFormat;
+        df.dateFormat = self.dateFormat;
 	NSString* dateStr = [df stringFromDate:now];
 	if (![dateStr isEqualToString:self.time.text])
 	{
 	        self.date.text = [df stringFromDate:now];
 	}
 
-        df.dateFormat = timeFormat;
+        df.dateFormat = self.timeFormat;
 	NSString* timeStr = [df stringFromDate:now];
 	if (![timeStr isEqualToString:self.date.text])
 	        self.time.text = [df stringFromDate:now];
 
 	[pool release];
 }
-
-@end
-
-@interface LockWeatherPlugin : WeatherIconPlugin
-
-@property (nonatomic, retain) WIHeaderView* headerView;
 
 @end
 
@@ -317,6 +321,91 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
         [self.headerView updateTime];
 }
 
+-(void) updateWeatherViews
+{
+	self.headerView = [self createHeaderView];
+	[self updateTime];
+
+	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
+
+	UIImageView* icon = [self weatherIcon];
+	self.headerView.icon.image = icon.image;
+	CGRect ir = self.headerView.icon.frame;
+	ir.size.width = icon.frame.size.width * 2.75;
+	ir.size.height = icon.frame.size.height * 2.75;
+	self.headerView.icon.frame = ir;
+	self.headerView.icon.center = CGPointMake(160, 73);
+
+	BOOL showDescription = false;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowDescription"])
+		showDescription = n.boolValue;
+
+	if (showDescription)
+	{
+		NSString* description = nil;
+		if (NSNumber* code = [weather objectForKey:@"code"])
+	        {
+                	if (code.intValue >= 0 && code.intValue < descriptions.count)
+	                {
+	                        description = localize([descriptions objectAtIndex:code.intValue]);
+	                }
+	        }
+
+		if (description == nil)
+			description = localize([weather objectForKey:@"description"]);
+
+		self.headerView.city.hidden = true;
+		self.headerView.description.hidden = false;
+		self.headerView.description.text = description;
+	}
+	else
+	{
+		NSString* city = [weather objectForKey:@"city"];
+		NSRange r = [city rangeOfString:@","];
+		if (r.location != NSNotFound)
+			city = [city substringToIndex:r.location];
+
+		self.headerView.city.hidden = false;
+		self.headerView.description.hidden = true;
+		self.headerView.city.text = city;
+	}
+
+	if (NSArray* forecast = [weather objectForKey:@"forecast"])
+	{
+		if (forecast.count > 0)
+		{
+			NSDictionary* today = [forecast objectAtIndex:0];
+			self.headerView.high.text = [NSString stringWithFormat:@"H %d\u00B0", [[today objectForKey:@"high"] intValue]];
+			self.headerView.low.text = [NSString stringWithFormat:@"L %d\u00B0", [[today objectForKey:@"low"] intValue]];
+		}
+	}
+
+	self.headerView.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
+
+	CGSize ts = [self.headerView.temp.text sizeWithFont:self.headerView.temp.font];
+	CGRect tr = self.headerView.temp.frame;
+	tr.size.width = ts.width;
+	tr.size.height = ts.height;
+	self.headerView.temp.frame = tr;
+	self.headerView.temp.center = CGPointMake(195 + (int)(tr.size.width / 2), 74);
+
+	tr = self.headerView.high.frame;
+	tr.origin.x = self.headerView.temp.frame.origin.x + ts.width + 8;
+        self.headerView.high.frame = tr;
+
+        tr = self.headerView.low.frame;
+        tr.origin.x = self.headerView.temp.frame.origin.x + ts.width + 8;
+        self.headerView.low.frame = tr;
+
+        ts = [self.headerView.time.text sizeWithFont:self.headerView.time.font];
+        tr = self.headerView.time.frame;
+        tr.size.height = ts.height;
+        self.headerView.time.frame = tr;
+        self.headerView.time.center = CGPointMake(160, 29);
+
+	[super updateWeatherViews];
+}
+
 -(CGFloat) tableView:(UITableView*) tableView heightForHeaderInSection:(NSInteger) section
 {
 	return 96;
@@ -329,7 +418,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 		detail = n.intValue;
 
 	if (detail == 2)
-		return showCalendar;
+		return self.headerView.showCalendar;
 
 	return (detail == 1);
 }
@@ -438,135 +527,16 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 	return [super tableView:tableView cellForRowAtIndexPath:indexPath];
 }
 
+-(LWHeaderView*) createHeaderView
+{
+	LWHeaderView* view = [[[LWHeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 96)] autorelease];
+	return view;
+}
+
 -(UIView*) tableView:(LITableView*) tableView viewForHeaderInSection:(NSInteger) section
 {
-	WIHeaderView* view = [[[WIHeaderView alloc] initWithFrame:CGRectMake(0, 0, 320, 96)] autorelease];
-
-	UIImage* image = _UIImageWithName(@"UILCDBackground.png");
-	UIImageView* iv = [[[UIImageView alloc] initWithFrame:view.bounds] autorelease];
-	iv.image = image;
-	[view addSubview:iv];
-
-	view.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 4, view.frame.size.width, 50)] autorelease];
-	view.time.font = [UIFont fontWithName:@"LockClock-Light" size:50];
-	view.time.textAlignment = UITextAlignmentCenter;
-	view.time.textColor = [UIColor whiteColor];
-	view.time.backgroundColor = [UIColor clearColor];
-	[view addSubview:view.time];
-
-	view.date = [[[UILabel alloc] initWithFrame:CGRectMake(5, 56, 120, 18)] autorelease];
-	view.date.font = [UIFont boldSystemFontOfSize:14];
-	view.date.textAlignment = UITextAlignmentRight;
-	view.date.textColor = [UIColor whiteColor];
-	view.date.backgroundColor = [UIColor clearColor];
-	[view addSubview:view.date];
-
-	view.city = [[[UILabel alloc] initWithFrame:CGRectMake(5, 73, 120, 18)] autorelease];
-	[view addSubview:view.city];
-	view.city.font = [UIFont boldSystemFontOfSize:14];
-	view.city.textAlignment = UITextAlignmentRight;
-	view.city.textColor = [UIColor lightGrayColor];
-	view.city.backgroundColor = [UIColor clearColor];
-
-	[view updateTime];
-
-	view.icon = [self tableView:tableView iconForHeaderInSection:section];
-	CGRect ir = view.icon.frame;
-	ir.size.width *= 2.75;
-	ir.size.height *= 2.75;
-	view.icon.frame = ir;
-	view.icon.center = CGPointMake(160, 73);
-	[view addSubview:view.icon];
-
-	view.temp = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
-	[view addSubview:view.temp];
-	view.temp.font = [UIFont systemFontOfSize:37];
-//	view.temp.font = [UIFont fontWithName:@"LockClock-Light" size:36];
-	view.temp.textColor = [UIColor whiteColor];
-	view.temp.backgroundColor = [UIColor clearColor];
-	view.temp.frame = CGRectMake(195, 52, 120, 37);
-
-	view.high = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 18)] autorelease];
-	[view addSubview:view.high];
-	view.high.font = [UIFont boldSystemFontOfSize:14];
-	view.high.textColor = [UIColor lightGrayColor];
-	view.high.backgroundColor = [UIColor clearColor];
-
-	view.low = [[[UILabel alloc] initWithFrame:CGRectMake(195, 73, 120, 18)] autorelease];
-	[view addSubview:view.low];
-	view.low.font = [UIFont boldSystemFontOfSize:14];
-	view.low.textColor = [UIColor lightGrayColor];
-	view.low.backgroundColor = [UIColor clearColor];
-
-	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
-
-	BOOL showDescription = false;
-	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowDescription"])
-		showDescription = n.boolValue;
-
-	if (showDescription)
-	{
-		NSString* description = nil;
-		if (NSNumber* code = [weather objectForKey:@"code"])
-	        {
-                	if (code.intValue >= 0 && code.intValue < descriptions.count)
-	                {
-	                        description = localize([descriptions objectAtIndex:code.intValue]);
-	                }
-	        }
-
-		if (description == nil)
-			description = localize([weather objectForKey:@"description"]);
-
-		view.city.text = description;
-	}
-	else
-	{
-		NSString* city = [weather objectForKey:@"city"];
-		NSRange r = [city rangeOfString:@","];
-		if (r.location != NSNotFound)
-			city = [city substringToIndex:r.location];
-		view.city.text = city;
-	}
-
-	if (NSArray* forecast = [weather objectForKey:@"forecast"])
-	{
-		if (forecast.count > 0)
-		{
-			NSDictionary* today = [forecast objectAtIndex:0];
-			view.high.text = [NSString stringWithFormat:@"H %d\u00B0", [[today objectForKey:@"high"] intValue]];
-			view.low.text = [NSString stringWithFormat:@"L %d\u00B0", [[today objectForKey:@"low"] intValue]];
-		}
-	}
-
-	view.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
-
-	CGSize ts = [view.temp.text sizeWithFont:view.temp.font];
-	CGRect tr = view.temp.frame;
-	tr.size.width = ts.width;
-	tr.size.height = ts.height;
-	view.temp.frame = tr;
-	view.temp.center = CGPointMake(195 + (int)(tr.size.width / 2), 74);
-
-	tr = view.high.frame;
-	tr.origin.x = view.temp.frame.origin.x + ts.width + 8;
-	view.high.frame = tr;
-
-	tr = view.low.frame;
-	tr.origin.x = view.temp.frame.origin.x + ts.width + 8;
-	view.low.frame = tr;
-
-	ts = [view.time.text sizeWithFont:view.time.font];
-	tr = view.time.frame;
-	tr.size.height = ts.height;
-	view.time.frame = tr;
-	view.time.center = CGPointMake(160, 29);
-
-	[weather release];
-
-	self.headerView = view;
-
-	return view;
+	[self updateWeatherViews];
+	return self.headerView;
 }
 
 -(id) initWithPlugin:(LIPlugin*) plugin
@@ -577,9 +547,6 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
         Hook(SBStatusBarController, signicantTimeChange, significantTimeChange);
         Class $SBStatusBarTimeView = objc_getClass("SBStatusBarTimeView");
         Hook(SBStatusBarTimeView, drawRect:, sbDrawRect);
-
-	dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
-        timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateTime) name:@"LWPUpdateTimeNotification" object:nil];
 

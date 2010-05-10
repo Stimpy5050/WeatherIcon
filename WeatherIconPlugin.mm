@@ -130,7 +130,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 @implementation WeatherIconPlugin
 
-@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView, reloadCondition;
+@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView, updateLock, reloadCondition;
 
 -(id) loadIcon:(NSString*) path
 {
@@ -189,8 +189,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	return [self defaultIcon:code night:false];
 }
 
-
-- (UIImageView *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
+-(UIImageView*) weatherIcon
 {
 	double scale = 0.33;
 
@@ -232,6 +231,11 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	return nil;
 }
 
+- (UIImageView *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
+{
+	return [self weatherIcon];
+}
+
 - (CGFloat)tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	switch (indexPath.row)
@@ -259,6 +263,42 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 		city = [city substringToIndex:r.location];
 
 	return [NSString stringWithFormat:@"%@: %d\u00B0", city, [[weather objectForKey:@"temp"] intValue]];
+}
+
+-(void) updateWeatherViews
+{
+	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
+	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
+
+	self.daysView.forecast = forecast;
+	[self.daysView setNeedsDisplay];
+
+	self.iconView.forecast = forecast;
+
+	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
+	for (int i = 0; i < forecast.count && i < 6; i++)
+	{
+		NSDictionary* day = [forecast objectAtIndex:i];
+		UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+
+		if (icon == nil)
+			icon = [self defaultIcon:[day objectForKey:@"code"]];
+
+		[arr addObject:(icon == nil ? [NSNull null] : icon)];
+	}
+	self.iconView.icons = arr;
+	[self.iconView setNeedsDisplay];
+
+	[forecast release];
+
+	BOOL show = false;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
+		show = n.boolValue;
+
+	self.tempView.forecast = forecast;
+	self.tempView.updatedString = localize(@"Updated");
+	self.tempView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
+	[self.tempView setNeedsDisplay];
 }
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -342,6 +382,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	self.tempView = [[[WIForecastTempView alloc] init] autorelease];
 
 	self.reloadCondition = [[[NSCondition alloc] init] autorelease];
+	self.updateLock = [[[NSLock alloc] init] autorelease];
 
 	plugin.tableViewDataSource = self;
 	plugin.tableViewDelegate = self;
@@ -358,9 +399,13 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	if (!self.plugin.enabled)
 		return;
 
-	NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
-	[self.dataCache performSelectorOnMainThread:@selector(setDictionary:) withObject:dict waitUntilDone:YES];
-	[[NSNotificationCenter defaultCenter] postNotificationName:LIUpdateViewNotification object:self.plugin userInfo:dict];
+	if ([self.updateLock tryLock])
+	{
+		NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
+		[self.dataCache setDictionary:dict];
+		[self updateWeatherViews];
+		[self.updateLock unlock];
+	}
 }
 
 - (NSString *)tableView:(LITableView *)tableView reloadDataInSection:(NSInteger)section

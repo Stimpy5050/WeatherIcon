@@ -37,5 +37,6 @@
 @property (nonatomic, retain) WIForecastTempView* tempView;
 
 @property (retain) NSCondition* reloadCondition;
+@property (retain) NSLock* updateLock;
 
 @end
