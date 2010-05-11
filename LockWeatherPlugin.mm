@@ -193,20 +193,55 @@
 @synthesize dateFormat, timeFormat;
 @synthesize showCalendar;
 
+-(void) layoutSubviews
+{
+	[super layoutSubviews];
+
+	float center = self.frame.size.width / 2;
+	self.date.frame = CGRectMake(5, 56, center - 40, 18);
+	self.city.frame = CGRectMake(5, 73, center - 40, 18);
+	self.description.frame = CGRectMake(5, 73, center - 40, 18);
+
+	CGSize ts = [self.temp.text sizeWithFont:self.temp.font];
+	CGRect tr = self.temp.frame;
+	tr.size.width = ts.width;
+	tr.size.height = ts.height;
+	self.temp.frame = tr;
+	self.temp.center = CGPointMake(center + 35 + (int)(tr.size.width / 2), 74);
+
+	tr = self.high.frame;
+	tr.origin.x = self.temp.frame.origin.x + ts.width + 8;
+        self.high.frame = tr;
+
+        tr = self.low.frame;
+        tr.origin.x = self.temp.frame.origin.x + ts.width + 8;
+        self.low.frame = tr;
+
+        ts = [self.time.text sizeWithFont:self.time.font];
+        tr = self.time.frame;
+        tr.size.height = ts.height;
+        self.time.frame = tr;
+        self.time.center = CGPointMake(center, 29);
+}
+
 -(id) initWithFrame:(CGRect) frame
 {
 	self = [super initWithFrame:frame];
+	self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.autoresizesSubviews = YES;
 
 	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
         self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
 
 	UIImage* image = _UIImageWithName(@"UILCDBackground.png");
-	UIImageView* iv = [[[UIImageView alloc] initWithFrame:self.bounds] autorelease];
-	iv.image = image;
+	UIImageView* iv = [[[UIImageView alloc] initWithImage:image] autorelease];
+	iv.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	iv.frame = self.bounds;
 	self.background = iv;
 	[self addSubview:iv];
 
 	self.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 4, self.frame.size.width, 50)] autorelease];
+	self.time.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	self.time.font = [UIFont fontWithName:@"LockClock-Light" size:50];
 	self.time.textAlignment = UITextAlignmentCenter;
 	self.time.textColor = [UIColor whiteColor];
@@ -214,6 +249,7 @@
 	[self addSubview:self.time];
 
 	self.date = [[[UILabel alloc] initWithFrame:CGRectMake(5, 56, 120, 18)] autorelease];
+	self.date.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	self.date.font = [UIFont boldSystemFontOfSize:14];
 	self.date.textAlignment = UITextAlignmentRight;
 	self.date.textColor = [UIColor whiteColor];
@@ -221,6 +257,7 @@
 	[self addSubview:self.date];
 
 	self.city = [[[UILabel alloc] initWithFrame:CGRectMake(5, 73, 120, 18)] autorelease];
+	self.city.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	[self addSubview:self.city];
 	self.city.font = [UIFont boldSystemFontOfSize:14];
 	self.city.textAlignment = UITextAlignmentRight;
@@ -228,6 +265,7 @@
 	self.city.backgroundColor = [UIColor clearColor];
 
 	self.description = [[[UILabel alloc] initWithFrame:CGRectMake(5, 73, 120, 18)] autorelease];
+	self.description.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	[self addSubview:self.description];
 	self.description.font = [UIFont boldSystemFontOfSize:14];
 	self.description.textAlignment = UITextAlignmentRight;
@@ -237,10 +275,12 @@
 	[self updateTime];
 
 	self.icon = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
+	self.icon.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	[self addSubview:self.icon];
 
 	self.temp = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
 	[self addSubview:self.temp];
+	self.temp.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	self.temp.font = [UIFont systemFontOfSize:37];
 	self.temp.textColor = [UIColor whiteColor];
 	self.temp.backgroundColor = [UIColor clearColor];
@@ -248,12 +288,14 @@
 
 	self.high = [[[UILabel alloc] initWithFrame:CGRectMake(195, 56, 120, 18)] autorelease];
 	[self addSubview:self.high];
+	self.high.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	self.high.font = [UIFont boldSystemFontOfSize:14];
 	self.high.textColor = [UIColor lightGrayColor];
 	self.high.backgroundColor = [UIColor clearColor];
 
 	self.low = [[[UILabel alloc] initWithFrame:CGRectMake(195, 73, 120, 18)] autorelease];
 	[self addSubview:self.low];
+	self.low.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	self.low.font = [UIFont boldSystemFontOfSize:14];
 	self.low.textColor = [UIColor lightGrayColor];
 	self.low.backgroundColor = [UIColor clearColor];
@@ -323,18 +365,21 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 -(void) updateWeatherViews
 {
+	NSLog(@"LI:Weather: Create header");
 	self.headerView = [self createHeaderView];
+	NSLog(@"LI:Weather: Update header time");
 	[self updateTime];
 
 	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
 
+	NSLog(@"LI:Weather: Get weather icon");
 	UIImageView* icon = [self weatherIcon];
 	self.headerView.icon.image = icon.image;
 	CGRect ir = self.headerView.icon.frame;
 	ir.size.width = icon.frame.size.width * 2.75;
 	ir.size.height = icon.frame.size.height * 2.75;
 	self.headerView.icon.frame = ir;
-	self.headerView.icon.center = CGPointMake(160, 73);
+	self.headerView.icon.center = CGPointMake(self.headerView.frame.size.width / 2, 73);
 
 	BOOL showDescription = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowDescription"])
@@ -382,12 +427,13 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 	self.headerView.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
 
+/*
 	CGSize ts = [self.headerView.temp.text sizeWithFont:self.headerView.temp.font];
 	CGRect tr = self.headerView.temp.frame;
 	tr.size.width = ts.width;
 	tr.size.height = ts.height;
 	self.headerView.temp.frame = tr;
-	self.headerView.temp.center = CGPointMake(195 + (int)(tr.size.width / 2), 74);
+	self.headerView.temp.center = CGPointMake((self.headerView.frame.size.width / 2) + 35 + (int)(tr.size.width / 2), 74);
 
 	tr = self.headerView.high.frame;
 	tr.origin.x = self.headerView.temp.frame.origin.x + ts.width + 8;
@@ -401,8 +447,11 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
         tr = self.headerView.time.frame;
         tr.size.height = ts.height;
         self.headerView.time.frame = tr;
-        self.headerView.time.center = CGPointMake(160, 29);
+        self.headerView.time.center = CGPointMake(self.headerView.frame.size.width / 2, 29);
+*/
+	[self.headerView setNeedsLayout];
 
+	NSLog(@"LI:Weather: Call super");
 	[super updateWeatherViews];
 }
 
@@ -418,7 +467,10 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 		detail = n.intValue;
 
 	if (detail == 2)
+	{
+		NSLog(@"LI:Weather: Show calendar? %d", self.headerView.showCalendar);
 		return self.headerView.showCalendar;
+	}
 
 	return (detail == 1);
 }
