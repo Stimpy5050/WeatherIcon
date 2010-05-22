@@ -289,8 +289,6 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	self.iconView.icons = arr;
 	[self.iconView setNeedsDisplay];
 
-	[forecast release];
-
 	BOOL show = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
 		show = n.boolValue;
@@ -299,6 +297,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	self.tempView.updatedString = localize(@"Updated");
 	self.tempView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
 	[self.tempView setNeedsDisplay];
+
+	[forecast release];
 }
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath

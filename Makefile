@@ -22,7 +22,7 @@ CFLAGS= -I$(SDK)/var/include \
   -I"$(SDK)/usr/include" \
   -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/include" \
   -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/gcc/arm-apple-darwin9/4.0.1/include" \
-  -DDEBUG -Diphoneos_version_min=2.0
+  -DDEBUG -Diphoneos_version_min=2.0 -g
 
 Target=WeatherIcon.dylib
 

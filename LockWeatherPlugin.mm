@@ -303,12 +303,12 @@
 	return self;
 }
 
--(void) touchesBegan:(NSSet*) touches withEvent:(UIEvent*) event
+-(void) touchesEnded:(NSSet*) touches withEvent:(UIEvent*) event
 {
 	UITouch* touch = [touches anyObject];
 	CGPoint p = [touch locationInView:self];
 	self.showCalendar = (p.x < 160);
-	return [self.nextResponder touchesBegan:touches withEvent:event];
+	return [self.nextResponder touchesEnded:touches withEvent:event];
 }
 
 -(void) updateTime
@@ -320,15 +320,21 @@
 
         df.dateFormat = self.dateFormat;
 	NSString* dateStr = [df stringFromDate:now];
-	if (![dateStr isEqualToString:self.time.text])
+	if (![dateStr isEqualToString:self.date.text])
 	{
+		NSLog(@"LI:Weather: Refreshing date.");
 	        self.date.text = [df stringFromDate:now];
+		[self.date setNeedsLayout];
 	}
 
         df.dateFormat = self.timeFormat;
 	NSString* timeStr = [df stringFromDate:now];
-	if (![timeStr isEqualToString:self.date.text])
+	if (![timeStr isEqualToString:self.time.text])
+	{
+		NSLog(@"LI:Weather: Refreshing time.");
 	        self.time.text = [df stringFromDate:now];
+		[self.time setNeedsLayout];
+	}
 
 	[pool release];
 }
@@ -365,14 +371,13 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 -(void) updateWeatherViews
 {
-	NSLog(@"LI:Weather: Create header");
-	self.headerView = [self createHeaderView];
-	NSLog(@"LI:Weather: Update header time");
+	if (self.headerView == nil)
+		self.headerView = [self createHeaderView];
+
 	[self updateTime];
 
 	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
 
-	NSLog(@"LI:Weather: Get weather icon");
 	UIImageView* icon = [self weatherIcon];
 	self.headerView.icon.image = icon.image;
 	CGRect ir = self.headerView.icon.frame;
@@ -427,29 +432,8 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 	self.headerView.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
 
-/*
-	CGSize ts = [self.headerView.temp.text sizeWithFont:self.headerView.temp.font];
-	CGRect tr = self.headerView.temp.frame;
-	tr.size.width = ts.width;
-	tr.size.height = ts.height;
-	self.headerView.temp.frame = tr;
-	self.headerView.temp.center = CGPointMake((self.headerView.frame.size.width / 2) + 35 + (int)(tr.size.width / 2), 74);
-
-	tr = self.headerView.high.frame;
-	tr.origin.x = self.headerView.temp.frame.origin.x + ts.width + 8;
-        self.headerView.high.frame = tr;
-
-        tr = self.headerView.low.frame;
-        tr.origin.x = self.headerView.temp.frame.origin.x + ts.width + 8;
-        self.headerView.low.frame = tr;
-
-        ts = [self.headerView.time.text sizeWithFont:self.headerView.time.font];
-        tr = self.headerView.time.frame;
-        tr.size.height = ts.height;
-        self.headerView.time.frame = tr;
-        self.headerView.time.center = CGPointMake(self.headerView.frame.size.width / 2, 29);
-*/
 	[self.headerView setNeedsLayout];
+	[self.headerView setNeedsDisplay];
 
 	NSLog(@"LI:Weather: Call super");
 	[super updateWeatherViews];
@@ -468,7 +452,6 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 
 	if (detail == 2)
 	{
-		NSLog(@"LI:Weather: Show calendar? %d", self.headerView.showCalendar);
 		return self.headerView.showCalendar;
 	}
 
