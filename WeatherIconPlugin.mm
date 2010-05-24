@@ -1,5 +1,6 @@
 #include "WeatherIconPlugin.h"
 #include <UIKit/UIKit.h>
+#include <UIKit/UIScreen.h>
 
 #define localize(str) \
         [self.plugin.bundle localizedStringForKey:str value:str table:nil]
@@ -15,6 +16,12 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 @implementation WIForecastIconView
 
 @synthesize icons;
+
+-(void) setFrame:(CGRect) r
+{
+	[super setFrame:r];
+	[self setNeedsDisplay];
+}
 
 -(void) drawRect:(struct CGRect) rect
 {
@@ -53,6 +60,12 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 @implementation WIForecastTempView
 
 @synthesize timestamp, updatedString;
+
+-(void) setFrame:(CGRect) r
+{
+	[super setFrame:r];
+	[self setNeedsDisplay];
+}
 
 -(void) drawRect:(struct CGRect) rect
 {
@@ -101,6 +114,12 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 @end
 
 @implementation WIForecastDaysView
+
+-(void) setFrame:(CGRect) r
+{
+	[super setFrame:r];
+	[self setNeedsDisplay];
+}
 
 -(void) drawRect:(struct CGRect) rect
 {
@@ -306,9 +325,10 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	NSString* reuse = [NSString stringWithFormat:@"Forecast%d", indexPath.row];
 	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:reuse];
 
+	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
 	if (fc == nil)
 	{
-		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuse] autorelease];
+		fc = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:reuse] autorelease];
 		fc.backgroundColor = [UIColor clearColor];
 		
 		WIForecastView* fcv = nil;
@@ -325,6 +345,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 				break;
 		}
 
+		fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), [UIScreen mainScreen].bounds.size.width - 10, height);
 		fcv.backgroundColor = [UIColor clearColor];
 		fcv.tag = 42;
 		[fc.contentView addSubview:fcv];
@@ -332,8 +353,6 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	WIForecastView* fcv = [fc viewWithTag:42];
 	fcv.theme = tableView.theme;
-	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), 310, height);
 
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
@@ -378,8 +397,11 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	self.iconCache = [NSMutableDictionary dictionaryWithCapacity:10];
 
 	self.daysView = [[[WIForecastDaysView alloc] init] autorelease];
+	self.daysView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	self.iconView = [[[WIForecastIconView alloc] init] autorelease];
+	self.iconView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 	self.tempView = [[[WIForecastTempView alloc] init] autorelease];
+	self.tempView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 
 	self.reloadCondition = [[[NSCondition alloc] init] autorelease];
 	self.updateLock = [[[NSLock alloc] init] autorelease];
