@@ -598,6 +598,7 @@ MSHook(void, sbDrawRect, SBStatusBarTimeView *self, SEL sel, CGRect rect)
 -(UIView*) tableView:(LITableView*) tableView viewForHeaderInSection:(NSInteger) section
 {
 	[self updateWeatherViews];
+	[self.headerView setNeedsLayout];
 	return self.headerView;
 }
 
