@@ -416,6 +416,11 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	return self;
 }
 
+-(void) notifyLockInfo
+{
+	[self.plugin updateView:self.dataCache];
+}
+
 -(void) updateWeather:(NSDictionary*) weather
 {
 	if (!self.plugin.enabled)
@@ -425,7 +430,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	{
 		NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
 		[self.dataCache setDictionary:dict];
-		[self updateWeatherViews];
+		[self performSelectorOnMainThread:@selector(updateWeatherViews) withObject:nil waitUntilDone:YES];
+		[self notifyLockInfo];
 		[self.updateLock unlock];
 	}
 }

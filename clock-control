@@ -1,0 +1,12 @@
+Package: com.ashman.lockinfoclock
+Name: Clock Plugin for LockInfo (Native)
+Version: 1.3.2.0
+Architecture: iphoneos-arm
+Description: Adds a clock and calendar to LockInfo's native rendering.
+Homepage: http://modmyi.com/info/lockinfoclock.php
+Depiction: http://modmyi.com/info/lockinfoclock.d.php
+Maintainer: poetic_folly <poetic_folly@modmyi.com>
+Author: David Ashman (Stimpy5050) <dashman@gmail.com>
+Sponsor: ModMyi.com <http://modmyi.com/forums/index.php?styleid=31>
+Section: LockInfo Addons
+Pre-Depends: com.ashman.lockinfo (>= 1.1.6)

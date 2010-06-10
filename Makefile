@@ -2,7 +2,7 @@ CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-gc
 CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-g++-4.0.1
 LD=$(CC)
 
-SDKVER=3.0
+SDKVER=4.0
 SDK=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
 LDFLAGS=	-framework Foundation \
 		-framework UIKit \
@@ -28,9 +28,9 @@ Target=WeatherIcon.dylib
 
 all:	package
 
-HTCPlugin: WeatherIconPlugin.o LockWeatherPlugin.o HTCPlugin.o
-                $(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
-		ldid -S HTCPlugin
+HTCPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o LockWeatherPlugin.o HTCPlugin.o
+	$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
+	ldid -S HTCPlugin
 
 WeatherIconSettings: WeatherIconSettings.o
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
@@ -40,7 +40,11 @@ WeatherIconPlugin: WeatherIconPlugin.o
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S WeatherIconPlugin
 
-LockWeatherPlugin: WeatherIconPlugin.o LockWeatherPlugin.o
+ClockPlugin: CalendarScrollView.o ClockPlugin.o
+		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
+		ldid -S ClockPlugin
+
+LockWeatherPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o LockWeatherPlugin.o
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S LockWeatherPlugin
 
@@ -66,18 +70,29 @@ lockweather: LockWeatherPlugin
 	find package/lock -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/lock LockWeatherPlugin_$(shell grep ^Version: lockweather-control | cut -d ' ' -f 2).deb
 
+clock: ClockPlugin
+	mkdir -p package/clock/DEBIAN
+	mkdir -p package/clock/Library/LockInfo/Plugins
+	cp -r com.ashman.lockinfo.ClockPlugin.bundle package/clock/Library/LockInfo/Plugins
+	cp ClockPlugin package/clock/Library/LockInfo/Plugins/com.ashman.lockinfo.ClockPlugin.bundle
+	cp clock-control package/clock/DEBIAN/control
+	find package/clock -name .svn -print0 | xargs -0 rm -rf
+	find package/clock -name .DS_Store -print0 | xargs -0 rm -rf
+	find package/clock -name Thumbs.db -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/clock ClockPlugin_$(shell grep ^Version: clock-control | cut -d ' ' -f 2).deb
+
 HTC: HTCPlugin
-	mkdir -p package/lock/DEBIAN
-        mkdir -p package/lock/Library/LockInfo/Plugins
-        cp -r com.burgch.lockinfo.HTCPlugin.bundle package/lock/Library/LockInfo/Plugins
-        cp HTCPlugin package/lock/Library/LockInfo/Plugins/com.burgch.lockinfo.HTCPlugin.bundle
-        cp HTC-control package/lock/DEBIAN/control
-        find package/lock -name .svn -print0 | xargs -0 rm -rf
-        find package/lock -name .DS_Store -print0 | xargs -0 rm -rf
-        find package/lock -name Thumbs.db -print0 | xargs -0 rm -rf
-        find package/lock -name pspbrwse.jbf -print0 | xargs -0 rm -rf
-        find package/lock -name *.pspimage -print0 | xargs -0 rm -rf
-        dpkg-deb -b package/lock HTCPlugin_$(shell grep ^Version: HTC-control | cut -d ' ' -f 2).deb
+	mkdir -p package/htc/DEBIAN
+	mkdir -p package/htc/Library/LockInfo/Plugins
+	cp -r com.burgch.lockinfo.HTCPlugin.bundle package/htc/Library/LockInfo/Plugins
+	cp HTCPlugin package/htc/Library/LockInfo/Plugins/com.burgch.lockinfo.HTCPlugin.bundle
+	cp HTC-control package/htc/DEBIAN/control
+	find package/htc -name .svn -print0 | xargs -0 rm -rf
+	find package/htc -name .DS_Store -print0 | xargs -0 rm -rf
+	find package/htc -name Thumbs.db -print0 | xargs -0 rm -rf
+	find package/htc -name pspbrwse.jbf -print0 | xargs -0 rm -rf
+	find package/htc -name *.pspimage -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/htc HTCPlugin_$(shell grep ^Version: HTC-control | cut -d ' ' -f 2).deb
 
 lockinfo: WeatherIconPlugin
 	mkdir -p package/lockinfo/DEBIAN
@@ -88,7 +103,7 @@ lockinfo: WeatherIconPlugin
 	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/lockinfo WeatherIconPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
 
-package:	$(Target) WeatherIconSettings lockinfo lockweather
+package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences

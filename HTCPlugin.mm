@@ -3,6 +3,8 @@
 #include <UIKit/UIKit.h>
 #include "substrate.h"
 
+Class $SBStatusBarControllerHTC = objc_getClass("SBStatusBarController");
+
 #define localize(str) \
 [self.plugin.bundle localizedStringForKey:str value:str table:nil]
 
@@ -349,9 +351,11 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	self.temp.low.textColor = [utilToolsControl colourToSetFromInt:lowColour];
 	
 	/* Update Layout */
-	
-	float center = self.frame.size.width / 2;
-		
+
+        CGRect screen = [[UIScreen mainScreen] bounds];
+        int orientation = [[$SBStatusBarControllerHTC sharedStatusBarController] statusBarOrientation];
+        float center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
+
 	/* Update Frame and Background */
 	int bgInt = 0;
 	CGRect frame;
@@ -721,7 +725,7 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 
 @synthesize headerViewHTC;
 
--(void) updateTime
+-(void) _updateTime
 {
 	[self.headerViewHTC updateTimeHTC];
 }
@@ -852,8 +856,6 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 -(id) initWithPlugin:(LIPlugin*) plugin
 {	
 	[imageCacheControl initCache];
-	
-	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateTime) name:@"LWPUpdateTimeNotification" object:nil];
 	
 	return [super initWithPlugin:plugin];
 }
