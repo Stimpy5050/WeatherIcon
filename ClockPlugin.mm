@@ -23,7 +23,8 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 -(void) setFrame:(CGRect) f
 {
 	[super setFrame:f];
-	[self setNeedsLayout];
+	[self.time setNeedsDisplay];
+	[self.date setNeedsDisplay];
 }
 
 -(void) layoutSubviews
@@ -38,6 +39,7 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 	r.origin.x = 5;
 	r.size.width -= 10;
 	self.time.frame = r;
+	[self.time setNeedsDisplay];
 
 	if (self.date.style.font)
 	{
@@ -47,6 +49,7 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 	}
 
 	self.date.frame = r;
+	[self.date setNeedsDisplay];
 }
 
 -(void) updateTime
@@ -81,12 +84,12 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 	self.ampm = true;
 
 	self.time = [[[objc_getClass("LILabel") alloc] initWithFrame:self.bounds] autorelease];
-	self.time.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.time.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
 	self.time.backgroundColor = [UIColor clearColor];
 	[self addSubview:self.time];
 
 	self.date = [[[objc_getClass("LILabel") alloc] initWithFrame:self.bounds] autorelease];
-	self.date.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.date.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
 	self.date.textAlignment = UITextAlignmentRight;
 	self.date.backgroundColor = [UIColor clearColor];
 	[self addSubview:self.date];
@@ -129,6 +132,10 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 	self.plugin = plugin;
 	self.plugin.tableViewDataSource = self;
 	self.plugin.tableViewDelegate = self;
+
+        NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+        [center addObserver:self selector:@selector(updateTime) name:LIUndimScreenNotification object:nil];
+
 	return self;
 }
 

@@ -160,4 +160,12 @@
 	return self.headerView;
 }
 
+-(id) initWithPlugin:(LIPlugin*) plugin
+{
+	self = [super initWithPlugin:plugin];
+	NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+        [center addObserver:self selector:@selector(updateTime) name:LIUndimScreenNotification object:nil];
+	return self;
+}
+
 @end
