@@ -8,6 +8,12 @@
 
 extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 
+MSHook(void, _undimScreen, id self, SEL sel)
+{
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.ClockPlugin.updateTime" object:nil];
+        __undimScreen(self, sel);
+}
+
 @interface ClockHeaderView : UIView
 
 @property BOOL ampm;
@@ -133,8 +139,11 @@ extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 	self.plugin.tableViewDataSource = self;
 	self.plugin.tableViewDelegate = self;
 
+	Class $SBAwayController = objc_getClass("SBAwayController");
+        Hook(SBAwayController, _undimScreen, _undimScreen);
+
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-        [center addObserver:self selector:@selector(updateTime) name:LIUndimScreenNotification object:nil];
+        [center addObserver:self selector:@selector(updateTime) name:@"com.ashman.lockinfo.ClockPlugin.updateTime" object:nil];
 
 	return self;
 }

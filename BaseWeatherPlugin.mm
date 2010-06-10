@@ -38,6 +38,12 @@
 
 @end
 
+MSHook(void, _undimScreen, id self, SEL sel)
+{
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
+	__undimScreen(self, sel);
+}
+
 @implementation BaseWeatherPlugin
 
 @synthesize headerView;
@@ -51,15 +57,17 @@
 -(void) updateTime
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(updateTime) object:nil];
+	NSDate* now = [NSDate date];
         NSCalendar* cal = [NSCalendar currentCalendar];
-        NSDateComponents* comps = [cal components:NSHourCalendarUnit | NSMinuteCalendarUnit | NSSecondCalendarUnit fromDate:[NSDate date]];
+        NSDateComponents* comps = [cal components:NSHourCalendarUnit | NSMinuteCalendarUnit | NSSecondCalendarUnit fromDate:now];
         [self performSelector:@selector(updateTime) withObject:nil afterDelay:(60 - comps.second)];
+
 
 	[self _updateTime];
 
 	if (self.calendarScrollView)
 		if (comps.hour == 0 && comps.minute == 0)
-			[self.calendarScrollView setDate:[NSDate date]];
+			[self.calendarScrollView setDate:now];
 }
 
 -(void) notifyLockInfo
@@ -163,8 +171,13 @@
 -(id) initWithPlugin:(LIPlugin*) plugin
 {
 	self = [super initWithPlugin:plugin];
+
+	Class $SBAwayController = objc_getClass("SBAwayController");
+	Hook(SBAwayController, _undimScreen, _undimScreen);
+
 	NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-        [center addObserver:self selector:@selector(updateTime) name:LIUndimScreenNotification object:nil];
+        [center addObserver:self selector:@selector(updateTime) name:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
+
 	return self;
 }
 
