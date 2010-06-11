@@ -26,6 +26,18 @@
                         <key>defaults</key>
                         <string>com.ashman.lockinfo.ClockPlugin</string>
                         <key>key</key>
+                        <string>ShowCalendarWeeks</string>
+                        <key>label</key>
+                        <string>Show Week Numbers</string>
+                </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.ClockPlugin</string>
+                        <key>key</key>
                         <string>Collapsed</string>
                         <key>label</key>
                         <string>Collapsed By Default</string>
