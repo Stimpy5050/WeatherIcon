@@ -231,6 +231,10 @@
         for (int i = 0; i < dayRange.length; i++)
         {
                 int day = i + comp.weekday - (firstWeekday - 1);
+
+		if (comp.weekday < firstWeekday)
+			day += 7;
+
                 int week = (day - 1) / 7;
                 int index = (day - 1) % 7;
 
