@@ -139,31 +139,26 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 -(id) initWithFrame:(CGRect)frame;
 {
 	self = [super initWithFrame:frame];
-	self.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	
 	UIImage* initImage = [imageCacheControl getDigit:0];
 	
 	CGSize originalDigitSize = initImage.size;
-	CGSize newDigitSize = CGSizeMake(((frame.size.height / originalDigitSize.height)*originalDigitSize.width),frame.size.height);
+	CGSize newDigitSize = CGSizeMake((int)((frame.size.height / originalDigitSize.height) * originalDigitSize.width), frame.size.height);
 	
 	self.hoursTens = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, newDigitSize.width, newDigitSize.height)] autorelease];
 	self.hoursTens.image = initImage;
-	self.hoursTens.center = CGPointMake((newDigitSize.width / 2), (frame.size.height / 2));
 	[self addSubview:self.hoursTens];
 	
-	self.hoursUnits = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, newDigitSize.width, newDigitSize.height)] autorelease];
+	self.hoursUnits = [[[UIImageView alloc] initWithFrame:CGRectMake(newDigitSize.width, 0, newDigitSize.width, newDigitSize.height)] autorelease];
 	self.hoursUnits.image = initImage;
-	self.hoursUnits.center = CGPointMake((newDigitSize.width * 1.5), (frame.size.height / 2));
 	[self addSubview:self.hoursUnits];
 	
-	self.minutesTens = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, newDigitSize.width, newDigitSize.height)] autorelease];
+	self.minutesTens = [[[UIImageView alloc] initWithFrame:CGRectMake(frame.size.width - (newDigitSize.width * 2), 0, newDigitSize.width, newDigitSize.height)] autorelease];
 	self.minutesTens.image = initImage;		
-	self.minutesTens.center = CGPointMake((frame.size.width - (newDigitSize.width * 1.5)), (frame.size.height / 2));
 	[self addSubview:self.minutesTens];
 	
-	self.minutesUnits = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, newDigitSize.width, newDigitSize.height)] autorelease];
+	self.minutesUnits = [[[UIImageView alloc] initWithFrame:CGRectMake(frame.size.width - newDigitSize.width, 0, newDigitSize.width, newDigitSize.height)] autorelease];
 	self.minutesUnits.image = initImage;
-	self.minutesUnits.center = CGPointMake((frame.size.width - (newDigitSize.width / 2)), (frame.size.height / 2));
 	[self addSubview:self.minutesUnits];
 	
 	return self;
@@ -176,17 +171,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	UIImage* initImage = [imageCacheControl getDigit:0];
 	
 	CGSize originalDigitSize = initImage.size;
-	CGSize newDigitSize = CGSizeMake(((self.frame.size.height / originalDigitSize.height)*originalDigitSize.width),self.frame.size.height);
+	CGSize newDigitSize = CGSizeMake((int)((self.frame.size.height / originalDigitSize.height)*originalDigitSize.width),self.frame.size.height);
 	
 	self.hoursTens.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
-	self.hoursUnits.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
-	self.minutesTens.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
-	self.minutesUnits.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
-	
-	self.hoursTens.center = CGPointMake((newDigitSize.width / 2), (self.frame.size.height / 2));
-	self.hoursUnits.center = CGPointMake((newDigitSize.width * 1.5), (self.frame.size.height / 2));
-	self.minutesTens.center = CGPointMake((self.frame.size.width - (newDigitSize.width * 1.5)), (self.frame.size.height / 2));
-	self.minutesUnits.center = CGPointMake((self.frame.size.width - (newDigitSize.width / 2)), (self.frame.size.height / 2));
+	self.hoursUnits.frame = CGRectMake(newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
+	self.minutesTens.frame = CGRectMake(self.frame.size.width - (newDigitSize.width * 2), 0, newDigitSize.width, newDigitSize.height);
+	self.minutesUnits.frame = CGRectMake(self.frame.size.width - newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
 }
 
 @end
@@ -198,45 +188,32 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 -(void) layoutSubviews
 {
 	CGSize ts = [self.temp.text sizeWithFont:self.temp.font];
-	CGRect tr = self.temp.frame;
-	tr.size.width = ts.width;
-	tr.size.height = ts.height;
-	self.temp.frame = tr;
-	
 	CGSize hs = [self.high.text sizeWithFont:self.high.font];
-	CGRect hr = self.high.frame;
-	hr.size.width = hs.width;
-	hr.size.height = hs.height;
-	
 	CGSize ls = [self.low.text sizeWithFont:self.low.font];
-	CGRect lr = self.low.frame;
-	lr.size.width = ls.width;
-	lr.size.height = ls.height;
-	
-	if (hr.size.width > lr.size.width)
+
+	if (hs.width > ls.width)
 	{
-		lr.size.width = hr.size.width;
+		ls.width = hs.width;
 	} else {
-		hr.size.width = lr.size.width;
+		hs.width = ls.width;
 	}
 	
-	self.low.frame = lr;
-	self.high.frame = hr;
+	float tempWidth = ts.width + hs.width;
 	
-	float tempWidth = self.temp.frame.size.width + self.high.frame.size.width;
+	CGRect frame = self.frame;
+	frame.size.width = tempWidth;
+	self.frame = frame;
 	
-	self.frame.size.width = tempWidth;
+	NSLog(@"HTC: temp frame width: %f", self.frame.size.width);
 	
-	self.high.center = CGPointMake(tempWidth - (hr.size.width / 2), (hr.size.height / 2));
-	self.low.center = CGPointMake(tempWidth - (lr.size.width / 2), hr.size.height + (lr.size.height / 2));
-	self.temp.center = CGPointMake(tempWidth - (2 + hr.size.width + (self.temp.frame.size.width / 2)), ((self.temp.frame.size.height / 2) -2));
+	self.high.frame = CGRectMake(tempWidth - hs.width, 4, hs.width, hs.height);
+	self.low.frame = CGRectMake(tempWidth - ls.width, hs.height + 4, ls.width, ls.height);
+	self.temp.frame = CGRectMake(0, 0, ts.width, ts.height);
 }
-
 
 -(id) initWithFrame:(CGRect)frame withTempColour:(int)tempTextColour withHighColour:(int)highTextColour withLowColour:(int)lowTextColour
 {
 	self = [super initWithFrame:frame];
-	self.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	
 	self.temp = [[[UILabel alloc] initWithFrame:CGRectMake(0, 0, 100, 37)] autorelease];
 	[self addSubview:self.temp];
@@ -266,11 +243,9 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 @synthesize icon, background, city, date, description;
 @synthesize hourNumber, minuteNumber, viewPreferences;
 @synthesize clock, temp;
-@synthesize dateFormat, showCalendar;
 
 -(void) layoutSubviews
 {
-	NSLog(@"Layout HTCHeaderView");
 	[super layoutSubviews];
 	
 	/* City Settings */
@@ -315,46 +290,14 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	if (NSNumber* isc = [self.viewPreferences objectForKey:@"IconScale"])
 		iconScale = isc.doubleValue;
 	
-	/* Colour Settings */
-	
-	int cityColour = 7;
-	if (NSNumber* cc = [self.viewPreferences objectForKey:@"CityColour"])
-		cityColour = cc.intValue;
-	
-	int descriptionColour = 1;
-	if (NSNumber* dsc = [self.viewPreferences objectForKey:@"DescriptionColour"])
-		descriptionColour = dsc.intValue;
-	
-	int dateColour = 1;
-	if (NSNumber* dtc = [self.viewPreferences objectForKey:@"DateColour"])
-		dateColour = dtc.intValue;
-	
-	int tempColour = 7;
-	if (NSNumber* tc = [self.viewPreferences objectForKey:@"TempColour"])
-		tempColour = tc.intValue;
-	
-	int highColour = 1;
-	if (NSNumber* hc = [self.viewPreferences objectForKey:@"HighColour"])
-		highColour = hc.intValue;
-	
-	int lowColour = 1;
-	if (NSNumber* lc = [self.viewPreferences objectForKey:@"LowColour"])
-		lowColour = lc.intValue;
-	
-	/* Update Colours */
-	
-	self.date.textColor = [utilToolsControl colourToSetFromInt:dateColour];
-	self.city.textColor = [utilToolsControl colourToSetFromInt:cityColour];
-	self.description.textColor = [utilToolsControl colourToSetFromInt:descriptionColour];
-	self.temp.temp.textColor = [utilToolsControl colourToSetFromInt:tempColour];
-	self.temp.high.textColor = [utilToolsControl colourToSetFromInt:highColour];
-	self.temp.low.textColor = [utilToolsControl colourToSetFromInt:lowColour];
+	/* Update Colous */
+	[self updateColours];
 	
 	/* Update Layout */
 
-        CGRect screen = [[UIScreen mainScreen] bounds];
-        int orientation = [[$SBStatusBarControllerHTC sharedStatusBarController] statusBarOrientation];
-        float center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
+	CGRect screen = [[UIScreen mainScreen] bounds];
+    int orientation = [[$SBStatusBarControllerHTC sharedStatusBarController] statusBarOrientation];
+    float center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
 
 	/* Update Frame and Background */
 	int bgInt = 0;
@@ -443,7 +386,6 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	}
 	CGRect cr = self.city.frame;
 	cr.size.height = cs.height;
-	self.city.frame = cr;
 	
 	/* Set Description Frame Sizes */
 	if (descriptionTwoLine)
@@ -468,7 +410,6 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	}
 	CGRect dr = self.description.frame;
 	dr.size.height = ds.height;
-	self.description.frame = dr;
 	
 	/* Position City and Description */
 	float cityDescLHS;
@@ -478,36 +419,34 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	if (spaceSave)
 	{
 		cityDescLHS = center - 145;
-		self.description.center = CGPointMake(cityDescLHS + (dr.size.width / 2), descriptionBottom - (dr.size.height / 2));
-		self.city.center = CGPointMake(cityDescLHS + (cr.size.width / 2), descriptionBottom - (2 + dr.size.height + (cr.size.height / 2)));
+		self.description.frame = CGRectMake(cityDescLHS, descriptionBottom - dr.size.height, dr.size.width, dr.size.height);
+		self.city.frame = CGRectMake(cityDescLHS, descriptionBottom - (2 + dr.size.height + cr.size.height), cr.size.width, cr.size.height);
 	} else {
 		cityDescLHS = center - 131;
-		self.city.center = CGPointMake(cityDescLHS + (cr.size.width / 2), cityTop + (cr.size.height / 2));
-		self.description.center = CGPointMake(cityDescLHS + (dr.size.width / 2), cityTop + cr.size.height + 2 + (dr.size.height / 2));
+		self.city.frame = CGRectMake(cityDescLHS, cityTop, cr.size.width, cr.size.height);
+		self.description.frame = CGRectMake(cityDescLHS, cityTop + cr.size.height + 2, dr.size.width, dr.size.height);
 	}
 	
-	/* Resize Temp, then reset positions */
-	[self.temp setNeedsLayout];
-	
-	float tempRHS = center + 130;
+	/* Reset Temp Positions */
+		
+	float tempRHS = center + 132;
 	
 	if (spaceSave)
 	{
 		tempRHS = center + 140;
 	}
 	
-	float tempWidth = self.temp.temp.frame.size.width + self.temp.high.frame.size.width;
-	
-	self.temp.frame.size.width = tempWidth;
+	CGSize tempSize = self.temp.frame.size;
+	CGSize dateSize = self.date.frame.size;
 	
 	if (spaceSave)
 	{
-		self.temp.center = CGPointMake(tempRHS - (int)(tempWidth / 2), 79);
-		self.date.center = CGPointMake((tempRHS - (self.date.frame.size.width / 2)), (38 + (self.date.frame.size.height / 2)));
+		self.temp.frame = CGRectMake(tempRHS - tempSize.width, 55, tempSize.width, tempSize.height);
+		self.date.frame = CGRectMake(tempRHS - dateSize.width, 38, dateSize.width, dateSize.height);
 		self.icon.center = CGPointMake(center, 85);
 	} else {
-		self.temp.center = CGPointMake(tempRHS - (int)(tempWidth / 2), 146);
-		self.date.center = CGPointMake((tempRHS - (self.date.frame.size.width / 2)), (105 + (self.date.frame.size.height / 2)));
+		self.temp.frame = CGRectMake(tempRHS - tempSize.width, 121, tempSize.width, tempSize.height);
+		self.date.frame = CGRectMake(tempRHS - dateSize.width, 105, dateSize.width, dateSize.height);
 		self.icon.center = CGPointMake(center, 135);
 	}
 	
@@ -566,8 +505,48 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	[self addSubview:self.city];
 	[self addSubview:self.description];
 	[self addSubview:self.icon];
-		
+	
+	[self updateTime];
+	
 	return self;
+}
+
+-(void) updateColours
+{
+	/* Colour Settings */
+
+	int cityColour = 7;
+	if (NSNumber* cc = [self.viewPreferences objectForKey:@"CityColour"])
+	cityColour = cc.intValue;
+
+	int descriptionColour = 1;
+	if (NSNumber* dsc = [self.viewPreferences objectForKey:@"DescriptionColour"])
+		descriptionColour = dsc.intValue;
+
+	int dateColour = 1;
+	if (NSNumber* dtc = [self.viewPreferences objectForKey:@"DateColour"])
+		dateColour = dtc.intValue;
+
+	int tempColour = 7;
+	if (NSNumber* tc = [self.viewPreferences objectForKey:@"TempColour"])
+		tempColour = tc.intValue;
+
+	int highColour = 1;
+	if (NSNumber* hc = [self.viewPreferences objectForKey:@"HighColour"])
+		highColour = hc.intValue;
+
+	int lowColour = 1;
+	if (NSNumber* lc = [self.viewPreferences objectForKey:@"LowColour"])
+		lowColour = lc.intValue;
+
+	/* Update Colours */
+
+	self.date.textColor = [utilToolsControl colourToSetFromInt:dateColour];
+	self.city.textColor = [utilToolsControl colourToSetFromInt:cityColour];
+	self.description.textColor = [utilToolsControl colourToSetFromInt:descriptionColour];
+	self.temp.temp.textColor = [utilToolsControl colourToSetFromInt:tempColour];
+	self.temp.high.textColor = [utilToolsControl colourToSetFromInt:highColour];
+	self.temp.low.textColor = [utilToolsControl colourToSetFromInt:lowColour];
 }
 
 -(void) updatePreferences:(NSDictionary*)preferences
@@ -578,7 +557,6 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 -(UIImageView*) iconViewToFitInFrame:(CGRect)frame
 {
 	UIImageView* icon = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
-	icon.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	return icon;
 }
 
@@ -587,14 +565,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	UIImage* bgImage = [imageCacheControl getBackground:bgi];
 	UIImageView* background = [[[UIImageView alloc] initWithFrame:frame] autorelease];
 	background.image = bgImage;
-	background.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	return background;
 }					 
 					 
 -(UILabel*) dateViewToFitInFrame:(CGRect)frame withColour:(int)textColour
 {
 	UILabel* date = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	date.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	date.font = [UIFont boldSystemFontOfSize:16];
 	date.textAlignment = UITextAlignmentRight;
 	date.textColor = [utilToolsControl colourToSetFromInt:textColour];
@@ -605,7 +581,6 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 -(UILabel*) cityViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour
 {
 	UILabel* city = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	city.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	city.font = [UIFont boldSystemFontOfSize:maxSize];
 	city.textAlignment = UITextAlignmentLeft;
 	city.textColor = [utilToolsControl colourToSetFromInt:textColour];
@@ -622,7 +597,6 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 -(UILabel*) descriptionViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour
 {
 	UILabel* description = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	description.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
 	description.font = [UIFont boldSystemFontOfSize:maxSize];
 	description.textAlignment = UITextAlignmentLeft;
 	description.textColor = [utilToolsControl colourToSetFromInt:textColour];
@@ -636,16 +610,8 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	return description;
 }
 
--(void) touchesEnded:(NSSet*) touches withEvent:(UIEvent*) event
-{
-	UITouch* touch = [touches anyObject];
-	CGPoint p = [touch locationInView:self];
-	self.showCalendar = (p.x < (self.frame.size.width / 2));
-	return [self.nextResponder touchesEnded:touches withEvent:event];
-}
-
 -(void) updateDigits
-{		
+{	
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	
 	int minutesInt = self.minuteNumber.intValue;
@@ -662,12 +628,13 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	self.clock.minutesTens.image = [imageCacheControl getDigit:minuteTensInt];
 	self.clock.minutesUnits.image = [imageCacheControl getDigit:minuteUnitsInt];
 	
+	[self setNeedsDisplay];
+	
 	[pool release];
 }
 
--(void) updateTimeHTC
-
-{
+-(void) updateTime
+{	
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	
 	BOOL twelveHour = false;
@@ -722,29 +689,18 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 @end
 
 @implementation HTCPlugin
-
-@synthesize headerViewHTC;
-
--(void) _updateTime
-{
-	[self.headerViewHTC updateTimeHTC];
-}
 					 
 -(void) updateWeatherViews
 {	
-	if (self.headerViewHTC == nil)
-	{
-		self.headerViewHTC = [self createHTCHeaderView];
-	} else {
-		[self.headerViewHTC updatePreferences:self.plugin.preferences];
-	}
-
-	[self updateTime];
-	
+	[super updateWeatherViews];
+		
 	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
+	HTCHeaderView* header = self.headerView;
+	
+	[header updatePreferences:self.plugin.preferences];
 	
 	UIImageView* icon = [self weatherIcon];
-	self.headerViewHTC.icon.image = icon.image;
+	header.icon.image = icon.image;
 	
 	BOOL showDescription = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowDescription"])
@@ -764,12 +720,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 		if (description == nil)
 			description = localize([weather objectForKey:@"description"]);
 				
-		self.headerViewHTC.description.hidden = false;
-		self.headerViewHTC.description.text = description;
+		header.description.hidden = false;
+		header.description.text = description;
 	}
 	else
 	{				
-	self.headerViewHTC.description.hidden = true;
+	header.description.hidden = true;
 	}
 	
 	NSString* city = [weather objectForKey:@"city"];
@@ -777,38 +733,27 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	if (r.location != NSNotFound)
 		city = [city substringToIndex:r.location];
 	
-	self.headerViewHTC.city.text = city;
+	header.city.text = city;
 	
 	if (NSArray* forecast = [weather objectForKey:@"forecast"])
 	{
 		if (forecast.count > 0)
 		{
 			NSDictionary* today = [forecast objectAtIndex:0];
-			self.headerViewHTC.temp.high.text = [NSString stringWithFormat:@"H %d\u00B0", [[today objectForKey:@"high"] intValue]];
-			self.headerViewHTC.temp.low.text = [NSString stringWithFormat:@"L %d\u00B0", [[today objectForKey:@"low"] intValue]];
+			header.temp.high.text = [NSString stringWithFormat:@"H %d\u00B0", [[today objectForKey:@"high"] intValue]];
+			header.temp.low.text = [NSString stringWithFormat:@"L %d\u00B0", [[today objectForKey:@"low"] intValue]];
 		}
 	}
 			
-	self.headerViewHTC.temp.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
-			
-	[self.headerViewHTC setNeedsLayout];
-	[self.headerViewHTC setNeedsDisplay];
+	header.temp.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
 	
-	[super updateWeatherViews];
-}
-
--(BOOL) showCalendar
-{
-	int detail = 0;
-	if (NSNumber* n = [self.plugin.preferences objectForKey:@"Detail"])
-		detail = n.intValue;
+	[header.temp setNeedsLayout];
 	
-	if (detail == 2)
-	{
-		return self.headerViewHTC.showCalendar;
-	}
+	[header updateTime];
+	[header updateDigits];
 	
-	return (detail == 1);
+	[header setNeedsLayout];
+	[header setNeedsDisplay];
 }
 
 -(CGFloat) tableView:(UITableView*) tableView heightForHeaderInSection:(NSInteger) section
@@ -831,32 +776,14 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	}
 }
 
-- (CGFloat) tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{	
-	return [super tableView:tableView heightForRowAtIndexPath:indexPath];
-}
-
-- (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+-(HTCHeaderView*) createHeaderView
 {
-	return [super tableView:tableView cellForRowAtIndexPath:indexPath];
-}
-
--(HTCHeaderView*) createHTCHeaderView
-{
-	HTCHeaderView* view = [[[HTCHeaderView alloc] initWithPreferences:self.plugin.preferences] autorelease];
-	return view;
-}
-
--(UIView*) tableView:(LITableView*) tableView viewForHeaderInSection:(NSInteger) section
-{	
-	[self updateWeatherViews];
-	return self.headerViewHTC;
+	return [[[HTCHeaderView alloc] initWithPreferences:self.plugin.preferences] autorelease];
 }
 
 -(id) initWithPlugin:(LIPlugin*) plugin
 {	
 	[imageCacheControl initCache];
-	
 	return [super initWithPlugin:plugin];
 }
 

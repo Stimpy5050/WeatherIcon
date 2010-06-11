@@ -32,6 +32,18 @@
 			<key>detail</key>
 			<string>HTCSettingsController</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>label</key>
+			<string>FAQ</string>
+			<key>detail</key>
+			<string>HTCSettingsController</string>
+		</dict>
 	</array>
 	<key>title</key>
 	<string>HTC Plugin</string>

@@ -1,4 +1,4 @@
-#include "LockWeatherPlugin.h"
+#include "BaseWeatherPlugin.h"
 #include <Preferences/PSListController.h>
 
 @interface utilTools : NSObject
@@ -43,7 +43,7 @@
 
 @end
 
-@interface HTCHeaderView : UIView
+@interface HTCHeaderView : LockHeaderView
 
 -(id) initWithPreferences:(NSDictionary*)preferences;
 
@@ -59,11 +59,10 @@
 @property (nonatomic, retain) NSNumber* minuteNumber;
 
 @property (nonatomic, retain) NSDictionary* viewPreferences;
-@property (nonatomic, retain) NSString* dateFormat;
-@property BOOL showCalendar;
 
--(void) updateTimeHTC;
 -(void) updatePreferences:(NSDictionary*)preferences;
+-(void) updateDigits;
+-(void) updateColours;
 
 -(UIImageView*) iconViewToFitInFrame:(CGRect)frame;
 -(UIImageView*) backgroundWithFrame:(CGRect)frame andBackgroundImage:(int)bgi;
@@ -71,14 +70,8 @@
 -(UILabel*) cityViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour;
 -(UILabel*) descriptionViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour;
 
-
 @end
 
-@interface HTCPlugin : LockWeatherPlugin 
-
-@property (nonatomic, retain) HTCHeaderView* headerViewHTC;
-
--(HTCHeaderView*) createHTCHeaderView;
-
+@interface HTCPlugin : BaseWeatherPlugin
 @end
 

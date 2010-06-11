@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Colours</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Can I change text colours?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Yes, In the Colours Pane, select a text field, and then choose the colour you would like.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>General</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Show Description do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Show Description controls whether you want to see the weather description in the header or not.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Show Update Time do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>It toggles whether or not you want to see the last time the weather was updated below the weather forecast.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Detail do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>It controls what you want to see when you expand the plugin: Calendar, Weather, or Both.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Calendar Weeks do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>55</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>It toggles whether you want to see the week of the year in the Calendar.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Use 12 for Midnight do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>95</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Unlike Use 12 Hour Clock, which turns 12 hour clock on, this just sets whether to use 12 at midnight, or the default 00.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Layout</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What is Space Save?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Space Save is a compacted version of the HTC plugin if you are a bit space conscious on the LockScreen.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Remove Extra do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>This removes the little extra space between the bottom of the HTC plugin and the next plugin.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>Why is Icon Scale a small range?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>75</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>All icons are resized to a standard size. This scale is just for user customisation.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>How do the Font Sizes Work?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>195</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>The Font Sizes are customisable and automatic. You set the Maximum size to the ideal size that you would like, and the Minimum to the smallest size you are comfortable with. The font size is then gradually decreased from the Maximum size until it fits in the frame, or it reaches the Minimum size.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTitleValueCell</string>
+			<key>height</key>
+			<integer>30</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>What does Allow Two Lines do?</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>height</key>
+			<integer>155</integer>
+			<key>alignment</key>
+			<integer>1</integer>
+			<key>label</key>
+			<string>This sets whether you would like to allow the city text or the description text to be shown on two lines instead of one. Useful if your city/weather is too long to fit on one line without being too small to read. It will stay on one line if it fits that way too though.</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>HTC Plugin</string>
+</dict>
+</plist>

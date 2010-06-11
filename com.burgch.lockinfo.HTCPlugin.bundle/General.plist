@@ -74,6 +74,18 @@
 		</dict>
 		<dict>
 			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.burgch.lockinfo.HTCPlugin</string>
+			<key>key</key>
+			<string>ShowCalendarWeeks</string>
+			<key>label</key>
+			<string>Calendar Weeks</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSGroupCell</string>
 		</dict>
 		<dict>
@@ -87,6 +99,18 @@
 			<string>TwelveHour</string>
 			<key>label</key>
 			<string>Use 12 Hour Clock</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.burgch.lockinfo.HTCPlugin</string>
+			<key>key</key>
+			<string>UseTwelve</string>
+			<key>label</key>
+			<string>Use 12 for midnight</string>
 		</dict>
 	</array>
 	<key>title</key>

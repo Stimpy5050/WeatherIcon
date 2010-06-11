@@ -28,7 +28,7 @@ Target=WeatherIcon.dylib
 
 all:	package
 
-HTCPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o LockWeatherPlugin.o HTCPlugin.o
+HTCPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o HTCPlugin.o
 	$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 	ldid -S HTCPlugin
 
