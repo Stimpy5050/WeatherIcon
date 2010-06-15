@@ -1,6 +1,26 @@
 #include "WeatherIconPlugin.h"
 #include <UIKit/UIKit.h>
 #include <UIKit/UIScreen.h>
+#include <substrate.h>
+
+@interface UIScreen (WeatherIcon)
+
+-(CGSize) rotatedScreenSize;
+
+@end
+
+@implementation UIScreen (WeatherIcon)
+
+-(CGSize) rotatedScreenSize
+{
+	CGRect screen = [self bounds];
+        int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
+	return (orientation == 90 || orientation == -90 ? 
+		CGSizeMake(screen.size.height, screen.size.width) : screen.size);
+}
+
+@end
+
 
 #define localize(str) \
         [self.plugin.bundle localizedStringForKey:str value:str table:nil]
@@ -25,7 +45,8 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 
 -(void) drawRect:(struct CGRect) rect
 {
-	int width = (rect.size.width / 6);
+	float screenWidth = [[UIScreen mainScreen] rotatedScreenSize].width;
+	int width = ((screenWidth - 10) / 6);
 	double scale = 0.66;
 
 	NSBundle* bundle = [NSBundle mainBundle];
@@ -49,7 +70,7 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 			s.width *= scale;
 			s.height *= scale;
 
-			CGRect r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + (rect.size.height / 2) - (s.height / 2), s.width, s.height);
+			CGRect r = CGRectMake((width * i) + (width / 2) - (s.width / 2), (rect.size.height / 2) - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
 		}
 	}
@@ -69,28 +90,29 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 
 -(void) drawRect:(struct CGRect) rect
 {
-	int width = (rect.size.width / 6);
+	float screenWidth = [[UIScreen mainScreen] rotatedScreenSize].width;
+	int width = ((screenWidth - 10) / 6);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i) - 5, rect.origin.y + 1, (width / 2) + 5, theme.detailStyle.font.pointSize);
-        	[theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	CGRect r = CGRectMake((width * i) - 5, 1, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
+        	[self.theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
         	r.origin.y -= 1;
-        	[theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	[self.theme.summaryStyle.textColor set];
+		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width - 5, rect.origin.y + 1, (width / 2) + 5, theme.detailStyle.font.pointSize);
-        	[theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	r = CGRectMake((width * i) + r.size.width - 5, 1, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
+        	[self.theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 
         	r.origin.y -= 1;
-        	[theme.detailStyle.textColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	[self.theme.detailStyle.textColor set];
+		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 
 	if (self.timestamp)
@@ -100,13 +122,13 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 		df.timeStyle = NSDateFormatterShortStyle;
 		NSString* str = [NSString stringWithFormat:@"%@ %@", self.updatedString, [df stringFromDate:[NSDate dateWithTimeIntervalSince1970:self.timestamp.doubleValue]]];
 
-		UIFont* font = [UIFont boldSystemFontOfSize:(theme.detailStyle.font.pointSize - 2)];
-		CGRect r = CGRectMake(0, rect.origin.y + theme.detailStyle.font.pointSize + 8, rect.size.width, font.pointSize);
-        	[theme.detailStyle.shadowColor set];
+		UIFont* font = [UIFont boldSystemFontOfSize:(self.theme.detailStyle.font.pointSize - 2)];
+		CGRect r = CGRectMake(0, self.theme.detailStyle.font.pointSize + 8, screenWidth, font.pointSize);
+        	[self.theme.detailStyle.shadowColor set];
 		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[theme.detailStyle.textColor set];
+        	[self.theme.detailStyle.textColor set];
 		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
@@ -126,20 +148,21 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
 
-	int width = (rect.size.width / 6);
+	float screenWidth = [[UIScreen mainScreen] rotatedScreenSize].width;
+	int width = ((screenWidth - 10) / 6);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y + 1, width, theme.detailStyle.font.pointSize + 2);
-        	[theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	CGRect r = CGRectMake((width * i), 1, width, self.theme.detailStyle.font.pointSize + 2);
+        	[self.theme.detailStyle.shadowColor set];
+		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         	r.origin.y -= 1;
-        	[theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	[self.theme.summaryStyle.textColor set];
+		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
@@ -322,37 +345,39 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	NSString* reuse = [NSString stringWithFormat:@"Forecast%d", indexPath.row];
-	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:reuse];
-
-	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-	if (fc == nil)
+	WIForecastView* fcv = nil;
+	switch (indexPath.row)
 	{
-		fc = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:reuse] autorelease];
-		fc.backgroundColor = [UIColor clearColor];
-		
-		WIForecastView* fcv = nil;
-		switch (indexPath.row)
-		{
-			case 0:
-				fcv = self.daysView;
-				break;
-			case 1:
-				fcv = self.iconView;
-				break;
-			case 2:
-				fcv = self.tempView;
-				break;
-		}
-
-		fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), [UIScreen mainScreen].bounds.size.width - 10, height);
-		fcv.backgroundColor = [UIColor clearColor];
-		fcv.tag = 42;
-		[fc.contentView addSubview:fcv];
+		case 0:
+			fcv = self.daysView;
+			break;
+		case 1:
+			fcv = self.iconView;
+			break;
+		case 2:
+			fcv = self.tempView;
+			break;
 	}
 
-	WIForecastView* fcv = [fc viewWithTag:42];
+	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
+	NSString* reuse = [NSString stringWithFormat:@"Forecast%d", indexPath.row];
+
+	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:reuse];
+	if (fc == nil)
+	{
+		fc = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [[UIScreen mainScreen] rotatedScreenSize].width, height) reuseIdentifier:reuse] autorelease];
+		fc.backgroundColor = [UIColor clearColor];
+	}
+
+	for (UIView* subview in fc.contentView.subviews)
+		[subview removeFromSuperview];
+	[fc.contentView addSubview:fcv];
+
+	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), [[UIScreen mainScreen] rotatedScreenSize].width - 10, height);
+	fcv.backgroundColor = [UIColor clearColor];
 	fcv.theme = tableView.theme;
+	fcv.hidden = false;
+	fcv.alpha = 1;
 
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
