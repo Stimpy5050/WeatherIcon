@@ -833,33 +833,42 @@ foundCharacters:(NSString *)string
 {
 	[self updateNightSetting];
 
+	SBIconModel* model = [$SBIconModel sharedInstance];
+	SBApplicationIcon* applicationIcon = nil;
+	if ([model respondsToSelector:@selector(applicationIconForDisplayIdentifier:)])
+		applicationIcon = [model applicationIconForDisplayIdentifier:self.bundleIdentifier];
+	else
+		applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier];
+
 	if (self.showWeatherIcon)
 	{
 		BOOL reload = (self.weatherIcon != nil);
 		self.weatherIcon = [self createIcon];
 		if (reload)
-			[[$SBIconModel sharedInstance] reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
+		{
+			if ([model respondsToSelector:@selector(reloadIconImageForDisplayIdentifier:)])
+				[model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
+			else if ([applicationIcon respondsToSelector:@selector(reloadIconImage)])
+				[applicationIcon reloadIconImage];
+		}
 	}
 
 	// now the status bar image
 	if (self.showStatusBarWeather)
 		[self updateIndicator];
 
-	if (SBIconModel* model = [$SBIconModel sharedInstance])
+	if (applicationIcon)
 	{
-		if (SBIcon* applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier])
+		if (self.showWeatherBadge)
 		{
-			if (self.showWeatherBadge)
-			{
-				[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
-			}
-			else
-			{
-		        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
-		        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
-						if ([badgeStr hasSuffix:@"\u00B0"])
-							[applicationIcon setBadge:nil];
-			}
+			[applicationIcon setBadge:[self.temp stringByAppendingString: @"\u00B0"]];
+		}
+		else
+		{
+	        	if (SBIconBadge* badge = MSHookIvar<SBIconBadge*>(applicationIcon, "_badge"))
+	        		if (NSString* badgeStr = MSHookIvar<NSString*>(badge, "_badge"))
+					if ([badgeStr hasSuffix:@"\u00B0"])
+						[applicationIcon setBadge:nil];
 		}
 	}
 	
@@ -1194,13 +1203,13 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 		[_controller manualRefresh];
 }
 
-MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, id app) 
+MSHook(id, initWithApplication, SBApplicationIcon *self, SEL sel, SBApplication* app) 
 {
 	self = _initWithApplication(self, sel, app);
 
-	if ([_controller isWeatherIcon:self.displayIdentifier])
+	if ([_controller isWeatherIcon:app.displayIdentifier])
 	{
-		NSLog(@"WI: Application: %@.", self.displayIdentifier);
+		NSLog(@"WI: Application: %@.", app.displayIdentifier);
 		if ([self class] == objc_getClass("SBInstalledApplicationIcon"))
 			object_setClass(self, $WIInstalledApplicationIcon);
 		else
@@ -1296,7 +1305,7 @@ extern "C" void TweakInit() {
 	// MSHookMessage is what we use to redirect the methods to our own
 	Hook(SBApplication, deactivated, deactivated);
 	Hook(SBApplicationIcon, initWithApplication:, initWithApplication);
-	Hook(SBBookmarkIcon, initWithWebClip:, initWithWebClip);
+//	Hook(SBBookmarkIcon, initWithWebClip:, initWithWebClip);
 	Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
 	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
 

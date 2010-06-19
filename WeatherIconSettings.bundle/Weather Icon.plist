@@ -33,8 +33,6 @@
 			<string>ShowWeatherIcon</string>
 			<key>key</key>
 			<string>ShowWeatherIcon</string>
-			<key>set</key>
-			<string>showWeatherIcon:specifier:</string>
 			<key>label</key>
 			<string>Show Image</string>
 		</dict>
@@ -283,8 +281,6 @@
 			<string>OverrideLocation</string>
 			<key>key</key>
 			<string>OverrideLocation</string>
-			<key>set</key>
-			<string>showOverride:specifier:</string>
 			<key>label</key>
 			<string>Override Location</string>
 		</dict>
