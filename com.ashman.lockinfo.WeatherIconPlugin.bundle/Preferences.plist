@@ -18,8 +18,22 @@
                         <key>label</key>
                         <string>Enabled</string>
                 </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSGroupCell</string>
+                </dict>
+                <dict>
+                        <key>bundle</key>
+                        <string>LibWeatherSettings</string>
+                        <key>cell</key>
+                        <string>PSLinkCell</string>
+                        <key>isController</key>
+                        <true/>
+                        <key>label</key>
+                        <string>Weather Settings</string>
+                </dict>
         </array>
 	<key>title</key>
-        <string>WeatherIcon</string>
+        <string>Weather</string>
 </dict>
 </plist>

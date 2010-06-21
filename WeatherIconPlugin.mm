@@ -436,7 +436,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
         [center addObserver:self selector:@selector(update:) name:LIViewReadyNotification object:nil];
-        [center addObserver:self selector:@selector(updateOnUpdate:) name:@"WIWeatherUpdatedNotification" object:nil];
+        [center addObserver:self selector:@selector(updateOnUpdate:) name:@"LWWeatherUpdatedNotification" object:nil];
 
 	return self;
 }
@@ -463,7 +463,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 - (NSString *)tableView:(LITableView *)tableView reloadDataInSection:(NSInteger)section
 {
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"WIRefreshNotification" object:nil];
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"LWRefreshNotification" object:nil];
 	[self.reloadCondition lock];
 	[self.reloadCondition wait];
 	[self.reloadCondition unlock];

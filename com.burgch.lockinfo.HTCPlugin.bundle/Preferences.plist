@@ -10,6 +10,15 @@
 			key = Enabled;
 			label = Enabled;
 		},
+		{
+			cell = PSGroupCell;
+		},
+		{
+			cell = PSLinkCell;
+			bundle = "LibWeatherSettings";
+			isController = YES;
+			label = "Weather Settings";
+		}
 	);
 	title = "HTC Plugin";
 }

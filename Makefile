@@ -101,7 +101,7 @@ lockinfo: WeatherIconPlugin
 	cp WeatherIconPlugin package/lockinfo/Library/LockInfo/Plugins/com.ashman.lockinfo.WeatherIconPlugin.bundle
 	cp lockinfo-control package/lockinfo/DEBIAN/control
 	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
-	dpkg-deb -b package/lockinfo WeatherIconPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
+	dpkg-deb -b package/lockinfo WeatherPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
 
 package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock
 	mkdir -p package/weathericon/DEBIAN
