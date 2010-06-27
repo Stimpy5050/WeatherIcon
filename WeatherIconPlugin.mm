@@ -25,7 +25,7 @@
 #define localize(str) \
         [self.plugin.bundle localizedStringForKey:str value:str table:nil]
 
-static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache.plist";
+static NSString* cachePath = @"/User/Library/Caches/com.ashman.LibWeather.cache.plist";
 
 @implementation WIForecastView
 
@@ -50,13 +50,10 @@ static NSString* prefsPath = @"/User/Library/Caches/com.ashman.WeatherIcon.cache
 	double scale = 0.66;
 
 	NSBundle* bundle = [NSBundle mainBundle];
-	NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
-	if (NSDictionary* thm = [NSDictionary dictionaryWithContentsOfFile:path])
+	id libweather = [objc_getClass("LibWeather") sharedInstance];
+	if (NSDictionary* theme = [libweather theme])
 	{
-//		if (NSNumber* n = [thm objectForKey:@"ImageScale"])
-//			scale = n.doubleValue;
-
-		if (NSNumber* n = [thm objectForKey:@"LockInfoImageScale"])
+		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
 			scale = n.doubleValue;
 	}
 
@@ -249,15 +246,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	if (icon)
 	{
-		NSBundle* wiBundle = [NSBundle bundleWithPath:@"/Library/WeatherIcon"];
-		NSString* wiPath = [wiBundle pathForResource:@"Theme" ofType:@"plist"];
-		if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:wiPath])
-			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
-				scale = n.doubleValue;
-
-		NSBundle* bundle = [NSBundle mainBundle];
-		NSString* path = [bundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"];
-		if (NSDictionary* theme = [NSDictionary dictionaryWithContentsOfFile:path])
+		id libweather = [objc_getClass("LibWeather") sharedInstance];
+		if (NSDictionary* theme = [libweather theme])
 			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
 				scale = n.doubleValue;
 
@@ -484,7 +474,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	if (NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:prefsPath])
+	if (NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:cachePath])
 	{
 //		NSLog(@"LI:Weather: Updating when view is ready");
 		[self updateWeather:current];
