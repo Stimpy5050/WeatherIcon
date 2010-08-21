@@ -1,5 +1,5 @@
-CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-gcc-4.0.1
-CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-g++-4.0.1
+CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-gcc-4.2.1
+CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-g++-4.2.1
 LD=$(CC)
 
 SDKVER=4.0
@@ -39,6 +39,10 @@ WeatherIconSettings: WeatherIconSettings.o
 WeatherIconPlugin: WeatherIconPlugin.o
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S WeatherIconPlugin
+
+WeatherIconStatusBar.dylib: WeatherIconStatusBar.o
+		$(LD) $(LDFLAGS) -dynamiclib -init _WeatherIconStatusBarInit -o $@ $^
+		ldid -S WeatherIconStatusBar.dylib
 
 ClockPlugin: CalendarScrollView.o ClockPlugin.o
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
@@ -103,14 +107,23 @@ lockinfo: WeatherIconPlugin
 	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/lockinfo WeatherPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
 
-package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock
+statusbar: WeatherIconStatusBar.dylib
+	mkdir -p package/statusbar/DEBIAN
+	mkdir -p package/statusbar/Library/MobileSubstrate/DynamicLibraries
+	cp WeatherIconStatusBar.dylib package/statusbar/Library/MobileSubstrate/DynamicLibraries
+	cp WeatherIconStatusBar.plist package/statusbar/Library/MobileSubstrate/DynamicLibraries
+	cp lockinfo-control package/statusbar/DEBIAN/control
+	find package/statusbar -name .svn -print0 | xargs -0 rm -rf
+	dpkg-deb -b package/statusbar WeatherIconStatusBar_$(shell grep ^Version: statusbar-control | cut -d ' ' -f 2).deb
+
+package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock statusbar
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
 	mkdir -p package/weathericon/System/Library/PreferenceBundles
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
-	cp *.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp WeatherIcon.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle

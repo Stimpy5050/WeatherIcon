@@ -1,0 +1,12 @@
+Package: com.ashman.weathericonstatusbar
+Name: WeatherIcon Status Bar Icons
+Version: 1.0.0.0
+Architecture: iphoneos-arm
+Description: WeatherIcon status bar icons.
+Homepage: http://modmyi.com/info/weathericonstatusbar.php
+Depiction: http://modmyi.com/info/weathericonstatusbar.d.php
+Maintainer: poetic_folly <poetic_folly@modmyi.com>
+Author: David Ashman (Stimpy5050) <dashman@gmail.com>
+Sponsor: ModMyi.com <http://modmyi.com/forums/index.php?styleid=31>
+Section: Tweaks
+Pre-Depends: mobilesubstrate, com.ashman.weathericon, libstatusbar

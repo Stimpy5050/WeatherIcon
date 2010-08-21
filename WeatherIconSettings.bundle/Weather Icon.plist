@@ -16,6 +16,20 @@
 			<key>label</key>
 			<string>Enabled</string>
 		</dict>
+                <dict>
+                        <key>cell</key>
+                        <string>PSGroupCell</string>
+                </dict>
+                <dict>
+                        <key>bundle</key>
+                        <string>LibWeatherSettings</string>
+                        <key>cell</key>
+                        <string>PSLinkCell</string>
+                        <key>isController</key>
+                        <true/>
+                        <key>label</key>
+                        <string>Weather Settings</string>
+                </dict>
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
@@ -63,8 +77,6 @@
 			<string>WeatherBundleIdentifier</string>
 			<key>id</key>
 			<string>WeatherBundleIdentifier</string>
-			<key>set</key>
-			<string>customBundleIdentifier:specifier:</string>
 			<key>label</key>
 			<string>Application</string>
 			<key>validTitles</key>
@@ -125,22 +137,6 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-			<key>id</key>
-			<string>WeatherIconSeparator</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTitleValueCell</string>
-			<key>label</key>
-			<string>Changing the application the icon is applied to requires a respring.</string>
-			<key>id</key>
-			<string>WeatherIconText</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Status Bar</string>
 		</dict>
@@ -168,193 +164,15 @@
 			<key>label</key>
 			<string>Show Temp</string>
 		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSLinkListCell</string>
-			<key>default</key>
-			<integer>15</integer>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>detail</key>
-			<string>PSListItemsController</string>
-			<key>key</key>
-			<string>RefreshInterval</string>
-			<key>label</key>
-			<string>Refresh Every</string>
-			<key>validTitles</key>
-			<array>
-				<string>1 Minute</string>
-				<string>5 Minutes</string>
-				<string>10 Minutes</string>
-				<string>15 Minutes</string>
-				<string>30 Minutes</string>
-				<string>1 Hour</string>
-				<string>2 Hours</string>
-				<string>4 Hours</string>
-				<string>6 Hours</string>
-			</array>
-			<key>validValues</key>
-			<array>
-				<integer>1</integer>
-				<integer>5</integer>
-				<integer>10</integer>
-				<integer>15</integer>
-				<integer>30</integer>
-				<integer>60</integer>
-				<integer>120</integer>
-				<integer>240</integer>
-				<integer>360</integer>
-			</array>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<integer>0</integer>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>key</key>
-			<string>ShowFeelsLike</string>
-			<key>label</key>
-			<string>Feels Like</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTitleValueCell</string>
-			<key>label</key>
-			<string>Feels Like shows the wind chill temperature instead of the true temperature.</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<integer>0</integer>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>key</key>
-			<string>UseLocalTime</string>
-			<key>label</key>
-			<string>Use Local Time</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTitleValueCell</string>
-			<key>label</key>
-			<string>Local Time uses the time local to the weather location for determining night/day instead of the Yahoo! weather feed.</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<integer>0</integer>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>id</key>
-			<string>OverrideLocation</string>
-			<key>key</key>
-			<string>OverrideLocation</string>
-			<key>label</key>
-			<string>Override Location</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSEditTextCell</string>
-			<key>id</key>
-			<string>Location</string>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>detail</key>
-			<string>PSDetailController</string>
-			<key>key</key>
-			<string>Location</string>
-			<key>label</key>
-			<string>Location</string>
-			<key>placeholder</key>
-			<string>Yahoo! Location Code</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSLinkListCell</string>
-			<key>default</key>
-			<true/>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>detail</key>
-			<string>PSListItemsController</string>
-			<key>id</key>
-			<string>Celsius</string>
-			<key>key</key>
-			<string>Celsius</string>
-			<key>label</key>
-			<string>Temperature Unit</string>
-			<key>validTitles</key>
-			<array>
-				<string>Celsius</string>
-				<string>Fahrenheit</string>
-			</array>
-			<key>validValues</key>
-			<array>
-				<true/>
-				<false/>
-			</array>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTitleValueCell</string>
-			<key>label</key>
-			<string>By default, WeatherIcon will use the first location set in the standard iPhone Weather application.  If you want to override this setting, make sure to use a valid Yahoo! location code.</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-		</dict>
 		<dict>	
 			<key>cell</key>
                         <string>PSLinkCell</string>
-                        <key>bundle</key>
-                        <string>WebViewController</string>
-                        <key>isController</key>
-                        <true/>
                         <key>label</key>
                         <string>Donate via PayPal</string>
                         <key>URL</key>
                         <string>https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=3324856</string>
-			<key>embed</key>
-			<false/>
+			<key>action</key>
+			<string>openURL:</string>
 		</dict>
 	</array>
 	<key>title</key>

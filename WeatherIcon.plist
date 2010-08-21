@@ -1,1 +1,1 @@
-Filter = {Bundles = ("com.apple.springboard", "com.ashman.WeatherIconSettings");};
+Filter = {Bundles = ("com.apple.springboard");};
