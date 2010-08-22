@@ -7,6 +7,8 @@ extern "C" void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque,
 #define Hook(cls, sel, imp) \
         _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
+Class $WIStatusBarCustomItemView;
+BOOL hooked = NO;
 UIImage* indicators[2];
 
 static NSDictionary* currentCondition()
@@ -160,7 +162,7 @@ static void updateIndicators(CFNotificationCenterRef center, void* observer, CFS
 }
 
 MSHook(UIImage*, contentsImageForStyle, id self, SEL sel, int style)
-//UIImage* contentsImageForStyle(id self, SEL sel, int style)
+//UIImage* wi_contentsImageForStyle(id self, SEL sel, int style)
 {
 	NSString* itemName = [[self item] indicatorName];
 	if ([itemName isEqualToString:@"WeatherIcon"])
@@ -170,7 +172,16 @@ MSHook(UIImage*, contentsImageForStyle, id self, SEL sel, int style)
        		return indicators[index];
 	}
 
+	NSLog(@"WI: Calling super for %@", itemName);
 	return _contentsImageForStyle(self, sel, style);
+}
+
+MSHook(id, viewClass, id self, SEL sel)
+{
+	if ([[self indicatorName] isEqualToString:@"WeatherIcon"])
+		return $WIStatusBarCustomItemView;
+
+	return _viewClass(self, sel);
 }
 
 MSHook(void, applicationResume, id self, SEL sel, id event)
@@ -183,19 +194,33 @@ MSHook(void, applicationResume, id self, SEL sel, id event)
 	}
 }
 
+static void createWIView()
+{
+	Class $UIStatusBarItemView = objc_getClass("UIStatusBarItemView");
+	$WIStatusBarCustomItemView = objc_allocateClassPair($UIStatusBarItemView, "WIStatusBarCustomItemView", 0);
+//	class_addMethod($WIStatusBarCustomItemView, @selector(contentsImageForStyle:), (IMP) wi_contentsImageForStyle, "@@:i");
+	objc_registerClassPair($WIStatusBarCustomItemView);
+}
+
 MSHook(void, _startWindowServerIfNecessary, id self, SEL sel)
 {
 	__startWindowServerIfNecessary(self, sel);
-	
-	NSLog(@"WI: Overriding viewClass");
-	Class $UIStatusBarCustomItemView = objc_getClass("UIStatusBarCustomItemView");
-	Hook(UIStatusBarCustomItemView, contentsImageForStyle:, contentsImageForStyle);
+
+	if (!hooked)
+	{	
+		NSLog(@"WI: Hooking class");
+		Class $UIStatusBarCustomItemView = objc_getClass("UIStatusBarCustomItemView");
+		Hook(UIStatusBarCustomItemView, contentsImageForStyle:, contentsImageForStyle);
+		hooked = YES;
+	}
 }
 
 extern "C" void WeatherIconStatusBarInit() 
 {
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
+//	createWIView();
+
 	Class $UIApplication = object_getClass(objc_getClass("UIApplication"));
 	Hook(UIApplication, _startWindowServerIfNecessary, _startWindowServerIfNecessary);
 

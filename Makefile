@@ -112,7 +112,7 @@ statusbar: WeatherIconStatusBar.dylib
 	mkdir -p package/statusbar/Library/MobileSubstrate/DynamicLibraries
 	cp WeatherIconStatusBar.dylib package/statusbar/Library/MobileSubstrate/DynamicLibraries
 	cp WeatherIconStatusBar.plist package/statusbar/Library/MobileSubstrate/DynamicLibraries
-	cp lockinfo-control package/statusbar/DEBIAN/control
+	cp statusbar-control package/statusbar/DEBIAN/control
 	find package/statusbar -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/statusbar WeatherIconStatusBar_$(shell grep ^Version: statusbar-control | cut -d ' ' -f 2).deb
 
