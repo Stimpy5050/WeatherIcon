@@ -511,15 +511,13 @@ static NSString* defaultCode = @"3200";
 	if (!image)
 		image = [self findWeatherImage:@"weather"];
 
-	UIFont* font = [UIFont boldSystemFontOfSize:13];
+	UIFont* font = [UIFont boldSystemFontOfSize:14];
 	CGSize tempSize = CGSizeMake(0, 20);
         CGSize sbSize = CGSizeMake(0, 20);
 
-	NSString* style = (mode == 0 ? self.statusBarTempStyle : self.statusBarTempStyleFSO);
-
         if (self.showStatusBarTemp)
 	{
-//	        tempSize = [t sizeWithStyle:style forWidth:40];
+	        tempSize = [t sizeWithFont:font];
                 sbSize.width += tempSize.width;
 	}
 
@@ -530,7 +528,15 @@ static NSString* defaultCode = @"3200";
 
         if (self.showStatusBarTemp)
         {
-//                [t drawAtPoint:CGPointMake(0, 0) withStyle:style];
+		if (mode == 0)
+                {
+                        [[[UIColor whiteColor] colorWithAlphaComponent:0.8] set];
+                        [t drawAtPoint:CGPointMake(0, 1) withFont:font];
+                }
+
+                float colorValue = 0.3 + (0.7 * mode);
+                [[UIColor colorWithRed:colorValue green:colorValue blue:colorValue alpha:1] set];
+                [t drawAtPoint:CGPointMake(0, 0) withFont:font];
         }
 
         if (self.showStatusBarImage && image)
@@ -618,9 +624,8 @@ static NSString* defaultCode = @"3200";
 	}
 	else
 	{
-		notify_post("weathericon_changed");
-		[[UIApplication sharedApplication] removeStatusBarImageNamed:@"WeatherIcon"];
 		[[UIApplication sharedApplication] addStatusBarImageNamed:@"WeatherIcon"];
+		notify_post("weathericon_changed");
 	}
 }
 
@@ -670,6 +675,8 @@ static NSString* defaultCode = @"3200";
 	// now the status bar image
 	if (self.showStatusBarWeather)
 		[self updateIndicator];
+	else if (objc_getClass("SBStatusBarController") == nil)
+		[[UIApplication sharedApplication] removeStatusBarImageNamed:@"WeatherIcon"];
 
 	if (applicationIcon)
 	{

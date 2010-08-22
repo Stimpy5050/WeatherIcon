@@ -9,18 +9,18 @@ extern "C" void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque,
 
 Class $WIStatusBarCustomItemView;
 BOOL hooked = NO;
+
 UIImage* indicators[2];
+NSDictionary* cachedCondition;
 
 static NSDictionary* currentCondition()
 {
 	if (Class wi = objc_getClass("WeatherIconController"))
 	{
-		NSLog(@"WI: Getting local condition");
 		return [[wi sharedInstance] currentStatusBarCondition];
 	}
 	else
 	{
-		NSLog(@"WI: Getting remote condition");
 		id dmc = [objc_getClass("CPDistributedMessagingCenter") centerNamed: @"com.ashman.WeatherIcon"];
 		return [dmc sendMessageAndReceiveReplyName: @"currentStatusBarCondition" userInfo: nil];
 	}
@@ -65,10 +65,9 @@ static NSDictionary* currentCondition()
 
 @end
 
-void createIndicator(int index)
+void createIndicator(int index, NSDictionary* current)
 {
-	NSDictionary* current = currentCondition();
-	NSLog(@"WI: Current: %@", current);
+	NSLog(@"WI: Creating indicator for style %d", index);
         NSString* temp = [current objectForKey:@"temp"];
 
 	UIImage* image = nil;
@@ -131,6 +130,21 @@ void createIndicator(int index)
         UIGraphicsEndImageContext();
 }
 
+void createIndicators()
+{
+	NSDictionary* current = currentCondition();
+
+	if (cachedCondition && [current isEqualToDictionary:cachedCondition])
+		return;
+
+	createIndicator(0, current);
+	createIndicator(1, current);
+
+	NSDictionary* tmp = cachedCondition;
+	cachedCondition = [current retain];
+	[tmp release];
+}
+
 @interface UIStatusBar : UIView
 @end
 
@@ -168,11 +182,10 @@ MSHook(UIImage*, contentsImageForStyle, id self, SEL sel, int style)
 	if ([itemName isEqualToString:@"WeatherIcon"])
 	{
 	        int index = (style == 2 ? 1 : 0);
-		createIndicator(index);
+		createIndicators();
        		return indicators[index];
 	}
 
-	NSLog(@"WI: Calling super for %@", itemName);
 	return _contentsImageForStyle(self, sel, style);
 }
 

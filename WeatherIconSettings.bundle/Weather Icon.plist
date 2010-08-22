@@ -164,6 +164,10 @@
 			<key>label</key>
 			<string>Show Temp</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
 		<dict>	
 			<key>cell</key>
                         <string>PSLinkCell</string>
