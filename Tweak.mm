@@ -362,8 +362,8 @@ static NSString* defaultCode = @"3200";
 - (id) init
 {
 	lock = [[NSConditionLock alloc] init];
-	self.currentCondition = [NSDictionary dictionaryWithContentsOfFile:conditionPath];
 	[self loadPreferences];
+	self.currentCondition = [NSDictionary dictionaryWithContentsOfFile:conditionPath];
 
 //	[self performSelectorOnMainThread:@selector(initMessaging) withObject:nil waitUntilDone:NO];
 	[self initMessaging];
@@ -489,12 +489,7 @@ static NSString* defaultCode = @"3200";
 
 	if (self.showStatusBarImage)
 	{
-		NSString* image = [self findWeatherImagePath:@"weatherstatus"];
-		// save the status bar image
-		if (!image)
-			image = [self findWeatherImagePath:@"weather"];
-
-		[dict setValue:image forKey:@"image"];
+		[dict setValue:[self.currentCondition objectForKey:@"icon"] forKey:@"image"];
 		[dict setValue:[NSNumber numberWithDouble:self.statusBarImageScale] forKey:@"imageScale"];
 	}
 
@@ -594,7 +589,6 @@ static NSString* defaultCode = @"3200";
      	[t drawAtPoint:CGPointMake((int)(size.width / 2) - (ts.width / 2) + 3, 40) withFont:font];
 
 	UIImage* icon = UIGraphicsGetImageFromCurrentImageContext();
-	NSLog(@"WI: Icon scale: %f", [icon scale]);
 	UIGraphicsEndImageContext();
 
 	return icon;
@@ -973,13 +967,10 @@ MSHook(id, kitImageNamed, id self, SEL sel, NSString* name)
 		return _kitImageNamed(self, sel, name);
 }
 
-MSHook(id, viewClass, id self, SEL sel)
+MSHook(id, uiInit, id self, SEL sel)
 {
-	int type = (int)[self type];
-	if (type == 40)
-		return objc_getClass("WIStatusBarItemView");
-
-	return _viewClass(self, sel);
+	_controller = [[[WeatherIconController alloc] init] retain];
+	_uiInit(self, sel);
 }
 
 static id contentsImageForStyle(id self, SEL sel, int style) 
@@ -1019,23 +1010,6 @@ extern "C" void TweakInit() {
 	springBoardBundle = [NSBundle bundleWithPath:@"/System/Library/CoreServices/SpringBoard.app"];
 	weatherIconBundle = [NSBundle bundleWithPath:@"/Library/WeatherIcon"];
 
-	_controller = [[[WeatherIconController alloc] init] retain];
-
-/*
-	Class $UIStatusBarLayoutManager = objc_getClass("UIStatusBarLayoutManager");
-	Hook(UIStatusBarLayoutManager, reflowWithVisibleItems:duration:, reflowWithVisibleItems);
-
-	Class $WIStatusBarItemView = objc_allocateClassPair(objc_getClass("UIStatusBarItemView"), "WIStatusBarItemView", 0);
-	class_addMethod($WIStatusBarItemView, @selector(contentsImageForStyle:), (IMP) contentsImageForStyle, "@@:i");
-	objc_registerClassPair($WIStatusBarItemView);
-
-	$UIStatusBarItem = objc_getClass("UIStatusBarItem");
-	Hook(UIStatusBarItem, viewClass, viewClass);
-
-	Class $UIStatusBarItemClass = object_getClass($UIStatusBarItem);
-	Hook(UIStatusBarItemClass, itemWithType, itemWithType);
-*/
-
 	Class $UIImageClass = object_getClass(objc_getClass("UIImage"));
 	Hook(UIImageClass, kitImageNamed:, kitImageNamed);
 
@@ -1043,6 +1017,7 @@ extern "C" void TweakInit() {
 	{
 		Class $SBIcon = objc_getClass("SBIcon");
 		Class $SBIconModel = objc_getClass("SBIconModel");
+		Class $SBUIController = objc_getClass("SBUIController");
 		Class $SBIconController = objc_getClass("SBIconController");
 		Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
 		Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
@@ -1052,8 +1027,9 @@ extern "C" void TweakInit() {
 		Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
 		Class $SBStatusBarIndicatorsView = objc_getClass("SBStatusBarIndicatorsView");
 		$SBStatusBarContentsView = objc_getClass("SBStatusBarContentsView");
-	
+
 		// MSHookMessage is what we use to redirect the methods to our own
+       		Hook(SBUIController, init, uiInit);
 		Hook(SBApplication, deactivated, deactivated);
 		Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
 		Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);

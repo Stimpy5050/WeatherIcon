@@ -84,17 +84,15 @@ void createIndicator(int index, NSDictionary* current)
 	UIFont* font = [UIFont boldSystemFontOfSize:13];
 	CGSize tempSize = [temp sizeWithFont:font];
 
-	CGSize size = CGSizeMake(0, 0);
+	CGSize size = CGSizeMake(0, 20);
 
 	if (temp)
 	{
-		size = tempSize;
-		size.height += 1;
+		size.width = tempSize.width;
 	}
 
 	if (image)
 	{
-		size.height = MAX(size.height, imgSize.height);
 		size.width += imgSize.width;
 	}
 
@@ -108,17 +106,17 @@ void createIndicator(int index, NSDictionary* current)
 		if (index == 0)
 		{
 			[[[UIColor whiteColor] colorWithAlphaComponent:0.8] set];
-	                [temp drawAtPoint:CGPointMake(0, 1) withFont:font];
+	                [temp drawAtPoint:CGPointMake(0, 3) withFont:font];
 		}
 
 		float colorValue = 0.3 + (0.7 * index);
 		[[UIColor colorWithRed:colorValue green:colorValue blue:colorValue alpha:1] set];
-                [temp drawAtPoint:CGPointMake(0, 0) withFont:font];
+                [temp drawAtPoint:CGPointMake(0, 2) withFont:font];
         }
 
         if (image)
         {
-                CGRect rect = CGRectMake(tempSize.width, 0, imgSize.width, imgSize.height);
+                CGRect rect = CGRectMake(tempSize.width, (int)(size.height / 2) - (int)(imgSize.height / 2), imgSize.width, imgSize.height);
                 [image drawInRect:rect];
         }
 
