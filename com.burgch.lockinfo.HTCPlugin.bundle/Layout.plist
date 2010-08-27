@@ -7,6 +7,8 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>This is enabled automatically with Space Save.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -35,22 +37,10 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTextValueCell</string>
-			<key>label</key>
-			<string>This is enabled automatically with Space Save.</string>
-			<key>alignment</key>
-			<integer>1</integer>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Icon Scale</string>
+			<key>footerText</key>
+			<string>Adjust to change the size of the icon below the clock. Note: This will NOT change the size of the icons that appear in the weather forecast.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -69,20 +59,8 @@
 			<real>0.5</real>
 			<key>showValue</key>
 			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>isStaticText</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSTextValueCell</string>
-			<key>label</key>
-			<string>Adjust to change the size of the icon below the clock. Note: This will NOT change the size of the icons that appear in the weather forecast.</string>
 			<key>alignment</key>
-			<integer>1</integer>
+			<string>3</string>
 		</dict>
 		<dict>
 			<key>cell</key>
