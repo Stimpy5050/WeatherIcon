@@ -1,5 +1,5 @@
-#include "BaseWeatherPlugin.h"
-#include <Preferences/PSListController.h>
+#import "BaseWeatherPlugin.h"
+#import <Preferences/PSListController.h>
 
 @interface utilTools : NSObject
 

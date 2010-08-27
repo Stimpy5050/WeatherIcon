@@ -1,6 +1,6 @@
-#include "HTCPlugin.h"
-#include "HTCConstants.h"
-#include <UIKit/UIKit.h>
+#import "HTCPlugin.h"
+#import "HTCConstants.h"
+#import <UIKit/UIKit.h>
 #include "substrate.h"
 
 Class $SBStatusBarControllerHTC = objc_getClass("SBStatusBarController");
@@ -204,11 +204,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	frame.size.width = tempWidth;
 	self.frame = frame;
 	
-	NSLog(@"HTC: temp frame width: %f", self.frame.size.width);
-	
 	self.high.frame = CGRectMake(tempWidth - hs.width, 4, hs.width, hs.height);
 	self.low.frame = CGRectMake(tempWidth - ls.width, hs.height + 4, ls.width, ls.height);
 	self.temp.frame = CGRectMake(0, 0, ts.width, ts.height);
+	
+	NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+	[center postNotificationName:@"com.burgch.lockinfo.HTCPlugin.updateLayout" object:nil];
 }
 
 -(id) initWithFrame:(CGRect)frame withTempColour:(int)tempTextColour withHighColour:(int)highTextColour withLowColour:(int)lowTextColour
@@ -556,58 +557,58 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 
 -(UIImageView*) iconViewToFitInFrame:(CGRect)frame
 {
-	UIImageView* icon = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
-	return icon;
+	UIImageView* tmpIcon = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
+	return tmpIcon;
 }
 
 -(UIImageView*) backgroundWithFrame:(CGRect)frame andBackgroundImage:(int)bgi
 {	
 	UIImage* bgImage = [imageCacheControl getBackground:bgi];
-	UIImageView* background = [[[UIImageView alloc] initWithFrame:frame] autorelease];
-	background.image = bgImage;
-	return background;
+	UIImageView* tmpBackground = [[[UIImageView alloc] initWithFrame:frame] autorelease];
+	tmpBackground.image = bgImage;
+	return tmpBackground;
 }					 
 					 
 -(UILabel*) dateViewToFitInFrame:(CGRect)frame withColour:(int)textColour
 {
-	UILabel* date = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	date.font = [UIFont boldSystemFontOfSize:16];
-	date.textAlignment = UITextAlignmentRight;
-	date.textColor = [utilToolsControl colourToSetFromInt:textColour];
-	date.backgroundColor = [UIColor clearColor];
-	return date;
+	UILabel* tmpDate = [[[UILabel alloc] initWithFrame:frame] autorelease];
+	tmpDate.font = [UIFont boldSystemFontOfSize:16];
+	tmpDate.textAlignment = UITextAlignmentRight;
+	tmpDate.textColor = [utilToolsControl colourToSetFromInt:textColour];
+	tmpDate.backgroundColor = [UIColor clearColor];
+	return tmpDate;
 }
 
 -(UILabel*) cityViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour
 {
-	UILabel* city = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	city.font = [UIFont boldSystemFontOfSize:maxSize];
-	city.textAlignment = UITextAlignmentLeft;
-	city.textColor = [utilToolsControl colourToSetFromInt:textColour];
-	city.backgroundColor = [UIColor clearColor];
+	UILabel* tmpCity = [[[UILabel alloc] initWithFrame:frame] autorelease];
+	tmpCity.font = [UIFont boldSystemFontOfSize:maxSize];
+	tmpCity.textAlignment = UITextAlignmentLeft;
+	tmpCity.textColor = [utilToolsControl colourToSetFromInt:textColour];
+	tmpCity.backgroundColor = [UIColor clearColor];
 	if (twoLine)
 	{
-		city.numberOfLines = 2;
+		tmpCity.numberOfLines = 2;
 	} else {
-		city.numberOfLines = 1;
+		tmpCity.numberOfLines = 1;
 	}
-	return city;
+	return tmpCity;
 }
 
 -(UILabel*) descriptionViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour
 {
-	UILabel* description = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	description.font = [UIFont boldSystemFontOfSize:maxSize];
-	description.textAlignment = UITextAlignmentLeft;
-	description.textColor = [utilToolsControl colourToSetFromInt:textColour];
-	description.backgroundColor = [UIColor clearColor];
+	UILabel* tmpDescription = [[[UILabel alloc] initWithFrame:frame] autorelease];
+	tmpDescription.font = [UIFont boldSystemFontOfSize:maxSize];
+	tmpDescription.textAlignment = UITextAlignmentLeft;
+	tmpDescription.textColor = [utilToolsControl colourToSetFromInt:textColour];
+	tmpDescription.backgroundColor = [UIColor clearColor];
 	if (twoLine)
 	{
-		description.numberOfLines = 2;
+		tmpDescription.numberOfLines = 2;
 	} else {
-		description.numberOfLines = 1;
+		tmpDescription.numberOfLines = 1;
 	}
-	return description;
+	return tmpDescription;
 }
 
 -(void) updateDigits
@@ -689,6 +690,11 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 @end
 
 @implementation HTCPlugin
+
+-(void) updateLayout
+{
+	[self.headerView setNeedsLayout];
+}
 					 
 -(void) updateWeatherViews
 {	
@@ -783,6 +789,8 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 
 -(id) initWithPlugin:(LIPlugin*) plugin
 {	
+	NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+	[center addObserver:self selector:@selector(updateLayout) name:@"com.burgch.lockinfo.HTCPlugin.updateLayout" object:nil];
 	[imageCacheControl initCache];
 	return [super initWithPlugin:plugin];
 }
