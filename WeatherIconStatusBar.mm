@@ -144,6 +144,9 @@ void createIndicators()
 }
 
 @interface UIStatusBar : UIView
+
+-(BOOL) isHidden;
+
 @end
 
 @interface UIStatusBarForegroundView : UIView
@@ -159,12 +162,15 @@ static void updateIndicator()
 {
 	// find the indicator view
 	UIStatusBar* sb = [[UIApplication sharedApplication] statusBar];
-	UIStatusBarForegroundView* fg = [sb.subviews objectAtIndex:1];
-	for (UIStatusBarItemView* item in fg.subviews)
+	if (!sb.isHidden)
 	{
-		if ([item respondsToSelector:@selector(item)])
-			if ([[[item item] indicatorName] isEqualToString:@"WeatherIcon"])
-				[item updateContentsAndWidth];
+		UIStatusBarForegroundView* fg = [sb.subviews objectAtIndex:1];
+		for (UIStatusBarItemView* item in fg.subviews)
+		{
+			if ([item respondsToSelector:@selector(item)])
+				if ([[[item item] indicatorName] isEqualToString:@"WeatherIcon"])
+					[item updateContentsAndWidth];
+		}
 	}
 }
 

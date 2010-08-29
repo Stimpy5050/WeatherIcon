@@ -9,4 +9,4 @@ Maintainer: poetic_folly <poetic_folly@modmyi.com>
 Author: David Ashman (Stimpy5050) <dashman@gmail.com>
 Sponsor: ModMyi.com <http://modmyi.com/forums/index.php?styleid=31>
 Section: Tweaks
-Pre-Depends: mobilesubstrate, com.ashman.weathericon, libstatusbar
+Pre-Depends: mobilesubstrate, com.ashman.weathericon, libstatusbar, firmware (>= 4.0)

@@ -309,7 +309,7 @@ static NSString* defaultCode = @"3200";
 
 - (void) loadPreferences
 {
-	NSString* bundleIdentifier = [_controller.bundleIdentifier retain];
+	NSString* bundleIdentifier = [self.bundleIdentifier retain];
 
 	NSMutableDictionary* prefs = [NSMutableDictionary dictionaryWithContentsOfFile:prefsPath];
 	if (prefs == nil)
@@ -322,25 +322,24 @@ static NSString* defaultCode = @"3200";
 		[prefs writeToFile:prefsPath atomically:YES];
 	}
 
-	BOOL badge = self.showWeatherBadge;
+	[self setBadge:nil];
 
 	self.preferences = prefs;
 	[self loadTheme];
 
-	if (!self.showWeatherBadge && badge)
-	{
-	        SBIconModel* model = [$SBIconModel sharedInstance];
-		SBApplicationIcon* applicationIcon = nil;
-       		if ([model respondsToSelector:@selector(applicationIconForDisplayIdentifier:)])
-			applicationIcon = [model applicationIconForDisplayIdentifier:self.bundleIdentifier];
-		else
-			applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier];
+	[self updateBadge];
 
-		[applicationIcon setBadge:nil];
+	if (![bundleIdentifier isEqualToString:self.bundleIdentifier])
+	{
+		NSLog(@"WI: Reset weather icon for %@ because identifier changed.", self.bundleIdentifier);
+		[self resetWeatherIcon:bundleIdentifier];
 	}
 
-	if (![bundleIdentifier isEqualToString:_controller.bundleIdentifier])
-		[_controller resetWeatherIcon:bundleIdentifier];
+	if (!self.showWeatherIcon)
+	{
+		NSLog(@"WI: Reset weather icon for %@ because not showing icon.", self.bundleIdentifier);
+		[self resetWeatherIcon:self.bundleIdentifier];
+	}
 
 	[bundleIdentifier release];
 }
@@ -623,7 +622,7 @@ static NSString* defaultCode = @"3200";
 	}
 }
 
-- (void) resetWeatherIcon:(NSString*) bundleIdentifier
+-(SBApplicationIcon*) applicationIcon:(NSString*) bundleIdentifier
 {
 	SBIconModel* model = [$SBIconModel sharedInstance];
 	SBApplicationIcon* applicationIcon = nil;
@@ -632,27 +631,32 @@ static NSString* defaultCode = @"3200";
 	else
 		applicationIcon = [model iconForDisplayIdentifier:bundleIdentifier];
 
-	if (self.showWeatherIcon)
-	{
-		if ([model respondsToSelector:@selector(reloadIconImageForDisplayIdentifier:)])
-			[model reloadIconImageForDisplayIdentifier:bundleIdentifier];
-		else if ([applicationIcon respondsToSelector:@selector(reloadIconImage)])
-			[applicationIcon reloadIconImage];
-	}
+	return applicationIcon;
+}
 
+-(SBApplicationIcon*) applicationIcon
+{
+	return [self applicationIcon:self.bundleIdentifier];
+}
+
+- (void) resetWeatherIcon:(NSString*) bundleIdentifier
+{
+	SBIconModel* model = [$SBIconModel sharedInstance];
+	SBApplicationIcon* applicationIcon = [self applicationIcon];
+
+	if ([model respondsToSelector:@selector(reloadIconImageForDisplayIdentifier:)])
+		[model reloadIconImageForDisplayIdentifier:bundleIdentifier];
+	else if ([applicationIcon respondsToSelector:@selector(reloadIconImage)])
+		[applicationIcon reloadIconImage];
 }
 
 - (void) updateWeatherIcon
 {
-	SBIconModel* model = [$SBIconModel sharedInstance];
-	SBApplicationIcon* applicationIcon = nil;
-	if ([model respondsToSelector:@selector(applicationIconForDisplayIdentifier:)])
-		applicationIcon = [model applicationIconForDisplayIdentifier:self.bundleIdentifier];
-	else
-		applicationIcon = [model iconForDisplayIdentifier:self.bundleIdentifier];
-
 	if (self.showWeatherIcon)
 	{
+		SBIconModel* model = [$SBIconModel sharedInstance];
+		SBApplicationIcon* applicationIcon = [self applicationIcon];
+
 		BOOL reload = (self.weatherIcon != nil);
 		self.weatherIcon = [self createIcon];
 		if (reload)
@@ -672,14 +676,23 @@ static NSString* defaultCode = @"3200";
 	else if (objc_getClass("SBStatusBarController") == nil)
 		[[UIApplication sharedApplication] removeStatusBarImageNamed:@"WeatherIcon"];
 
-	if (applicationIcon)
-	{
-		if (self.showWeatherBadge)
-		{
-			NSNumber* temp = [self.currentCondition objectForKey:@"temp"];
-			[applicationIcon setBadge:[temp.stringValue stringByAppendingString: @"\u00B0"]];
-		}
-	}
+	[self updateBadge];
+}
+
+-(void) setBadge:(NSString*) badge
+{
+	SBApplicationIcon* applicationIcon = [self applicationIcon];
+
+	if (self.showWeatherBadge)
+		[applicationIcon setBadge:badge];
+	else
+		[applicationIcon setBadge:nil];
+}
+
+-(void) updateBadge
+{
+	NSNumber* temp = [self.currentCondition objectForKey:@"temp"];
+	[self setBadge:[temp.stringValue stringByAppendingString: @"\u00B0"]];
 }
 
 -(void) update:(NSNotification*) notif
@@ -928,7 +941,7 @@ MSHook(void, reflowWithVisibleItems, id self, SEL sel, NSArray* items, double du
 
 MSHook(void, setDisplayedIconImage, SBIcon *self, SEL sel, id image)
 {
-	if ([self respondsToSelector:@selector(leafIdentifier)] && [[self leafIdentifier] isEqualToString:_controller.bundleIdentifier])
+	if (_controller.showWeatherIcon && [self respondsToSelector:@selector(leafIdentifier)] && [[self leafIdentifier] isEqualToString:_controller.bundleIdentifier])
 	{
 		NSLog(@"WI: Overriding weather icon");
 		_setDisplayedIconImage(self, sel, _controller.icon);
@@ -941,7 +954,7 @@ MSHook(void, setDisplayedIconImage, SBIcon *self, SEL sel, id image)
 
 MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOOL small) 
 {
-	if (!small && [_controller isWeatherIcon:icon.displayIdentifier])
+	if (!small && _controller.showWeatherIcon && [_controller isWeatherIcon:icon.displayIdentifier])
 	{
 		return _controller.icon;
 	}
