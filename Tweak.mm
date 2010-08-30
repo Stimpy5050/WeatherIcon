@@ -1,4 +1,5 @@
 #import <substrate.h>
+#import <execinfo.h>
 #import <notify.h>
 #import <SpringBoard/SBIcon.h>
 #import <SpringBoard/SBApplication.h>
@@ -30,6 +31,17 @@
 
 extern "C" void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque, CGFloat scale);
 
+static void callStackSymbols()
+{
+	void* callstack[128]; 
+	int i, frames = backtrace(callstack, 128); 
+	char** strs = backtrace_symbols(callstack, frames); 
+	for (i = 0; i < frames; ++i) 
+	{ 
+		printf("%s\n", strs[i]); 
+	} 
+	free(strs);
+}
 
 @interface UIScreen (WIAdditions)
 
@@ -93,7 +105,6 @@ extern "C" void UIGraphicsBeginImageContextWithOptions(CGSize size, BOOL opaque,
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
 - (UIImage*)icon;
 - (UIImage*)statusBarIndicator:(int) mode;
-- (UIImageView*)statusBarIndicatorView:(int) mode;
 
 @end
 
@@ -364,8 +375,8 @@ static NSString* defaultCode = @"3200";
 	[self loadPreferences];
 	self.currentCondition = [NSDictionary dictionaryWithContentsOfFile:conditionPath];
 
-//	[self performSelectorOnMainThread:@selector(initMessaging) withObject:nil waitUntilDone:NO];
-	[self initMessaging];
+	if (objc_getClass("UIStatusBar"))
+		[self initMessaging];
 
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(update:) name:@"LWWeatherUpdatedNotification" object:nil];
 
@@ -554,7 +565,7 @@ static NSString* defaultCode = @"3200";
 	UIImage* weatherImage = [self findWeatherImage:@"weather"];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
 
-	if (UIGraphicsBeginImageContextWithOptions!=NULL)
+	if (objc_getClass("UIStatusBar"))
 		UIGraphicsBeginImageContextWithOptions(size, NO, 0.0); 
 	else 
 		UIGraphicsBeginImageContext(size);
@@ -597,27 +608,16 @@ static NSString* defaultCode = @"3200";
 {
 	self.statusBarIndicator = [self createIndicator:0];
 	self.statusBarIndicatorFSO = [self createIndicator:1];
+	[[UIApplication sharedApplication] addStatusBarImageNamed:@"WeatherIcon"];
 
 	if (SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController])
 	{
 		NSLog(@"WI: Refreshing indicator...");
-		if ([statusBarController respondsToSelector:@selector(showBatteryPercentageChanged)])
-		{
-			// 3.x
-			[statusBarController addStatusBarItem:@"WeatherIcon"];
-			[statusBarController removeStatusBarItem:@"WeatherIcon"];
-		}
-		else
-		{
-			// 2.x
-			[statusBarController removeStatusBarItem:@"WeatherIcon"];
-			[statusBarController addStatusBarItem:@"WeatherIcon"];
-		}
-//		NSLog(@"WI: Done refreshing indicator.");
+		statusBarIndicatorView.image = self.statusBarIndicator;
+		statusBarIndicatorFSOView.image = self.statusBarIndicatorFSO;
 	}
 	else
 	{
-		[[UIApplication sharedApplication] addStatusBarImageNamed:@"WeatherIcon"];
 		notify_post("weathericon_changed");
 	}
 }
@@ -673,7 +673,7 @@ static NSString* defaultCode = @"3200";
 	// now the status bar image
 	if (self.showStatusBarWeather)
 		[self updateIndicator];
-	else if (objc_getClass("SBStatusBarController") == nil)
+	else
 		[[UIApplication sharedApplication] removeStatusBarImageNamed:@"WeatherIcon"];
 
 	[self updateBadge];
@@ -722,28 +722,6 @@ static NSString* defaultCode = @"3200";
 	return (mode == 0 ? self.statusBarIndicator : self.statusBarIndicatorFSO);
 }
 
-- (UIImageView*) statusBarIndicatorView:(int)mode
-{
-	UIImage* img = [self statusBarIndicator:mode];
-	UIImageView* v = (mode == 0 ? self.statusBarIndicatorView : self.statusBarIndicatorFSOView);
-	
-	if (v == nil)
-	{
-		v = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, img.size.width, 20)] autorelease];
-		if (mode == 0)
-			self.statusBarIndicatorView = v;
-		else
-			self.statusBarIndicatorFSOView = v;
-	}
-
-	CGRect r = v.frame;
-	r.size.width = img.size.width;
-	v.frame = r;
-	v.image = img;
-
-	return v;
-}
-
 @end
  
 static Class $SBStatusBarContentsView;
@@ -757,134 +735,30 @@ static NSTimeInterval lastPrefsUpdate = 0;
 -(BOOL) isVisible;
 @end
 
-static float findStart(SBStatusBarContentsView* self, const char* varName, const char* visibleVarName, float currentStart)
+MSHook(id, initWithNameAndMode, SBStatusBarContentView* self, SEL sel, NSString* name, int mode)
 {
-	if (SBStatusBarContentView3* icon  = MSHookIvar<NSMutableArray*>(self, varName))
+	UIView* ind = _initWithNameAndMode(self, sel, name, mode);
+
+	if ([name isEqualToString:@"WeatherIcon"])
 	{
-//		BOOL visible  = MSHookIvar<BOOL>(icon, visibleVarName);
-//		NSLog(@"WI: findStart: Icon %@ is visible? %d", icon, visible);	
-		return (icon.superview == self && icon.frame.origin.x > 0 && icon.isVisible && icon.frame.origin.x < currentStart ? icon.frame.origin.x : currentStart);
+		UIImageView* image = [ind.subviews objectAtIndex:0];
+
+		if (mode == 0)
+			_controller.statusBarIndicatorView = image;
+		else
+			_controller.statusBarIndicatorFSOView = image;
+
+		image.image = [_controller statusBarIndicator:mode];
+		NSLog(@"WI: Indicator: %@", image);
+		
+		CGRect r = ind.frame;
+		r.size.height = image.image.size.height;
+		r.size.width = image.image.size.width;
+		ind.frame = r;
+		image.frame = ind.bounds;
 	}
 
-	return currentStart;
-}
-
-static void updateWeatherView(SBStatusBarContentsView* self)
-{	
-	SBStatusBar* sb = [self statusBar];
-	int mode = [sb mode];
-
-	if (UIImage* indicator = [_controller statusBarIndicator:mode])
-	{
-		SBStatusBarContentView* weatherView = (mode == 0 ? _sb0 : _sb1);
-		if (weatherView == nil)
-		{
-//			NSLog(@"WI: Creating new weather indicator view for mode %d", mode);
-			Class sbClass = objc_getClass("SBStatusBarContentView");
-			weatherView = [[[sbClass alloc] initWithContentsView:self] autorelease];
-			weatherView.tag = -1;
-			weatherView.alpha = [$SBStatusBarContentsView contentAlphaForMode:mode];
-			[weatherView setMode:mode];
-
-			UIImageView* iv = [[[UIImageView alloc] initWithImage:indicator] autorelease];
-			[weatherView addSubview:iv];
-
-			if (mode == 0)
-				_sb0 = [weatherView retain];
-			else
-				_sb1 = [weatherView retain];
-		}
-
-		BOOL landscape = (sb.orientation == 90 || sb.orientation == -90);
-		float x = findStart(self, "_batteryView", "_showBatteryView", (landscape ? 480 : 320));
-		x = findStart(self, "_batteryPercentageView", "_showBatteryPercentageView", x);
-//		x = findStart(self, "_bluetoothView", "_showBluetoothView", x);
-//		x = findStart(self, "_bluetoothBatteryView", "_showBluetoothBatteryView", x);
-
-//		NSLog(@"WI: Moving weather view to %f", x - indicator.size.width - 3);	
-		weatherView.frame = CGRectMake(x - indicator.size.width - 3, 0, indicator.size.width, indicator.size.height);	
-
-		// clear the content view
-		UIImageView* iv = [[weatherView subviews] objectAtIndex:0];
-		if (iv.image != indicator)
-		{
-			iv.frame = CGRectMake(0, 0, indicator.size.width, indicator.size.height);
-			iv.image = indicator;
-		}
-
-		if ([[self subviews] indexOfObject:weatherView] == NSNotFound)
-		{
-//			NSLog(@"WI: Adding weather view");
-			[self addSubview:weatherView];
-		}
-	}
-}
-
-static void updateWeatherView(SBStatusBarContentView* view)
-{
-	if (!((SBStatusBarContentView3*)view).showOnLeft)
-	{
-		SBStatusBarContentsView* contents = MSHookIvar<SBStatusBarContentsView*>(view, "_contentsView");
-		updateWeatherView(contents);
-	}
-}
-
-MSHook(void, reflowContentViewsNow, SBStatusBarContentsView* self, SEL sel)
-{	
-//	NSLog(@"WI: reflowContentViewsNow");
-	_reflowContentViewsNow(self, sel);
-	updateWeatherView(self);
-}
-
-MSHook(void, btSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect)
-{
-	int mode = [self effectiveModeForImages];
-	UIImage* indicator = [_controller statusBarIndicator:mode];
-	float offset = (indicator == nil ? 0 : indicator.size.width + 2);
-	_btSetFrame(self, sel, CGRectMake(rect.origin.x - offset, rect.origin.y, rect.size.width, rect.size.height));
-}
-
-MSHook(void, btbSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect)
-{
-	int mode = [self effectiveModeForImages];
-	UIImage* indicator = [_controller statusBarIndicator:mode];
-	float offset = (indicator == nil ? 0 : indicator.size.width + 2);
-	_btbSetFrame(self, sel, CGRectMake(rect.origin.x - offset, rect.origin.y, rect.size.width, rect.size.height));
-}
-
-MSHook(void, indicatorSetFrame, SBStatusBarContentView* self, SEL sel, CGRect rect) 
-{
-	int mode = [self effectiveModeForImages];
-	UIImage* indicator = [_controller statusBarIndicator:mode];
-	float offset = (indicator == nil ? 0 : indicator.size.width + 2);
-	_indicatorSetFrame(self, sel, CGRectMake(rect.origin.x - offset, rect.origin.y, rect.size.width, rect.size.height));
-}
-
-MSHook(void, reloadIndicators, SBStatusBarIndicatorsView *self, SEL sel) 
-{
-	_reloadIndicators(self, sel);
-
-	int mode = [self effectiveModeForImages];
-	UIImage* indicator = [_controller statusBarIndicator:mode];
-
-//	NSLog(@"WI: Reloading indicators");
-	if (indicator)
-	{
-		UIImageView* weatherView = [[UIImageView alloc] initWithImage:indicator];
-		NSArray* views = [self subviews];
-		if (views.count > 0)
-		{
-			// if there are already indicators, move the weather view
-			UIView* last = [views objectAtIndex:views.count - 1];
-			weatherView.frame = CGRectMake(last.frame.origin.x + last.frame.size.width + 6, 0, weatherView.frame.size.width, weatherView.frame.size.height);
-		}
-
-		[self addSubview:weatherView];
-		self.frame = CGRectMake(0, 0, weatherView.frame.origin.x + weatherView.frame.size.width, 20);
-
-//		NSLog(@"WI: weatherView: %f, %f, %f, %f", weatherView.frame.origin.x, weatherView.frame.origin.y, weatherView.frame.size.width, weatherView.frame.size.height); 
-//		NSLog(@"WI: indicators: %f, %f, %f, %f", self.frame.origin.x, self.frame.origin.y, self.frame.size.width, self.frame.size.height); 
-	}
+	return ind;
 }
 
 MSHook(void, deactivated, SBApplication *self, SEL sel) 
@@ -913,32 +787,6 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 	}
 }
 
-MSHook(void, reflowWithVisibleItems, id self, SEL sel, NSArray* items, double duration)
-{
-	_reflowWithVisibleItems(self, sel, items, duration);
-
-	int region = MSHookIvar<int>(self, "_region");
-	if (region == 1)
-	{
-		NSLog(@"WI: Views: %@", [self _itemViews]);
-		NSArray* views = [self _itemViews];
-
-		float x = [[UIScreen mainScreen] bounds].size.width;
-		if (views.count > 0)
-		{
-			UIView* last = [views objectAtIndex:views.count - 1];
-			x = last.frame.origin.x;
-		}
-
-		UIImageView* view = [_controller statusBarIndicatorView:(int)[[self foregroundView] foregroundStyle]];
-		CGRect r = view.frame;
-		r.origin.x = x - r.size.width - 3;
-		view.frame = r;
-		NSLog(@"WI: Adding: %@ to status bar", view);
-		[[self foregroundView] addSubview:view];
-	}
-}
-
 MSHook(void, setDisplayedIconImage, SBIcon *self, SEL sel, id image)
 {
 	if (_controller.showWeatherIcon && [self respondsToSelector:@selector(leafIdentifier)] && [[self leafIdentifier] isEqualToString:_controller.bundleIdentifier])
@@ -962,28 +810,14 @@ MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOO
 	return _getCachedImagedForIcon(self, sel, icon, small);
 }
 
-MSHook(id, itemWithType, id self, SEL sel, int type)
-{
-	if (type >= 20)
-		return [[[$UIStatusBarItem alloc] initWithType:type] autorelease];
-
-	return _itemWithType(self, sel, type);
-}
-
-MSHook(id, kitImageNamed, id self, SEL sel, NSString* name)
-{
-	if ([name isEqualToString:@"Silver_WeatherIcon.png"])
-		return [_controller statusBarIndicator:0];
-	else if ([name isEqualToString:@"Black_WeatherIcon.png"])
-		return [_controller statusBarIndicator:1];
-	else
-		return _kitImageNamed(self, sel, name);
-}
+#define Hook(cls, sel, imp) \
+        _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
 MSHook(id, uiInit, id self, SEL sel)
 {
+	id ret = _uiInit(self, sel);
 	_controller = [[[WeatherIconController alloc] init] retain];
-	_uiInit(self, sel);
+	return ret;
 }
 
 static id contentsImageForStyle(id self, SEL sel, int style) 
@@ -1014,49 +848,33 @@ static void updatePrefs(CFNotificationCenterRef center, void *observer, CFString
 	[_controller stopTimer];
 }
 
-#define Hook(cls, sel, imp) \
-        _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
-
 extern "C" void TweakInit() {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
 	springBoardBundle = [NSBundle bundleWithPath:@"/System/Library/CoreServices/SpringBoard.app"];
 	weatherIconBundle = [NSBundle bundleWithPath:@"/Library/WeatherIcon"];
 
-	Class $UIImageClass = object_getClass(objc_getClass("UIImage"));
-	Hook(UIImageClass, kitImageNamed:, kitImageNamed);
+	Class $SBIcon = objc_getClass("SBIcon");
+	Class $SBIconModel = objc_getClass("SBIconModel");
+	Class $SBIconController = objc_getClass("SBIconController");
+	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
+	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
+	Class $SBApplication = objc_getClass("SBApplication");
+	Class $SBStatusBarBluetoothView = objc_getClass("SBStatusBarBluetoothView");
+	Class $SBStatusBarBluetoothBatteryView = objc_getClass("SBStatusBarBluetoothBatteryView");
+	Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
+	$SBStatusBarContentsView = objc_getClass("SBStatusBarContentsView");
 
-	if (objc_getClass("SpringBoard") != nil)
-	{
-		Class $SBIcon = objc_getClass("SBIcon");
-		Class $SBIconModel = objc_getClass("SBIconModel");
-		Class $SBUIController = objc_getClass("SBUIController");
-		Class $SBIconController = objc_getClass("SBIconController");
-		Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
-		Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
-		Class $SBApplication = objc_getClass("SBApplication");
-		Class $SBStatusBarBluetoothView = objc_getClass("SBStatusBarBluetoothView");
-		Class $SBStatusBarBluetoothBatteryView = objc_getClass("SBStatusBarBluetoothBatteryView");
-		Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
-		Class $SBStatusBarIndicatorsView = objc_getClass("SBStatusBarIndicatorsView");
-		$SBStatusBarContentsView = objc_getClass("SBStatusBarContentsView");
+	// MSHookMessage is what we use to redirect the methods to our own
+	Hook(SBApplication, deactivated, deactivated);
+	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
+	Hook(SBIcon, setDisplayedIconImage:, setDisplayedIconImage);
 
-		// MSHookMessage is what we use to redirect the methods to our own
-       		Hook(SBUIController, init, uiInit);
-		Hook(SBApplication, deactivated, deactivated);
-		Hook(SBStatusBarIndicatorsView, reloadIndicators, reloadIndicators);
-		Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
-		Hook(SBIcon, setDisplayedIconImage:, setDisplayedIconImage);
+	// only hook these in 3.0
+	Hook(SBStatusBarIndicatorView, initWithName:andMode:, initWithNameAndMode);
 	
-		// only hook these in 3.0
-		if ($SBStatusBarIndicatorsView == nil)
-		{
-			Hook(SBStatusBarIndicatorView, setFrame:, indicatorSetFrame);
-			Hook(SBStatusBarBluetoothView, setFrame:, btSetFrame);
-			Hook(SBStatusBarBluetoothBatteryView, setFrame:, btbSetFrame);
-			Hook(SBStatusBarContentsView, reflowContentViewsNow, reflowContentViewsNow);
-		}
-	}
-	
+	Class $SBUIController = objc_getClass("SBUIController");
+       	Hook(SBUIController, init, uiInit);
+
 	[pool release];
 }
