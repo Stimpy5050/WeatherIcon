@@ -451,8 +451,8 @@ static NSString* defaultCode = @"3200";
 	if (NSString* img = [self findImage:bundle name:prefix])
 		return img;
 
-//	return [self defaultImagePath:code night:night];
-	return nil;
+	return [self defaultImagePath:code night:night];
+//	return nil;
 }
 
 - (NSString*) findWeatherImagePath:(NSString*) prefix

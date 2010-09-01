@@ -50,7 +50,7 @@ static NSString* cachePath = @"/User/Library/Caches/com.ashman.LibWeather.cache.
 	double scale = 0.66;
 
 	NSBundle* bundle = [NSBundle mainBundle];
-	id libweather = [objc_getClass("LibWeather") sharedInstance];
+	id libweather = [objc_getClass("LibWeatherController") sharedInstance];
 	if (NSDictionary* theme = [libweather theme])
 	{
 		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
@@ -246,7 +246,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	if (icon)
 	{
-		id libweather = [objc_getClass("LibWeather") sharedInstance];
+		id libweather = [objc_getClass("LibWeatherController") sharedInstance];
 		if (NSDictionary* theme = [libweather theme])
 			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
 				scale = n.doubleValue;
