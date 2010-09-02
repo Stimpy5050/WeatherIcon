@@ -116,7 +116,7 @@ void createIndicator(int index, NSDictionary* current)
 
         if (image)
         {
-                CGRect rect = CGRectMake(tempSize.width, (int)(size.height / 2) - (int)(imgSize.height / 2), imgSize.width, imgSize.height);
+                CGRect rect = CGRectMake(tempSize.width, (int)(size.height / 2) - (int)(imgSize.height / 2) - 1, imgSize.width, imgSize.height);
                 [image drawInRect:rect];
         }
 

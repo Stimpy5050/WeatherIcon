@@ -499,7 +499,12 @@ static NSString* defaultCode = @"3200";
 
 	if (self.showStatusBarImage)
 	{
-		[dict setValue:[self.currentCondition objectForKey:@"icon"] forKey:@"image"];
+		NSString* image = [self findWeatherImagePath:@"weatherstatus"];
+		// save the status bar image
+		if (!image)
+			image = [self findWeatherImagePath:@"weather"];
+
+		[dict setValue:image forKey:@"image"];
 		[dict setValue:[NSNumber numberWithDouble:self.statusBarImageScale] forKey:@"imageScale"];
 	}
 
