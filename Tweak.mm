@@ -569,6 +569,8 @@ static NSString* defaultCode = @"3200";
 	UIImage* weatherImage = [self findWeatherImage:@"weather"];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
 
+	NSLog(@"WI: Icon size: %f, %f, %f", size.width, size.height, self.imageScale);
+
 	if (objc_getClass("UIStatusBar"))
 		UIGraphicsBeginImageContextWithOptions(size, NO, 0.0); 
 	else 

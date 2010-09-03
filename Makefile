@@ -52,7 +52,7 @@ LockWeatherPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o 
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S LockWeatherPlugin
 
-$(Target):	Tweak.o
+$(Target):	WeatherIconStatusBar.o Tweak.o
 		$(LD) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
 
@@ -116,7 +116,7 @@ statusbar: WeatherIconStatusBar.dylib
 	find package/statusbar -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/statusbar WeatherIconStatusBar_$(shell grep ^Version: statusbar-control | cut -d ' ' -f 2).deb
 
-package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock statusbar
+package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
@@ -124,6 +124,8 @@ package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock statusbar
 	mkdir -p package/weathericon/System/Library/CoreServices/SpringBoard.app
 	cp $(Target) package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp WeatherIcon.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp WeatherIconStatusBar.dylib package/weathericon/Library/MobileSubstrate/DynamicLibraries
+	cp WeatherIconStatusBar.plist package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	cp Preferences/* package/weathericon/Library/PreferenceLoader/Preferences
 	cp -r WeatherIconSettings.bundle package/weathericon/System/Library/PreferenceBundles
 	cp WeatherIconSettings package/weathericon/System/Library/PreferenceBundles/WeatherIconSettings.bundle

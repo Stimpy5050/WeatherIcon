@@ -236,14 +236,15 @@ extern "C" void WeatherIconStatusBarInit()
 {
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
-//	createWIView();
+	if (objc_getClass("UIStatusBar"))
+	{
+		Class $UIApplication = object_getClass(objc_getClass("UIApplication"));
+		Hook(UIApplication, _startWindowServerIfNecessary, _startWindowServerIfNecessary);
 
-	Class $UIApplication = object_getClass(objc_getClass("UIApplication"));
-	Hook(UIApplication, _startWindowServerIfNecessary, _startWindowServerIfNecessary);
-
-	CFNotificationCenterRef darwin = CFNotificationCenterGetDarwinNotifyCenter();
-	CFNotificationCenterAddObserver(darwin, NULL, (CFNotificationCallback) updateIndicators, (CFStringRef) @"weathericon_changed", NULL, NULL);
-	CFNotificationCenterAddObserver(darwin, NULL, (CFNotificationCallback) updateIndicators, (CFStringRef) @"UIApplicationDidBecomeActiveNotification", NULL, NULL);
+		CFNotificationCenterRef darwin = CFNotificationCenterGetDarwinNotifyCenter();
+		CFNotificationCenterAddObserver(darwin, NULL, (CFNotificationCallback) updateIndicators, (CFStringRef) @"weathericon_changed", NULL, NULL);
+		CFNotificationCenterAddObserver(darwin, NULL, (CFNotificationCallback) updateIndicators, (CFStringRef) @"UIApplicationDidBecomeActiveNotification", NULL, NULL);
+	}
 
 	[pool release];
 }
