@@ -42,6 +42,24 @@
                         <key>label</key>
                         <string>Collapsed By Default</string>
                 </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSGroupCell</string>
+                        <key>footerText</key>
+			<string>This will align the time in the plugin to the bottom, instead of the centre.</string>
+                </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.ClockPlugin</string>
+                        <key>key</key>
+                        <string>AlignBottom</string>
+                        <key>label</key>
+                        <string>Align Time at Bottom</string>
+                </dict>
         </array>
 	<key>title</key>
         <string>Clock</string>

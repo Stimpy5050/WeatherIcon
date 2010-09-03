@@ -17,6 +17,7 @@ MSHook(void, _undimScreen, id self, SEL sel)
 @interface ClockHeaderView : UIView
 
 @property BOOL ampm;
+@property BOOL alignBottom;
 @property (nonatomic, retain) LILabel* time;
 @property (nonatomic, retain) LILabel* date;
 
@@ -24,7 +25,7 @@ MSHook(void, _undimScreen, id self, SEL sel)
 
 @implementation ClockHeaderView
 
-@synthesize time, date, ampm;
+@synthesize time, date, ampm, alignBottom;
 
 -(void) setFrame:(CGRect) f
 {
@@ -36,24 +37,33 @@ MSHook(void, _undimScreen, id self, SEL sel)
 -(void) layoutSubviews
 {
 	[super layoutSubviews];
-
-        CGRect screen = [[UIScreen mainScreen] bounds];
-        int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
-        float width =  (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width);
-
+	
+	CGRect screen = [[UIScreen mainScreen] bounds];
+	int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
+	float width =  (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width);
+	
 	CGRect r = self.bounds;
 	r.origin.x = 5;
 	r.size.width -= 10;
 	self.time.frame = r;
+	
+	CGSize ts = [self.time.text sizeWithFont:self.time.style.font];
+	CGRect tr = self.time.frame;
+	tr.size.height = ts.height;
+	
+	if (self.alignBottom)		
+		tr.origin.y = (int)(r.size.height - (ts.height / 2)) - 5;
+	
+	self.time.frame = tr;
 	[self.time setNeedsDisplay];
-
+	
 	if (self.date.style.font)
 	{
 		CGSize ds = [self.date.text sizeWithFont:self.date.style.font];
 		r.origin.y = (int)(r.size.height / 2) - (int)(ds.height / 2) + 5;
 		r.size.height = ds.height;
 	}
-
+	
 	self.date.frame = r;
 	[self.date setNeedsDisplay];
 }
@@ -166,6 +176,9 @@ MSHook(void, _undimScreen, id self, SEL sel)
 
 	if (NSNumber* b = [self.plugin.preferences objectForKey:@"ShowAMPM"])
 		self.header.ampm = b.boolValue;
+	
+	if (NSNumber* ab = [self.plugin.preferences objectForKey:@"AlignBottom"])
+		self.header.alignBottom = ab.boolValue;
 
 	[self updateTime];
 
