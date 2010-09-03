@@ -123,7 +123,6 @@ static NSBundle* weatherIconBundle;
 static WeatherIconController* _controller;
 
 static NSString* prefsPath = @"/var/mobile/Library/Preferences/com.ashman.WeatherIcon.plist";
-static NSString* conditionPath = @"/var/mobile/Library/Caches/com.ashman.LibWeather.cache.plist";
 static NSString* defaultStatusBarTempStyleFSO(@""
 	"font-family: Helvetica; "
 	"font-weight: bold; "
@@ -373,7 +372,7 @@ static NSString* defaultCode = @"3200";
 {
 	lock = [[NSConditionLock alloc] init];
 	[self loadPreferences];
-	self.currentCondition = [NSDictionary dictionaryWithContentsOfFile:conditionPath];
+	self.currentCondition = [[objc_getClass("LibWeatherController") sharedInstance] currentCondition];
 
 	if (objc_getClass("UIStatusBar"))
 		[self initMessaging];
@@ -821,7 +820,7 @@ MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOO
 MSHook(id, uiInit, id self, SEL sel)
 {
 	id ret = _uiInit(self, sel);
-	_controller = [[[WeatherIconController alloc] init] retain];
+	_controller = [[WeatherIconController alloc] init];
 	return ret;
 }
 

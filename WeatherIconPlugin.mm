@@ -5,6 +5,7 @@
 
 @interface UIScreen (WeatherIcon)
 
+-(double) scale;
 -(CGSize) rotatedScreenSize;
 
 @end
@@ -22,10 +23,42 @@
 @end
 
 
+@interface UIImage (WIPAdditions)
+- (id)wip_initWithContentsOfResolutionIndependentFile:(NSString *)path;
++ (UIImage*)wip_imageWithContentsOfResolutionIndependentFile:(NSString *)path;
+@end
+
+@implementation UIImage (WIPAdditions)
+
+- (id)wip_initWithContentsOfResolutionIndependentFile:(NSString *)path
+{
+        double scale = ( [[UIScreen mainScreen] respondsToSelector:@selector(scale)] ? (double)[[UIScreen mainScreen] scale] : 1.0);
+        if ( scale != 1.0)
+        {
+                NSString *path2x = [[path stringByDeletingLastPathComponent]
+                        stringByAppendingPathComponent:[NSString stringWithFormat:@"%@@2x.%@",
+                                [[path lastPathComponent] stringByDeletingPathExtension],
+                                [path pathExtension]]];
+
+                if ( [[NSFileManager defaultManager] fileExistsAtPath:path2x] )
+                {
+                        return [self initWithContentsOfFile:path2x];
+                }
+        }
+
+        return [self initWithContentsOfFile:path];
+}
+
++ (UIImage*) wip_imageWithContentsOfResolutionIndependentFile:(NSString *)path
+{
+        return [[[UIImage alloc] wip_initWithContentsOfResolutionIndependentFile:path] autorelease];
+}
+
+@end
+
+
 #define localize(str) \
         [self.plugin.bundle localizedStringForKey:str value:str table:nil]
-
-static NSString* cachePath = @"/User/Library/Caches/com.ashman.LibWeather.cache.plist";
 
 @implementation WIForecastView
 
@@ -177,7 +210,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	if (path != nil && icon == nil)
 	{
-		icon = [UIImage imageWithContentsOfFile:path];
+		icon = [UIImage wip_imageWithContentsOfResolutionIndependentFile:path];
 		[self.iconCache setValue:icon forKey:path];
 	}
 
@@ -474,7 +507,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	if (NSDictionary* current = [NSDictionary dictionaryWithContentsOfFile:cachePath])
+	if (NSDictionary* current = [[objc_getClass("LibWeatherController") sharedInstance] currentCondition])
 	{
 //		NSLog(@"LI:Weather: Updating when view is ready");
 		[self updateWeather:current];
