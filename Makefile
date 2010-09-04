@@ -68,6 +68,7 @@ lockweather: LockWeatherPlugin
 	mkdir -p package/lock/Library/LockInfo/Plugins
 	cp -r com.ashman.lockinfo.LockWeatherPlugin.bundle package/lock/Library/LockInfo/Plugins
 	cp com.ashman.lockinfo.WeatherIconPlugin.bundle/*.png package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
+	cp com.ashman.lockinfo.WeatherIconPlugin.bundle/Theme.plist package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
 	cp -r com.ashman.lockinfo.WeatherIconPlugin.bundle/*.lproj package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
 	cp LockWeatherPlugin package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle
 	cp lockweather-control package/lock/DEBIAN/control

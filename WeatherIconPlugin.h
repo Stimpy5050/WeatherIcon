@@ -15,6 +15,7 @@
 @interface WIForecastIconView : WIForecastView
 
 @property (nonatomic, retain) NSArray* icons;
+@property (nonatomic, retain) NSMutableDictionary* pluginTheme;
 
 @end
 
@@ -31,6 +32,7 @@
 @property (nonatomic, retain) LIPlugin* plugin;
 @property (nonatomic, retain) NSMutableDictionary* iconCache;
 @property (nonatomic, retain) NSMutableDictionary* dataCache;
+@property (nonatomic, retain) NSMutableDictionary* theme;
 
 @property (nonatomic, retain) WIForecastDaysView* daysView;
 @property (nonatomic, retain) WIForecastIconView* iconView;

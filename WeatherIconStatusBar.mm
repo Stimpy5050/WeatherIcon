@@ -67,7 +67,7 @@ static NSDictionary* currentCondition()
 
 void createIndicator(int index, NSDictionary* current)
 {
-	NSLog(@"WI: Creating indicator for style %d", index);
+//	NSLog(@"WI: Creating indicator for style %d", index);
         NSString* temp = [current objectForKey:@"temp"];
 
 	UIImage* image = nil;
@@ -225,7 +225,7 @@ MSHook(void, _startWindowServerIfNecessary, id self, SEL sel)
 
 	if (!hooked)
 	{	
-		NSLog(@"WI: Hooking class");
+//		NSLog(@"WI: Hooking class");
 		Class $UIStatusBarCustomItemView = objc_getClass("UIStatusBarCustomItemView");
 		Hook(UIStatusBarCustomItemView, contentsImageForStyle:, contentsImageForStyle);
 		hooked = YES;

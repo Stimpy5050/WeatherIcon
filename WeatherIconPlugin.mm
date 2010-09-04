@@ -68,7 +68,7 @@
 
 @implementation WIForecastIconView
 
-@synthesize icons;
+@synthesize icons, pluginTheme;
 
 -(void) setFrame:(CGRect) r
 {
@@ -83,12 +83,10 @@
 	double scale = 0.66;
 
 	NSBundle* bundle = [NSBundle mainBundle];
-	id libweather = [objc_getClass("LibWeatherController") sharedInstance];
-	if (NSDictionary* theme = [libweather theme])
-	{
-		if (NSNumber* n = [theme objectForKey:@"LockInfoImageScale"])
-			scale = n.doubleValue;
-	}
+	if (NSNumber* n = [self.pluginTheme objectForKey:@"LockInfoImageScale"])
+		scale = n.doubleValue;
+
+	NSLog(@"WIP: Scale: %f", scale);
 
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
@@ -202,7 +200,25 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 @implementation WeatherIconPlugin
 
-@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView, updateLock, reloadCondition;
+@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView, updateLock, reloadCondition, theme;
+
+- (void) loadTheme
+{
+        NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:10];
+
+        if (NSString* themePrefs = [[NSBundle mainBundle] pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"])
+        {
+                [dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
+                NSLog(@"WIP: Loading theme from SB bundle: %@", dict);
+        }
+        else if (NSString* themePrefs = [self.plugin.bundle pathForResource:@"Theme" ofType:@"plist"])
+        {
+                [dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
+                NSLog(@"WIP: Loading theme from WI bundle: %@", dict);
+        }
+
+        self.theme = dict;
+}
 
 -(id) loadIcon:(NSString*) path
 {
@@ -279,10 +295,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	if (icon)
 	{
-		id libweather = [objc_getClass("LibWeatherController") sharedInstance];
-		if (NSDictionary* theme = [libweather theme])
-			if (NSNumber* n = [theme objectForKey:@"StatusBarImageScale"])
-				scale = n.doubleValue;
+		if (NSNumber* n = [self.theme objectForKey:@"StatusBarImageScale"])
+			scale = n.doubleValue;
 
 		CGSize s = icon.size;
 		s.width = s.width * scale;
@@ -332,6 +346,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 -(void) updateWeatherViews
 {
+	[self loadTheme];
+
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
 
@@ -352,6 +368,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 		[arr addObject:(icon == nil ? [NSNull null] : icon)];
 	}
 	self.iconView.icons = arr;
+	self.iconView.pluginTheme = self.theme;
 	[self.iconView setNeedsDisplay];
 
 	BOOL show = false;
@@ -453,13 +470,15 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	self.reloadCondition = [[[NSCondition alloc] init] autorelease];
 	self.updateLock = [[[NSLock alloc] init] autorelease];
-
+	
 	plugin.tableViewDataSource = self;
 	plugin.tableViewDelegate = self;
 
         NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
         [center addObserver:self selector:@selector(update:) name:LIViewReadyNotification object:nil];
         [center addObserver:self selector:@selector(updateOnUpdate:) name:@"LWWeatherUpdatedNotification" object:nil];
+
+	[self loadTheme];
 
 	return self;
 }

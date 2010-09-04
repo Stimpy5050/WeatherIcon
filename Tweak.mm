@@ -183,11 +183,16 @@ static NSString* defaultCode = @"3200";
 {
 	NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:10];
 
-	if (NSString* themePrefs = [weatherIconBundle pathForResource:@"Theme" ofType:@"plist"])
-		[dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
-
 	if (NSString* themePrefs = [springBoardBundle pathForResource:@"com.ashman.WeatherIcon" ofType:@"plist"])
+	{
 		[dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
+		NSLog(@"WI: Loading theme from SB bundle: %@", dict);
+	}
+	else if (NSString* themePrefs = [weatherIconBundle pathForResource:@"Theme" ofType:@"plist"])
+	{
+		[dict addEntriesFromDictionary:[NSDictionary dictionaryWithContentsOfFile:themePrefs]];
+		NSLog(@"WI: Loading theme from WI bundle: %@", dict);
+	}
 
 	self.theme = dict;
 }
@@ -450,22 +455,27 @@ static NSString* defaultCode = @"3200";
 	if (NSString* img = [self findImage:bundle name:prefix])
 		return img;
 
-	return [self defaultImagePath:code night:night];
-//	return nil;
+	return nil;
 }
 
-- (NSString*) findWeatherImagePath:(NSString*) prefix
+- (NSString*) findWeatherImagePath:(NSString*) prefix withDefault:(BOOL) d
 {
 	NSNumber* code = [self.currentCondition objectForKey:@"code"];
 	NSNumber* night = [self.currentCondition objectForKey:@"night"];
-	return [self findWeatherImagePath:prefix 
-		code:(code ? code.stringValue : @"3200")
-		night:(night ? night.boolValue : NO)];
+
+	NSString* path = [self findWeatherImagePath:prefix code:(code ? 
+				code.stringValue : @"3200") night:night.boolValue];
+
+	if (path || !d)
+		return path;
+
+	return [self defaultImagePath:code night:night.boolValue];
 }
 
-- (UIImage*) findWeatherImage:(NSString*) prefix
+- (UIImage*) findWeatherImage:(NSString*) prefix withDefault:(BOOL) d
 {
-	NSString* path = [self findWeatherImagePath:prefix];
+	NSString* path = [self findWeatherImagePath:prefix withDefault:d];
+	NSLog(@"WI: Found image %@ for prefix %@", path, prefix);
 	return (path ? [UIImage wi_imageWithContentsOfResolutionIndependentFile:path] : nil);
 }
 
@@ -498,10 +508,10 @@ static NSString* defaultCode = @"3200";
 
 	if (self.showStatusBarImage)
 	{
-		NSString* image = [self findWeatherImagePath:@"weatherstatus"];
+		NSString* image = [self findWeatherImagePath:@"weatherstatus" withDefault:NO];
 		// save the status bar image
 		if (!image)
-			image = [self findWeatherImagePath:@"weather"];
+			image = [self findWeatherImagePath:@"weather" withDefault:YES];
 
 		[dict setValue:image forKey:@"image"];
 		[dict setValue:[NSNumber numberWithDouble:self.statusBarImageScale] forKey:@"imageScale"];
@@ -515,10 +525,10 @@ static NSString* defaultCode = @"3200";
 	NSNumber* temp = [self.currentCondition objectForKey:@"temp"];
 	NSString* t = [temp.stringValue stringByAppendingString: @"\u00B0"];
 
-	UIImage* image = [self findWeatherImage:@"weatherstatus"];
+	UIImage* image = [self findWeatherImage:@"weatherstatus" withDefault:NO];
 	// save the status bar image
 	if (!image)
-		image = [self findWeatherImage:@"weather"];
+		image = [self findWeatherImage:@"weather" withDefault:YES];
 
 	UIFont* font = [UIFont boldSystemFontOfSize:14];
 	CGSize tempSize = CGSizeMake(0, 20);
@@ -565,8 +575,8 @@ static NSString* defaultCode = @"3200";
 
 - (UIImage*) createIcon
 {
-	UIImage* bgIcon = [self findWeatherImage:@"weatherbg"];
-	UIImage* weatherImage = [self findWeatherImage:@"weather"];
+	UIImage* bgIcon = [self findWeatherImage:@"weatherbg" withDefault:YES];
+	UIImage* weatherImage = [self findWeatherImage:@"weather" withDefault:YES];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
 
 	NSLog(@"WI: Icon size: %f, %f, %f", size.width, size.height, self.imageScale);

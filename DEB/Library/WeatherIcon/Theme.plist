@@ -4,8 +4,6 @@
 <dict>
 	<key>ImageMarginTop</key>
 	<integer>4</integer>
-	<key>LockInfoImageScale</key>
-	<real>0.6</real>
 	<key>StatusBarImageScale</key>
 	<real>0.52</real>
 </dict>
