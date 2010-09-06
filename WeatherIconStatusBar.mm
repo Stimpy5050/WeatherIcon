@@ -28,9 +28,10 @@ static NSDictionary* currentCondition()
 
 @interface UIScreen (WIAdditions)
 
--(double) scale;
+-(float) scale;
 
 @end
+
 @interface UIImage (WIAdditions)
 - (id)wi_initWithContentsOfResolutionIndependentFile:(NSString *)path;
 + (UIImage*)wi_imageWithContentsOfResolutionIndependentFile:(NSString *)path;
@@ -40,9 +41,8 @@ static NSDictionary* currentCondition()
 
 - (id)wi_initWithContentsOfResolutionIndependentFile:(NSString *)path
 {
-        double scale = ( [[UIScreen mainScreen] respondsToSelector:@selector(scale)] ? (double)[[UIScreen mainScreen
-] scale] : 1.0);
-        if ( scale != 1.0)
+        float scale = ( [[UIScreen mainScreen] respondsToSelector:@selector(scale)] ? (float)[[UIScreen mainScreen] scale] : 1.0);
+        if ( scale == 2.0)
         {
                 NSString *path2x = [[path stringByDeletingLastPathComponent]
                         stringByAppendingPathComponent:[NSString stringWithFormat:@"%@@2x.%@",
@@ -179,6 +179,17 @@ static void updateIndicators(CFNotificationCenterRef center, void* observer, CFS
 	updateIndicator();
 }
 
+MSHook(int, rightOrder, id self, SEL sel)
+{
+	NSString* itemName = [self indicatorName];
+	if ([itemName isEqualToString:@"WeatherIcon"])
+	{
+		return 5;
+	}
+
+	return _rightOrder(self, sel);
+}
+
 MSHook(UIImage*, contentsImageForStyle, id self, SEL sel, int style)
 //UIImage* wi_contentsImageForStyle(id self, SEL sel, int style)
 {
@@ -226,6 +237,9 @@ MSHook(void, _startWindowServerIfNecessary, id self, SEL sel)
 	if (!hooked)
 	{	
 //		NSLog(@"WI: Hooking class");
+		Class $UIStatusBarCustomItem = objc_getClass("UIStatusBarCustomItem");
+		Hook(UIStatusBarCustomItem, rightOrder, rightOrder);
+
 		Class $UIStatusBarCustomItemView = objc_getClass("UIStatusBarCustomItemView");
 		Hook(UIStatusBarCustomItemView, contentsImageForStyle:, contentsImageForStyle);
 		hooked = YES;

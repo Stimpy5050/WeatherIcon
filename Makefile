@@ -52,7 +52,7 @@ LockWeatherPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o 
 		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
 		ldid -S LockWeatherPlugin
 
-$(Target):	WeatherIconStatusBar.o Tweak.o
+$(Target):	Tweak.o
 		$(LD) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
 
@@ -117,7 +117,7 @@ statusbar: WeatherIconStatusBar.dylib
 	find package/statusbar -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/statusbar WeatherIconStatusBar_$(shell grep ^Version: statusbar-control | cut -d ' ' -f 2).deb
 
-package:	$(Target) WeatherIconSettings lockinfo lockweather HTC clock
+package:	$(Target) WeatherIconStatusBar.dylib WeatherIconSettings lockinfo lockweather HTC clock
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences

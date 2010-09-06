@@ -5,7 +5,7 @@
 
 @interface UIScreen (WeatherIcon)
 
--(double) scale;
+-(float) scale;
 -(CGSize) rotatedScreenSize;
 
 @end
@@ -32,8 +32,8 @@
 
 - (id)wip_initWithContentsOfResolutionIndependentFile:(NSString *)path
 {
-        double scale = ( [[UIScreen mainScreen] respondsToSelector:@selector(scale)] ? (double)[[UIScreen mainScreen] scale] : 1.0);
-        if ( scale != 1.0)
+        float scale = ( [[UIScreen mainScreen] respondsToSelector:@selector(scale)] ? (float)[[UIScreen mainScreen] scale] : 1.0);
+        if ( scale == 2.0)
         {
                 NSString *path2x = [[path stringByDeletingLastPathComponent]
                         stringByAppendingPathComponent:[NSString stringWithFormat:@"%@@2x.%@",
