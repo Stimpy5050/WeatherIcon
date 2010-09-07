@@ -9,9 +9,12 @@
 {
 	[super layoutSubviews];
 
+/*
 	CGRect screen = [[UIScreen mainScreen] bounds];
 	int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
 	float center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
+*/
+	float center = self.frame.size.width / 2;
 
 	CGRect bgr = self.background.frame;
 	bgr.size.width = (center * 2);
@@ -114,7 +117,15 @@
 	self.low.textColor = [UIColor lightGrayColor];
 	self.low.backgroundColor = [UIColor clearColor];
 
+	self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+
 	return self;
+}
+
+-(void) setFrame:(CGRect) frame
+{
+	[super setFrame:frame];
+	[self setNeedsLayout];
 }
 
 -(void) updateTime
