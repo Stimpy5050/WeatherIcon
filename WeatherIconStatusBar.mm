@@ -101,6 +101,9 @@ void createIndicator(int index, NSDictionary* current)
         else
                 UIGraphicsBeginImageContext(size);
 
+//	[[UIColor greenColor] set];
+//	CGContextFillRect(UIGraphicsGetCurrentContext(), CGRectMake(0, 0, size.width, size.height));
+
         if (temp)
         {
 		if (index == 0)
@@ -190,6 +193,17 @@ MSHook(int, rightOrder, id self, SEL sel)
 	return _rightOrder(self, sel);
 }
 
+MSHook(int, priority, id self, SEL sel)
+{
+	NSString* itemName = [self indicatorName];
+	if ([itemName isEqualToString:@"WeatherIcon"])
+	{
+		return 15;
+	}
+
+	return _priority(self, sel);
+}
+
 MSHook(UIImage*, contentsImageForStyle, id self, SEL sel, int style)
 //UIImage* wi_contentsImageForStyle(id self, SEL sel, int style)
 {
@@ -239,6 +253,7 @@ MSHook(void, _startWindowServerIfNecessary, id self, SEL sel)
 //		NSLog(@"WI: Hooking class");
 		Class $UIStatusBarCustomItem = objc_getClass("UIStatusBarCustomItem");
 		Hook(UIStatusBarCustomItem, rightOrder, rightOrder);
+		Hook(UIStatusBarCustomItem, priority, priority);
 
 		Class $UIStatusBarCustomItemView = objc_getClass("UIStatusBarCustomItemView");
 		Hook(UIStatusBarCustomItemView, contentsImageForStyle:, contentsImageForStyle);

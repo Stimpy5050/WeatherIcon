@@ -4,8 +4,6 @@
 #import <SpringBoard/SBUIController.h>
 #import <UIKit/UIApplication.h>
 
-static NSString* CUSTOM = @"Custom";
-
 @implementation WeatherIconSettings
 
 - (void) donate:(id) param

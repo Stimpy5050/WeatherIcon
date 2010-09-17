@@ -70,6 +70,7 @@ lockweather: LockWeatherPlugin
 	cp com.ashman.lockinfo.WeatherIconPlugin.bundle/*.png package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
 	cp com.ashman.lockinfo.WeatherIconPlugin.bundle/Theme.plist package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
 	cp -r com.ashman.lockinfo.WeatherIconPlugin.bundle/*.lproj package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
+	cp DEB/Library/WeatherIcon/*.png package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle/.
 	cp LockWeatherPlugin package/lock/Library/LockInfo/Plugins/com.ashman.lockinfo.LockWeatherPlugin.bundle
 	cp lockweather-control package/lock/DEBIAN/control
 	find package/lock -name .svn -print0 | xargs -0 rm -rf
@@ -103,6 +104,7 @@ lockinfo: WeatherIconPlugin
 	mkdir -p package/lockinfo/DEBIAN
 	mkdir -p package/lockinfo/Library/LockInfo/Plugins
 	cp -r com.ashman.lockinfo.WeatherIconPlugin.bundle package/lockinfo/Library/LockInfo/Plugins
+	cp DEB/Library/WeatherIcon/*.png package/lockinfo/Library/LockInfo/Plugins/com.ashman.lockinfo.WeatherIconPlugin.bundle/.
 	cp WeatherIconPlugin package/lockinfo/Library/LockInfo/Plugins/com.ashman.lockinfo.WeatherIconPlugin.bundle
 	cp lockinfo-control package/lockinfo/DEBIAN/control
 	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf

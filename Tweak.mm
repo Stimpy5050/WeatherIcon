@@ -82,16 +82,15 @@ static void callStackSymbols()
 
 @end
 
-@interface WeatherIconController : NSObject
+@interface WeatherIconController : NSObject <UIAlertViewDelegate>
 {
 	NSConditionLock* lock;
 }
 
 	// image caches
-@property (nonatomic, retain) UIImage* statusBarIndicator;
-@property (nonatomic, retain) UIImage* statusBarIndicatorFSO;
-@property (nonatomic, retain) UIImageView* statusBarIndicatorView;
-@property (nonatomic, retain) UIImageView* statusBarIndicatorFSOView;
+@property (nonatomic, retain) UIImageView* statusBarIndicatorViewMode0;
+@property (nonatomic, retain) UIImageView* statusBarIndicatorViewMode1;
+@property (nonatomic, retain) UIImageView* statusBarIndicatorViewMode2;
 @property (nonatomic, retain) UIImage* weatherIcon;
 
 	// refresh date info
@@ -104,7 +103,6 @@ static void callStackSymbols()
 - (id)init;
 - (BOOL)isWeatherIcon:(NSString*) displayIdentifier;
 - (UIImage*)icon;
-- (UIImage*)statusBarIndicator:(int) mode;
 
 @end
 
@@ -156,8 +154,10 @@ static NSString* defaultCode = @"3200";
 @implementation WeatherIconController
 
 // image cache
-@synthesize statusBarIndicator, statusBarIndicatorFSO, weatherIcon;
-@synthesize statusBarIndicatorView, statusBarIndicatorFSOView;
+@synthesize weatherIcon;
+@synthesize statusBarIndicatorViewMode0;
+@synthesize statusBarIndicatorViewMode1;
+@synthesize statusBarIndicatorViewMode2;
 
 // preferences
 @synthesize theme, preferences, currentCondition;
@@ -275,6 +275,20 @@ static NSString* defaultCode = @"3200";
 	return true;
 }
 
+- (BOOL) alwaysThemeWeather
+{
+	if (!self.enabled)
+		return false;
+
+	if (NSNumber* n = [self.theme objectForKey:@"AlwaysThemeWeather"])
+		return [n boolValue];
+
+	if (NSNumber* v = [self.preferences objectForKey:@"AlwaysThemeWeather"])
+		return [v boolValue];
+
+	return false;
+}
+
 - (BOOL) showWeatherBadge
 {
 	if (!self.enabled)
@@ -322,6 +336,11 @@ static NSString* defaultCode = @"3200";
 	return [self.theme objectForKey:@"Mappings"];
 }
 
+- (BOOL) showStatusBarWeather
+{
+	return (self.showStatusBarTemp || self.showStatusBarImage);
+}
+
 - (void) loadPreferences
 {
 	NSString* bundleIdentifier = [self.bundleIdentifier retain];
@@ -344,19 +363,41 @@ static NSString* defaultCode = @"3200";
 
 	[self updateBadge];
 
+	[self resetWeatherIcon:bundleIdentifier];
+	[self resetWeatherIcon:self.bundleIdentifier];
+	[self resetWeatherIcon:@"com.apple.weather"];
+
+/*
 	if (![bundleIdentifier isEqualToString:self.bundleIdentifier])
 	{
 		NSLog(@"WI: Reset weather icon for %@ because identifier changed.", self.bundleIdentifier);
-		[self resetWeatherIcon:bundleIdentifier];
 	}
 
 	if (!self.showWeatherIcon)
 	{
 		NSLog(@"WI: Reset weather icon for %@ because not showing icon.", self.bundleIdentifier);
-		[self resetWeatherIcon:self.bundleIdentifier];
 	}
+*/
 
 	[bundleIdentifier release];
+
+/*
+	if (self.showStatusBarWeather && objc_getClass("UIStatusBar") && objc_getClass("UIStatusBarCustomItem") == nil)
+	{
+		UIAlertView* sheet = nil;
+
+		sheet = [[UIAlertView alloc] initWithTitle:@"WeatherIcon" message:@"Status bar weather information requires libstatusbar.  Please open Cydia and install libstatusbar." delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+
+		[sheet show];
+	}
+*/
+}
+
+-(void) alertView:(UIAlertView*) view clickedButtonAtIndex:(int) index
+{
+	[view release];
+	if (index == 1)
+		[[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"cydia://package/libstatusbar"]];
 }
 
 -(void) dealloc
@@ -481,7 +522,8 @@ static NSString* defaultCode = @"3200";
 
 - (BOOL) isWeatherIcon:(NSString*) displayIdentifier
 {
-	if ([displayIdentifier isEqualToString:self.bundleIdentifier])
+	if ([displayIdentifier isEqualToString:self.bundleIdentifier]
+	 	|| (self.alwaysThemeWeather && [displayIdentifier isEqualToString:@"com.apple.weather"]))
 	{
 		// make sure to reload the theme here
 		[self loadTheme];
@@ -491,10 +533,6 @@ static NSString* defaultCode = @"3200";
 	return false;
 }
 
-- (BOOL) showStatusBarWeather
-{
-	return (self.showStatusBarTemp || self.showStatusBarImage);
-}
 
 -(NSDictionary*) currentStatusBarCondition
 {
@@ -529,6 +567,8 @@ static NSString* defaultCode = @"3200";
 	// save the status bar image
 	if (!image)
 		image = [self findWeatherImage:@"weather" withDefault:YES];
+
+	[image retain];
 
 	UIFont* font = [UIFont boldSystemFontOfSize:14];
 	CGSize tempSize = CGSizeMake(0, 20);
@@ -570,13 +610,15 @@ static NSString* defaultCode = @"3200";
 
         UIGraphicsEndImageContext();
 
+	[image release];
+
 	return indicator;
 }
 
 - (UIImage*) createIcon
 {
-	UIImage* bgIcon = [self findWeatherImage:@"weatherbg" withDefault:YES];
-	UIImage* weatherImage = [self findWeatherImage:@"weather" withDefault:YES];
+	UIImage* bgIcon = [[self findWeatherImage:@"weatherbg" withDefault:YES] retain];
+	UIImage* weatherImage = [[self findWeatherImage:@"weather" withDefault:YES] retain];
 	CGSize size = (bgIcon ? bgIcon.size : CGSizeMake(59, 60));
 
 	NSLog(@"WI: Icon size: %f, %f, %f", size.width, size.height, self.imageScale);
@@ -589,6 +631,7 @@ static NSString* defaultCode = @"3200";
 	if (bgIcon)
 	{
 		[bgIcon drawInRect:CGRectMake(0, 0, size.width, size.height)];	
+		[bgIcon release];
 	}
 
 	if (weatherImage)
@@ -597,6 +640,7 @@ static NSString* defaultCode = @"3200";
 		float height = weatherImage.size.height * self.imageScale;
 	        CGRect iconRect = CGRectMake((size.width - width) / 2, self.imageMarginTop, width, height);
 		[weatherImage drawInRect:iconRect];
+		[weatherImage release];
 	}
 
 	NSNumber* temp = [self.currentCondition objectForKey:@"temp"];
@@ -622,15 +666,19 @@ static NSString* defaultCode = @"3200";
 
 - (void) updateIndicator
 {
-	self.statusBarIndicator = [self createIndicator:0];
-	self.statusBarIndicatorFSO = [self createIndicator:1];
 	[[UIApplication sharedApplication] addStatusBarImageNamed:@"WeatherIcon"];
 
 	if (SBStatusBarController* statusBarController = [$SBStatusBarController sharedStatusBarController])
 	{
 		NSLog(@"WI: Refreshing indicator...");
-		statusBarIndicatorView.image = self.statusBarIndicator;
-		statusBarIndicatorFSOView.image = self.statusBarIndicatorFSO;
+		self.statusBarIndicatorViewMode0.image = [self createIndicator:0];
+		[self.statusBarIndicatorViewMode0 setNeedsDisplay];
+
+		self.statusBarIndicatorViewMode1.image = [self createIndicator:1];
+		[self.statusBarIndicatorViewMode1 setNeedsDisplay];
+
+		self.statusBarIndicatorViewMode2.image = [self createIndicator:2];
+		[self.statusBarIndicatorViewMode2 setNeedsDisplay];
 	}
 	else
 	{
@@ -655,34 +703,35 @@ static NSString* defaultCode = @"3200";
 	return [self applicationIcon:self.bundleIdentifier];
 }
 
-- (void) resetWeatherIcon:(NSString*) bundleIdentifier
+- (void) resetWeatherIcon:(NSString*) bundleIdentifier withImage:(UIImage*) image
 {
 	SBIconModel* model = [$SBIconModel sharedInstance];
 	SBApplicationIcon* applicationIcon = [self applicationIcon];
 
 	if ([model respondsToSelector:@selector(reloadIconImageForDisplayIdentifier:)])
 		[model reloadIconImageForDisplayIdentifier:bundleIdentifier];
+	else if (image && [applicationIcon respondsToSelector:@selector(setDisplayedIconImage:)])
+		[applicationIcon setDisplayedIconImage:image];
 	else if ([applicationIcon respondsToSelector:@selector(reloadIconImage)])
 		[applicationIcon reloadIconImage];
+}
+
+- (void) resetWeatherIcon:(NSString*) bundleIdentifier
+{
+	[self resetWeatherIcon:bundleIdentifier withImage:nil];
 }
 
 - (void) updateWeatherIcon
 {
 	if (self.showWeatherIcon)
 	{
-		SBIconModel* model = [$SBIconModel sharedInstance];
-		SBApplicationIcon* applicationIcon = [self applicationIcon];
-
 		BOOL reload = (self.weatherIcon != nil);
 		self.weatherIcon = [self createIcon];
+
 		if (reload)
 		{
-			if ([model respondsToSelector:@selector(reloadIconImageForDisplayIdentifier:)])
-				[model reloadIconImageForDisplayIdentifier:self.bundleIdentifier];
-			else if ([applicationIcon respondsToSelector:@selector(setDisplayedIconImage:)])
-				[applicationIcon setDisplayedIconImage:self.weatherIcon];
-			else if ([applicationIcon respondsToSelector:@selector(reloadIconImage)])
-				[applicationIcon reloadIconImage];
+			[self resetWeatherIcon:self.bundleIdentifier withImage:self.weatherIcon];
+			[self resetWeatherIcon:@"com.apple.weather" withImage:self.weatherIcon];
 		}
 	}
 
@@ -715,7 +764,7 @@ static NSString* defaultCode = @"3200";
 {
         NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	self.currentCondition = [[notif.userInfo copy] autorelease];
-        [self updateWeatherIcon];
+        [self performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
         [pool release];
 }
 
@@ -730,18 +779,8 @@ static NSString* defaultCode = @"3200";
 	return self.weatherIcon;
 }
 
-- (UIImage*) statusBarIndicator:(int)mode
-{
-	if (self.statusBarIndicator == nil)
-		[self updateIndicator];
-
-	return (mode == 0 ? self.statusBarIndicator : self.statusBarIndicatorFSO);
-}
-
 @end
  
-static Class $SBStatusBarContentsView;
-
 static SBStatusBarContentView* _sb0;
 static SBStatusBarContentView* _sb1;
 static NSTimeInterval lastPrefsUpdate = 0;
@@ -751,20 +790,39 @@ static NSTimeInterval lastPrefsUpdate = 0;
 -(BOOL) isVisible;
 @end
 
+MSHook(int, priority, SBStatusBarContentView* self, SEL sel)
+{
+	if ([[self indicatorName] isEqualToString:@"WeatherIcon"])
+	{
+		return 3;
+	}
+
+	return _priority(self, sel);
+}
+
 MSHook(id, initWithNameAndMode, SBStatusBarContentView* self, SEL sel, NSString* name, int mode)
 {
+	NSLog(@"WI: Initing for mode %d and name %@", mode, name);
 	UIView* ind = _initWithNameAndMode(self, sel, name, mode);
 
 	if ([name isEqualToString:@"WeatherIcon"])
 	{
 		UIImageView* image = [ind.subviews objectAtIndex:0];
 
-		if (mode == 0)
-			_controller.statusBarIndicatorView = image;
-		else
-			_controller.statusBarIndicatorFSOView = image;
+		switch (mode)
+		{
+			case 0:
+				_controller.statusBarIndicatorViewMode0 = image;
+				break;
+			case 1:
+				_controller.statusBarIndicatorViewMode1 = image;
+				break;
+			case 2:
+				_controller.statusBarIndicatorViewMode2 = image;
+				break;
+		}
 
-		image.image = [_controller statusBarIndicator:mode];
+		image.image = [_controller createIndicator:mode];
 		NSLog(@"WI: Indicator: %@", image);
 		
 		CGRect r = ind.frame;
@@ -805,7 +863,7 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 
 MSHook(void, setDisplayedIconImage, SBIcon *self, SEL sel, id image)
 {
-	if (_controller.showWeatherIcon && [self respondsToSelector:@selector(leafIdentifier)] && [[self leafIdentifier] isEqualToString:_controller.bundleIdentifier])
+	if (_controller.showWeatherIcon && [self respondsToSelector:@selector(leafIdentifier)] && [_controller isWeatherIcon:[self leafIdentifier]])
 	{
 		NSLog(@"WI: Overriding weather icon");
 		_setDisplayedIconImage(self, sel, _controller.icon);
@@ -818,6 +876,7 @@ MSHook(void, setDisplayedIconImage, SBIcon *self, SEL sel, id image)
 
 MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOOL small) 
 {
+	NSLog(@"WI: Getting cached image for %@", icon.displayIdentifier);
 	if (!small && _controller.showWeatherIcon && [_controller isWeatherIcon:icon.displayIdentifier])
 	{
 		return _controller.icon;
@@ -831,6 +890,9 @@ MSHook(id, getCachedImagedForIcon, SBIconModel *self, SEL sel, SBIcon* icon, BOO
 
 MSHook(id, uiInit, id self, SEL sel)
 {
+	Class $SBIconModel = objc_getClass("SBIconModel");
+	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
+
 	id ret = _uiInit(self, sel);
 	_controller = [[WeatherIconController alloc] init];
 	return ret;
@@ -870,24 +932,17 @@ extern "C" void TweakInit() {
 	springBoardBundle = [NSBundle bundleWithPath:@"/System/Library/CoreServices/SpringBoard.app"];
 	weatherIconBundle = [NSBundle bundleWithPath:@"/Library/WeatherIcon"];
 
-	Class $SBIcon = objc_getClass("SBIcon");
-	Class $SBIconModel = objc_getClass("SBIconModel");
-	Class $SBIconController = objc_getClass("SBIconController");
-	Class $SBBookmarkIcon = objc_getClass("SBBookmarkIcon");
-	Class $SBApplicationIcon = objc_getClass("SBApplicationIcon");
-	Class $SBApplication = objc_getClass("SBApplication");
-	Class $SBStatusBarBluetoothView = objc_getClass("SBStatusBarBluetoothView");
-	Class $SBStatusBarBluetoothBatteryView = objc_getClass("SBStatusBarBluetoothBatteryView");
-	Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
-	$SBStatusBarContentsView = objc_getClass("SBStatusBarContentsView");
-
 	// MSHookMessage is what we use to redirect the methods to our own
+	Class $SBApplication = objc_getClass("SBApplication");
 	Hook(SBApplication, deactivated, deactivated);
-	Hook(SBIconModel, getCachedImagedForIcon:smallIcon:, getCachedImagedForIcon);
+
+	Class $SBIcon = objc_getClass("SBIcon");
 	Hook(SBIcon, setDisplayedIconImage:, setDisplayedIconImage);
 
 	// only hook these in 3.0
+	Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
 	Hook(SBStatusBarIndicatorView, initWithName:andMode:, initWithNameAndMode);
+	Hook(SBStatusBarIndicatorView, priority, priority);
 	
 	Class $SBUIController = objc_getClass("SBUIController");
        	Hook(SBUIController, init, uiInit);

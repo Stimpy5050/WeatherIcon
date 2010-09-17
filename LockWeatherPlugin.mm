@@ -1,6 +1,12 @@
 #include "LockWeatherPlugin.h"
 #include <UIKit/UIScreen.h>
 
+@interface SpringBoard : UIApplication
+
+-(int) activeInterfaceOrientation;
+
+@end
+
 @implementation LWHeaderView
 
 @synthesize background, icon, description, city, temp, time, date, high, low;
@@ -9,12 +15,20 @@
 {
 	[super layoutSubviews];
 
-/*
 	CGRect screen = [[UIScreen mainScreen] bounds];
-	int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
-	float center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
-*/
-	float center = self.frame.size.width / 2;
+	float center = 0;
+
+	if (objc_getClass("UIStatusBar"))
+	{
+		SpringBoard* sb = [UIApplication sharedApplication];
+		int orientation = [sb activeInterfaceOrientation];
+		center = (orientation == 3 || orientation == 4 ? screen.size.height : screen.size.width) / 2;
+	}
+	else
+	{
+		int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
+		center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
+	}
 
 	CGRect bgr = self.background.frame;
 	bgr.size.width = (center * 2);
