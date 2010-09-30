@@ -2,7 +2,7 @@ CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-g
 CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-g++-4.2.1
 LD=$(CC)
 
-SDKVER=4.0
+SDKVER=4.2
 SDK=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
 LDFLAGS=	-framework Foundation \
 		-framework UIKit \
@@ -136,4 +136,5 @@ package:	$(Target) WeatherIconStatusBar.dylib WeatherIconSettings lockinfo lockw
 	cp -r DEB/* package/weathericon
 	cp control package/weathericon/DEBIAN
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
+	find package/weathericon -name .DS_Store -print0 | xargs -0 rm
 	dpkg-deb -b package/weathericon WeatherIcon_$(shell grep ^Version: control | cut -d ' ' -f 2).deb
