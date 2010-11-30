@@ -66,20 +66,6 @@
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>id</key>
-			<string>AlwaysThemeWeather</string>
-			<key>key</key>
-			<string>AlwaysThemeWeather</string>
-			<key>label</key>
-			<string>iPhone Weather</string>
-		</dict>
-		<dict>
-			<key>cell</key>
 			<string>PSLinkListCell</string>
 			<key>default</key>
 			<string>com.apple.weather</string>

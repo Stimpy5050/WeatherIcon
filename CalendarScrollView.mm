@@ -226,7 +226,10 @@
 
         comp.day = 1;
         NSDate* first = [cal dateFromComponents:comp];
-        comp = [cal components:NSWeekdayCalendarUnit | NSWeekCalendarUnit fromDate:first];
+        comp = [cal components:NSMonthCalendarUnit | NSWeekdayCalendarUnit | NSWeekCalendarUnit fromDate:first];
+
+	if (comp.month == 1)
+		comp.week = 0;
 
         for (int i = 0; i < dayRange.length; i++)
         {
