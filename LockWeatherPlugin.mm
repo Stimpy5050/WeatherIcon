@@ -234,7 +234,9 @@
 	}
 
 	header.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
-
+	
+	[weather release];
+	
 	[header setNeedsLayout];
 	[header setNeedsDisplay];
 }
