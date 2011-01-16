@@ -133,8 +133,9 @@ MSHook(void, _undimScreen, id self, SEL sel)
 	        	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
 	                cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:@"LWCalendarCell"] autorelease];
 
-	        	UIImage* marker = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:@"Black_LIClockTodayMarker" ofType:@"png"]];
-			UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:@"Black_LICurrentMonth" ofType:@"png"]];
+			UIImage* marker = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LIClockTodayMarker", tableView.theme.sectionIconSet] ofType:@"png"]];
+                UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LICurrentMonth", tableView.theme.sectionIconSet] ofType:@"png"]];
+
 			CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) marker:marker jump:jump] autorelease];
 			scroll.tag = 9494;
 			self.calendarScrollView = scroll;
