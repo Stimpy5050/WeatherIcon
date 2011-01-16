@@ -42,6 +42,18 @@
                         <key>label</key>
                         <string>Show Description</string>
                 </dict>
+		<dict>
+                        <key>cell</key>
+                        <string>PSSwitchCell</string>
+                        <key>default</key>
+                        <false/>
+                        <key>defaults</key>
+                        <string>com.ashman.lockinfo.LockWeatherPlugin</string>
+                        <key>key</key>
+                        <string>ThemeBackground</string>
+                        <key>label</key>
+                        <string>Theme Background</string>
+                </dict>
                 <dict>
                         <key>cell</key>
                         <string>PSGroupCell</string>

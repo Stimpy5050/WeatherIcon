@@ -110,6 +110,8 @@ lockinfo: WeatherIconPlugin
 	find package/lockinfo -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/lockinfo WeatherPlugin_$(shell grep ^Version: lockinfo-control | cut -d ' ' -f 2).deb
 
+plugins:	lockinfo lockweather clock HTC
+
 statusbar: WeatherIconStatusBar.dylib
 	mkdir -p package/statusbar/DEBIAN
 	mkdir -p package/statusbar/Library/MobileSubstrate/DynamicLibraries

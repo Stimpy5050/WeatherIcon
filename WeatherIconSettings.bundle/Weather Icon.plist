@@ -87,6 +87,7 @@
 				<string>WeatherBug</string>
 				<string>WeatherBug Elite</string>
 				<string>Outside</string>
+				<string>Weather HD</string>
 				<string>AccuWeather.com</string>
 				<string>Fizz Weather</string>
 				<string>Fizz Traveller</string>
@@ -106,6 +107,7 @@
 				<string>com.aws.weatherbug.pro</string>
 				<string>com.aws.weatherbug.elite</string>
 				<string>com.icelantern.Outside</string>
+				<string>com.vimov.weatherhd</string>
 				<string>com.yourcompany.TestWithCustomTabs</string>
 				<string>fizzsoftware.com.fizzweather</string>
 				<string>fizzsoftware.com.fizztraveller</string>

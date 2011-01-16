@@ -180,7 +180,22 @@
 
 	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
 
-	LWHeaderView* header = self.headerView;
+	LWHeaderView* header = (LWHeaderView*)self.headerView;
+
+	BOOL themeBG = NO;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ThemeBackground"])
+		themeBG = n.boolValue;
+
+	if (themeBG)
+	{
+		header.background.image = [[self.plugin theme] largeHeaderBackground];
+		header.background.alpha = [self.plugin headerTransparency];
+	}
+	else
+	{
+		header.background.image = _UIImageWithName(@"UILCDBackground.png");
+		header.background.alpha = 1.0;
+	}
 
 	UIImageView* icon = [self weatherIcon];
 	header.icon.image = icon.image;
