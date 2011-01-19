@@ -70,15 +70,17 @@
 
 @synthesize icons, pluginTheme;
 
+/*
 -(void) setFrame:(CGRect) r
 {
 	[super setFrame:r];
 	[self setNeedsDisplay];
 }
+*/
 
 -(void) drawRect:(struct CGRect) rect
 {
-	float screenWidth = [[UIScreen mainScreen] rotatedScreenSize].width;
+	float screenWidth = rect.size.width; //[[UIScreen mainScreen] rotatedScreenSize].width;
 	int width = ((screenWidth - 10) / 6);
 	double scale = 0.66;
 
@@ -110,15 +112,17 @@
 
 @synthesize timestamp, updatedString;
 
+/*
 -(void) setFrame:(CGRect) r
 {
 	[super setFrame:r];
 	[self setNeedsDisplay];
 }
+*/
 
 -(void) drawRect:(struct CGRect) rect
 {
-	float screenWidth = [[UIScreen mainScreen] rotatedScreenSize].width;
+	float screenWidth = rect.size.width; //[[UIScreen mainScreen] rotatedScreenSize].width;
 	int width = ((screenWidth - 10) / 6);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
@@ -165,18 +169,20 @@
 
 @implementation WIForecastDaysView
 
+/*
 -(void) setFrame:(CGRect) r
 {
 	[super setFrame:r];
 	[self setNeedsDisplay];
 }
+*/
 
 -(void) drawRect:(struct CGRect) rect
 {
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
 
-	float screenWidth = [[UIScreen mainScreen] rotatedScreenSize].width;
+	float screenWidth = rect.size.width; //[[UIScreen mainScreen] rotatedScreenSize].width;
 	int width = ((screenWidth - 10) / 6);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
@@ -463,10 +469,15 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	self.daysView = [[[WIForecastDaysView alloc] init] autorelease];
 	self.daysView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.daysView.contentMode = UIViewContentModeRedraw;
+
 	self.iconView = [[[WIForecastIconView alloc] init] autorelease];
 	self.iconView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.iconView.contentMode = UIViewContentModeRedraw;
+
 	self.tempView = [[[WIForecastTempView alloc] init] autorelease];
 	self.tempView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.tempView.contentMode = UIViewContentModeRedraw;
 
 	self.reloadCondition = [[[NSCondition alloc] init] autorelease];
 	self.updateLock = [[[NSLock alloc] init] autorelease];
