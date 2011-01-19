@@ -6,21 +6,21 @@
 @synthesize dateFormat, timeFormat;
 @synthesize showCalendar;
 
+/*
 -(void) setFrame:(CGRect) f
 {
 	[super setFrame:f];
 	[self setNeedsLayout];
 }
+*/
 
 -(id) initWithFrame:(CGRect) frame
 {
 	self = [super initWithFrame:frame];
-
+	self.contentMode = UIViewContentModeRedraw;
 	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
         self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
-
 	[self updateTime];
-
 	return self;
 }
 

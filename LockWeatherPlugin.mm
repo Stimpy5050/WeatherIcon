@@ -15,24 +15,9 @@
 {
 	[super layoutSubviews];
 
-	CGRect screen = [[UIScreen mainScreen] bounds];
-	float center = 0;
+	float center = (self.frame.size.width / 2);
 
-	if (objc_getClass("UIStatusBar"))
-	{
-		SpringBoard* sb = [UIApplication sharedApplication];
-		int orientation = [sb activeInterfaceOrientation];
-		center = (orientation == 3 || orientation == 4 ? screen.size.height : screen.size.width) / 2;
-	}
-	else
-	{
-		int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
-		center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
-	}
-
-	CGRect bgr = self.background.frame;
-	bgr.size.width = (center * 2);
-	self.background.frame = bgr;
+	self.background.frame = self.bounds;
 
 	self.date.frame = CGRectMake(5, 56, center - 40, 18);
 	self.city.frame = CGRectMake(5, 73, center - 40, 18);
