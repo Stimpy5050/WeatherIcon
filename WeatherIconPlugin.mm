@@ -15,13 +15,12 @@
 -(CGSize) rotatedScreenSize
 {
 	CGRect screen = [self bounds];
-        int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
+	int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
 	return (orientation == 90 || orientation == -90 ? 
-		CGSizeMake(screen.size.height, screen.size.width) : screen.size);
+			CGSizeMake(screen.size.height, screen.size.width) : screen.size);
 }
 
 @end
-
 
 @interface UIImage (WIPAdditions)
 - (id)wip_initWithContentsOfResolutionIndependentFile:(NSString *)path;

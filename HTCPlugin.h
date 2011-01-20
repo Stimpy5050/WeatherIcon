@@ -3,7 +3,7 @@
 
 @interface utilTools : NSObject
 
--(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font inFrame:(CGRect)frame withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines;		
+-(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font inSize:(CGSize)size withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines;		
 -(UIColor*) colourToSetFromInt:(int)colourInt;
 -(UIColor*) colourToSetFromRed:(CGFloat)Red andGreen:(CGFloat)Green andBlue:(CGFloat)Blue;
 
@@ -63,12 +63,6 @@
 -(void) updatePreferences:(NSDictionary*)preferences;
 -(void) updateDigits;
 -(void) updateColours;
-
--(UIImageView*) iconViewToFitInFrame:(CGRect)frame;
--(UIImageView*) backgroundWithFrame:(CGRect)frame andBackgroundImage:(int)bgi;
--(UILabel*) dateViewToFitInFrame:(CGRect)frame withColour:(int)textColour;
--(UILabel*) cityViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour;
--(UILabel*) descriptionViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour;
 
 @end
 

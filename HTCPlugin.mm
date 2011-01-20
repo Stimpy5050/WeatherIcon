@@ -1,9 +1,8 @@
 #import "HTCPlugin.h"
 #import "HTCConstants.h"
 #import <UIKit/UIKit.h>
-#include "substrate.h"
-
-Class $SBStatusBarControllerHTC = objc_getClass("SBStatusBarController");
+#include <substrate.h>
+#include <math.h>
 
 #define localize(str) \
 [self.plugin.bundle localizedStringForKey:str value:str table:nil]
@@ -22,12 +21,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 
 @implementation utilTools
 
--(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font inFrame:(CGRect)frame withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines
+-(UIFont*) fontToFitText:(NSString*)text withFont:(UIFont*)font inSize:(CGSize)size withMinSize:(int)minSize withMaxSize:(int)maxSize allowMoreLines:(BOOL)moreLines
 {		
 	int i = maxSize;
 	
 	UIFont* newFont = font;
-	CGSize constraintSize = CGSizeMake(frame.size.width, MAXFLOAT);
+	CGSize constraintSize = CGSizeMake(size.width, MAXFLOAT);
 	
 	for(i; i >= minSize; i=i-2)
 	{
@@ -36,12 +35,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 		if (moreLines)
 		{
 			CGSize labelSize = [text sizeWithFont:newFont constrainedToSize:constraintSize lineBreakMode:UILineBreakModeWordWrap];
-			if (labelSize.height <= frame.size.height)
+			if (labelSize.height <= size.height)
 				break;
 			
 		} else {
 			CGSize labelSize = [text sizeWithFont:newFont];
-			if (labelSize.width <= frame.size.width)
+			if (labelSize.width <= size.width)
 				break;
 			
 		}			
@@ -141,8 +140,15 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	self = [super initWithFrame:frame];
 	
 	UIImage* initImage = [imageCacheControl getDigit:0];
+	CGSize originalDigitSize;
 	
-	CGSize originalDigitSize = initImage.size;
+	if (isnan(initImage.size.width) || isnan(initImage.size.height) || initImage.size.width == 0 || initImage.size.height == 0)
+	{
+		originalDigitSize = CGSizeMake(36, 60);
+	} else {
+		originalDigitSize = initImage.size;
+	}
+
 	CGSize newDigitSize = CGSizeMake((int)((frame.size.height / originalDigitSize.height) * originalDigitSize.width), frame.size.height);
 	
 	self.hoursTens = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, newDigitSize.width, newDigitSize.height)] autorelease];
@@ -170,8 +176,16 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	
 	UIImage* initImage = [imageCacheControl getDigit:0];
 	
-	CGSize originalDigitSize = initImage.size;
-	CGSize newDigitSize = CGSizeMake((int)((self.frame.size.height / originalDigitSize.height)*originalDigitSize.width),self.frame.size.height);
+	CGSize originalDigitSize;
+	
+	if (isnan(initImage.size.width) || isnan(initImage.size.height) || initImage.size.width == 0 || initImage.size.height == 0)
+	{
+		originalDigitSize = CGSizeMake(36, 60);
+	} else {
+		originalDigitSize = initImage.size;
+	}
+	
+	CGSize newDigitSize = CGSizeMake((int)((self.frame.size.height / originalDigitSize.height) * originalDigitSize.width), self.frame.size.height);
 	
 	self.hoursTens.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
 	self.hoursUnits.frame = CGRectMake(newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
@@ -296,9 +310,7 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	
 	/* Update Layout */
 
-	CGRect screen = [[UIScreen mainScreen] bounds];
-    int orientation = [[$SBStatusBarControllerHTC sharedStatusBarController] statusBarOrientation];
-    float center = (orientation == 90 || orientation == -90 ? screen.size.height : screen.size.width) / 2;
+	float center = (self.frame.size.width / 2);
 
 	/* Update Frame and Background */
 	int bgInt = 0;
@@ -321,39 +333,48 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	
 	/*Update Icon Size and Position */
 	double iconStandardScale = 3.00;
-	CGSize is = self.icon.image.size; 
-	CGRect ir = CGRectMake(0, 0, is.width, is.height);
+	CGSize iconSize = self.icon.image.size; 
+	
+	if (isnan(iconSize.width) || isnan(iconSize.height) || iconSize.height == 0 || iconSize.width == 0)
+	{
+		NSLog(@"HTC: Icon size was invalid - replacing now");
+		iconSize = CGSizeMake(80, 80);
+	}
+	CGPoint ic = CGPointMake(center, 135);
 	
 	if (spaceSave)
 	{
-		if (ir.size.width > ir.size.height)
+		if (iconSize.width > iconSize.height)
 		{
-			iconStandardScale = (55 / ir.size.width);
+			iconStandardScale = (55 / iconSize.width);
 		} else {
-			iconStandardScale = (55 / ir.size.height);
+			iconStandardScale = (55 / iconSize.height);
 		}
+		ic = CGPointMake(center, 85);
 	} else {
-		if (ir.size.width > ir.size.height)
+		if (iconSize.width > iconSize.height)
 		{
-			iconStandardScale = (80 / ir.size.width);
+			iconStandardScale = (80 / iconSize.width);
 		} else {
-			iconStandardScale = (80 / ir.size.height);
+			iconStandardScale = (80 / iconSize.height);
 		}
 	}
-	ir.size.width *= (iconStandardScale * iconScale);
-	ir.size.height *= (iconStandardScale * iconScale);
-	self.icon.frame = ir;
+	iconSize.width *= (iconStandardScale * iconScale);
+	iconSize.height *= (iconStandardScale * iconScale);
+	
+	self.icon.frame = CGRectMake(ic.x - (int)(iconSize.width / 2), ic.y - (int)(iconSize.height / 2), iconSize.width, iconSize.height);
 	
 	/* Set Frame Sizes */
+	
+	CGSize dateSize;
+	
 	if (spaceSave)
 	{
-		self.clock.frame = CGRectMake(0, 0, 98, 37);
-		self.date.frame = CGRectMake(0, 0, 92, 22);
-		self.clock.center = CGPointMake(center, 33);
+		self.clock.frame = CGRectMake(center - 49, 15, 98, 37);
+		dateSize = CGSizeMake(92, 22);
 	} else {
-		self.clock.frame = CGRectMake(0, 0, 163, 60);
-		self.date.frame = CGRectMake(0, 0, 100, 22);
-		self.clock.center = CGPointMake(center, 54);
+		self.clock.frame = CGRectMake(center - 82, 24, 163, 60);
+		dateSize = CGSizeMake(100, 22);
 	}
 	
 	/* Layout Clock Images */
@@ -363,20 +384,22 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	CGSize ds;
 	
 	CGSize cityDescriptionWidth = CGSizeMake(95.0f, MAXFLOAT);
+	CGSize citySize;
+	CGSize descriptionSize;
 	
 	/* Set City Frame Sizes */
 	if (cityTwoLine)
 	{
-		self.city.frame = CGRectMake(0, 0, 95, 33);
+		citySize = CGSizeMake(95, 33);
 		self.city.numberOfLines = 2;
 	} else {
-		self.city.frame = CGRectMake(0, 0, 95, 22);
+		citySize = CGSizeMake(95, 22);
 		self.city.numberOfLines = 1;
 	}
 	
 	/* Resize City Text */
 	UIFont* tmpCityFont = self.city.font;
-	self.city.font = [utilToolsControl fontToFitText:self.city.text withFont:tmpCityFont inFrame:self.city.frame withMinSize:cityMinSize withMaxSize:cityMaxSize allowMoreLines:cityTwoLine];
+	self.city.font = [utilToolsControl fontToFitText:self.city.text withFont:tmpCityFont inSize:citySize withMinSize:cityMinSize withMaxSize:cityMaxSize allowMoreLines:cityTwoLine];
 	
 	/* Reset City Size With New Text Size */
 	if (cityTwoLine)
@@ -391,16 +414,16 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	/* Set Description Frame Sizes */
 	if (descriptionTwoLine)
 	{
-		self.description.frame = CGRectMake(0, 0, 95, 27);
+		descriptionSize = CGSizeMake(95, 27);
 		self.description.numberOfLines = 2;
 	} else {
-		self.description.frame = CGRectMake(0, 0, 95, 18);
+		descriptionSize = CGSizeMake(95, 18);
 		self.description.numberOfLines = 1;
 	}
 	
 	/* Resize Description Text */
 	UIFont* tmpDescriptionFont = self.description.font;
-	self.description.font = [utilToolsControl fontToFitText:self.description.text withFont:tmpDescriptionFont inFrame:self.description.frame withMinSize:descriptionMinSize withMaxSize:descriptionMaxSize allowMoreLines:descriptionTwoLine];
+	self.description.font = [utilToolsControl fontToFitText:self.description.text withFont:tmpDescriptionFont inSize:descriptionSize withMinSize:descriptionMinSize withMaxSize:descriptionMaxSize allowMoreLines:descriptionTwoLine];
 	
 	/* Reset Description Size With New Text Size */
 	if (descriptionTwoLine)
@@ -438,49 +461,26 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	}
 	
 	CGSize tempSize = self.temp.frame.size;
-	CGSize dateSize = self.date.frame.size;
 	
 	if (spaceSave)
 	{
 		self.temp.frame = CGRectMake(tempRHS - tempSize.width, 55, tempSize.width, tempSize.height);
 		self.date.frame = CGRectMake(tempRHS - dateSize.width, 38, dateSize.width, dateSize.height);
-		self.icon.center = CGPointMake(center, 85);
 	} else {
 		self.temp.frame = CGRectMake(tempRHS - tempSize.width, 121, tempSize.width, tempSize.height);
 		self.date.frame = CGRectMake(tempRHS - dateSize.width, 105, dateSize.width, dateSize.height);
-		self.icon.center = CGPointMake(center, 135);
 	}
 	
 	/*Update Date Font Size */
 	
 	UIFont* tmpDateFont = self.date.font;
-	self.date.font = [utilToolsControl fontToFitText:self.date.text withFont:tmpDateFont inFrame:self.date.frame withMinSize:10 withMaxSize:18 allowMoreLines:FALSE];
+	self.date.font = [utilToolsControl fontToFitText:self.date.text withFont:tmpDateFont inSize:dateSize withMinSize:10 withMaxSize:18 allowMoreLines:FALSE];
 }
 
 -(id) initWithPreferences:(NSDictionary*)preferences
-{	
-	/* General Settings */
-	BOOL spaceSave = false;	
-	if (NSNumber* ss = [preferences objectForKey:@"SpaceSaveEnabled"])
-		spaceSave = ss.boolValue;
-	
-	BOOL removeExtra = false;
-	if (NSNumber* rx = [preferences objectForKey:@"RemoveExtra"])
-		removeExtra = rx.boolValue;
-	
+{		
 	/* Setup HTCHeaderView with default values */
-	int bgInt = 0;
-	CGRect frame;
-	if (removeExtra && !spaceSave)
-	{	
-		bgInt = 1;
-		frame = CGRectMake(0, 0, 320, 170);
-	} else if (spaceSave) {
-		bgInt = 2;
-		frame = CGRectMake(0, 0, 320, 102);
-	} else {
-		frame = CGRectMake(0, 0, 320, 180);
-	}
+	CGRect frame = CGRectMake(0, 0, 320, 180);
 	
 	self = [super initWithFrame:frame];
 	self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
@@ -489,16 +489,35 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	
 	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
 	
-	self.icon = [self iconViewToFitInFrame:CGRectMake(0, 0, 80, 80)];
-	self.background = [self backgroundWithFrame:frame andBackgroundImage:bgInt];
-	self.date = [self dateViewToFitInFrame:CGRectMake(0, 0, 100, 22) withColour:1];
+	self.icon = [[[UIImageView alloc] initWithFrame:CGRectMake(120, 95, 80, 80)] autorelease];
 	
-	self.temp = [[[HTCTempView alloc] initWithFrame:CGRectMake(0, 0, 100, 37) withTempColour:7 withHighColour:1 withLowColour:1] autorelease];
-	self.clock = [[[HTCClockView alloc] initWithFrame:CGRectMake(0, 0, 163, 60)] autorelease];
+	self.background = [[[UIImageView alloc] initWithFrame:frame] autorelease];
+	UIImage* bgImage = [imageCacheControl getBackground:0];
+	self.background.image = bgImage;
+	
+	self.date = [[[UILabel alloc] initWithFrame:CGRectMake(200, 105, 100, 22)] autorelease];
+	self.date.font = [UIFont boldSystemFontOfSize:16];
+	self.date.textAlignment = UITextAlignmentRight;
+	self.date.textColor = [utilToolsControl colourToSetFromInt:1];
+	self.date.backgroundColor = [UIColor clearColor];
+	
+	self.temp = [[[HTCTempView alloc] initWithFrame:CGRectMake(192, 121, 100, 37) withTempColour:7 withHighColour:1 withLowColour:1] autorelease];
+	self.clock = [[[HTCClockView alloc] initWithFrame:CGRectMake(78, 24, 163, 60)] autorelease];
 
-	self.city = [self cityViewToFitInFrame:CGRectMake(0, 0, 95, 22) withMaxSize:18 usingTwoLines:FALSE withColour:7];
-	self.description = [self descriptionViewToFitInFrame:CGRectMake(0, 0, 95, 18) withMaxSize:14 usingTwoLines:FALSE withColour:1];
-			
+	self.city = [[[UILabel alloc] initWithFrame:CGRectMake(29, 102, 95, 22)] autorelease];
+	self.city.font = [UIFont boldSystemFontOfSize:18];
+	self.city.textAlignment = UITextAlignmentLeft;
+	self.city.textColor = [utilToolsControl colourToSetFromInt:7];
+	self.city.backgroundColor = [UIColor clearColor];
+	self.city.numberOfLines = 1;
+	
+	self.description = [[[UILabel alloc] initWithFrame:CGRectMake(29, 126, 95, 18)] autorelease];
+	self.description.font = [UIFont boldSystemFontOfSize:14];
+	self.description.textAlignment = UITextAlignmentLeft;
+	self.description.textColor = [utilToolsControl colourToSetFromInt:1];
+	self.description.backgroundColor = [UIColor clearColor];
+	self.description.numberOfLines = 1;
+	
 	[self addSubview:self.background];
 	[self addSubview:self.date];
 	[self addSubview:self.temp];
@@ -548,67 +567,12 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	self.temp.temp.textColor = [utilToolsControl colourToSetFromInt:tempColour];
 	self.temp.high.textColor = [utilToolsControl colourToSetFromInt:highColour];
 	self.temp.low.textColor = [utilToolsControl colourToSetFromInt:lowColour];
+	self.backgroundColor = [UIColor clearColor];
 }
 
 -(void) updatePreferences:(NSDictionary*)preferences
 {
 	self.viewPreferences = [NSDictionary dictionaryWithDictionary:preferences];
-}
-
--(UIImageView*) iconViewToFitInFrame:(CGRect)frame
-{
-	UIImageView* tmpIcon = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
-	return tmpIcon;
-}
-
--(UIImageView*) backgroundWithFrame:(CGRect)frame andBackgroundImage:(int)bgi
-{	
-	UIImage* bgImage = [imageCacheControl getBackground:bgi];
-	UIImageView* tmpBackground = [[[UIImageView alloc] initWithFrame:frame] autorelease];
-	tmpBackground.image = bgImage;
-	return tmpBackground;
-}					 
-					 
--(UILabel*) dateViewToFitInFrame:(CGRect)frame withColour:(int)textColour
-{
-	UILabel* tmpDate = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	tmpDate.font = [UIFont boldSystemFontOfSize:16];
-	tmpDate.textAlignment = UITextAlignmentRight;
-	tmpDate.textColor = [utilToolsControl colourToSetFromInt:textColour];
-	tmpDate.backgroundColor = [UIColor clearColor];
-	return tmpDate;
-}
-
--(UILabel*) cityViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour
-{
-	UILabel* tmpCity = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	tmpCity.font = [UIFont boldSystemFontOfSize:maxSize];
-	tmpCity.textAlignment = UITextAlignmentLeft;
-	tmpCity.textColor = [utilToolsControl colourToSetFromInt:textColour];
-	tmpCity.backgroundColor = [UIColor clearColor];
-	if (twoLine)
-	{
-		tmpCity.numberOfLines = 2;
-	} else {
-		tmpCity.numberOfLines = 1;
-	}
-	return tmpCity;
-}
-
--(UILabel*) descriptionViewToFitInFrame:(CGRect)frame withMaxSize:(int)maxSize usingTwoLines:(BOOL)twoLine withColour:(int)textColour
-{
-	UILabel* tmpDescription = [[[UILabel alloc] initWithFrame:frame] autorelease];
-	tmpDescription.font = [UIFont boldSystemFontOfSize:maxSize];
-	tmpDescription.textAlignment = UITextAlignmentLeft;
-	tmpDescription.textColor = [utilToolsControl colourToSetFromInt:textColour];
-	tmpDescription.backgroundColor = [UIColor clearColor];
-	if (twoLine)
-	{
-		tmpDescription.numberOfLines = 2;
-	} else {
-		tmpDescription.numberOfLines = 1;
-	}
-	return tmpDescription;
 }
 
 -(void) updateDigits
@@ -658,7 +622,7 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 		self.date.text = [df stringFromDate:now];
 		
 		UIFont* tmpDateFont = self.date.font;
-		self.date.font = [utilToolsControl fontToFitText:self.date.text withFont:tmpDateFont inFrame:self.date.frame withMinSize:10 withMaxSize:18 allowMoreLines:FALSE];
+		self.date.font = [utilToolsControl fontToFitText:self.date.text withFont:tmpDateFont inSize:self.date.frame.size withMinSize:10 withMaxSize:18 allowMoreLines:FALSE];
 		
 		[self.date setNeedsLayout];
 	}
@@ -752,6 +716,8 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	}
 			
 	header.temp.temp.text = [NSString stringWithFormat:@"%d\u00B0", [[weather objectForKey:@"temp"] intValue]];
+	
+	[weather release];
 	
 	[header.temp setNeedsLayout];
 	

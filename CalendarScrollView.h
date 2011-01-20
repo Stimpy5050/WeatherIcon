@@ -1,7 +1,4 @@
 #include "WeatherIconPlugin.h"
-#include <SpringBoard/SBAwayDateView.h>
-#include <SpringBoard/SBStatusBarController.h>
-#include <SpringBoard/SBStatusBarTimeView.h>
 #include <UIKit/UIKit.h>
 #include <substrate.h>
 
@@ -31,7 +28,10 @@
 @property (nonatomic, retain) CalendarView* currentMonth;
 @property (nonatomic, retain) CalendarView* nextMonth;
 
+-(id) initWithFrame:(CGRect) frame marker:(UIImage*) marker jump:(UIImage*) jump;
+
 -(void) setTheme:(LITheme*) theme;
 -(void) showWeeks:(BOOL) weeks;
+-(void) setDate:(NSDate*) date;
 
 @end

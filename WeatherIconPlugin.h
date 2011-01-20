@@ -41,4 +41,6 @@
 @property (retain) NSCondition* reloadCondition;
 @property (retain) NSLock* updateLock;
 
+-(void) updateWeatherViews;
+
 @end

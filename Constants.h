@@ -1,4 +1,4 @@
-#include <Foundation/Foundation.h>
+#import <Foundation/Foundation.h>
 
 static NSArray* defaultIcons = [[NSArray arrayWithObjects:
         @"tstorms", @"tstorms", @"tstorms", @"tstorms", @"tstorms",

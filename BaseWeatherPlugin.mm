@@ -128,20 +128,21 @@ MSHook(void, _undimScreen, id self, SEL sel)
 
 		UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"LWCalendarCell"];
 
-       		if (cell == nil)
+		if (cell == nil)
 		{
-	        	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-	                cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:@"LWCalendarCell"] autorelease];
-
+			CGFloat height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
+			cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:@"LWCalendarCell"] autorelease];
+			
 			UIImage* marker = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LIClockTodayMarker", tableView.theme.sectionIconSet] ofType:@"png"]];
-                UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LICurrentMonth", tableView.theme.sectionIconSet] ofType:@"png"]];
-
+			UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LICurrentMonth", tableView.theme.sectionIconSet] ofType:@"png"]];
+			
 			CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) marker:marker jump:jump] autorelease];
 			scroll.tag = 9494;
 			self.calendarScrollView = scroll;
 			[cell.contentView addSubview:scroll];
-	        }
-
+			 
+		}
+		 
 		CalendarScrollView* scroll = [cell.contentView viewWithTag:9494];
 
 		BOOL showWeeks = NO;
@@ -151,7 +152,7 @@ MSHook(void, _undimScreen, id self, SEL sel)
 		[scroll showWeeks:showWeeks];
 		[scroll setTheme:tableView.theme];
 
-	        return cell;
+		return cell;
 	}
 	
 	return [super tableView:tableView cellForRowAtIndexPath:indexPath];

@@ -1,4 +1,4 @@
-#include <Foundation/Foundation.h>
+#import <Foundation/Foundation.h>
 
 static NSArray* digits = [[NSArray arrayWithObjects:
 @"dg0", @"dg1", @"dg2", @"dg3", @"dg4",
