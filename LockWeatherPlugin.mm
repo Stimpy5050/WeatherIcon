@@ -117,6 +117,7 @@
 	self.low.backgroundColor = [UIColor clearColor];
 
 	self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+	self.backgroundColor = [UIColor clearColor];
 
 	return self;
 }
@@ -173,13 +174,28 @@
 
 	if (themeBG)
 	{
-		header.background.image = [[self.plugin theme] largeHeaderBackground];
-		header.background.alpha = [self.plugin headerTransparency];
+		header.background.image = self.plugin.theme.largeHeaderBackground;
+		header.background.alpha = self.plugin.headerTransparency;
+
+		UIImageView* countBG = [[[UIImageView alloc] initWithImage:self.plugin.theme.countBackground] autorelease];
+                countBG.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+                countBG.tag = 93450;
+                countBG.alpha = self.plugin.headerTransparency * 0.8;
+                countBG.contentStretch = CGRectMake(0.5, 0.0, 0.0, 1.0);
+
+                CGRect countRect = countBG.frame;
+                countRect.origin.y = (header.frame.size.height - countRect.size.height) / 2;
+                countRect.origin.x = header.bounds.size.width - countRect.size.width - 3;
+                countBG.frame = countRect;
+                CGPoint countBGCenter = countBG.center;
+
+		[header addSubview:countBG];
 	}
 	else
 	{
 		header.background.image = _UIImageWithName(@"UILCDBackground.png");
 		header.background.alpha = 1.0;
+                [[header viewWithTag:93450] removeFromSuperview];
 	}
 
 	UIImageView* icon = [self weatherIcon];

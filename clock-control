@@ -9,4 +9,4 @@ Maintainer: poetic_folly <poetic_folly@modmyi.com>
 Author: David Ashman (Stimpy5050) <dashman@gmail.com>
 Sponsor: ModMyi.com <http://modmyi.com/forums/index.php?styleid=31>
 Section: LockInfo Addons
-Pre-Depends: com.ashman.lockinfo (>= 1.1.6)
+Pre-Depends: com.ashman.lockinfo (>= 3.0.0.11)
