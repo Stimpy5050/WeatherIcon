@@ -6,19 +6,6 @@
 @interface UIScreen (WeatherIcon)
 
 -(float) scale;
--(CGSize) rotatedScreenSize;
-
-@end
-
-@implementation UIScreen (WeatherIcon)
-
--(CGSize) rotatedScreenSize
-{
-	CGRect screen = [self bounds];
-	int orientation = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarOrientation];
-	return (orientation == 90 || orientation == -90 ? 
-			CGSizeMake(screen.size.height, screen.size.width) : screen.size);
-}
 
 @end
 
@@ -61,15 +48,10 @@
 
 @implementation WIForecastView
 
-@synthesize forecast, theme;
+@synthesize forecast, icons, theme, pluginTheme;
+@synthesize timestamp, updatedString;
 
-@end
-
-@implementation WIForecastIconView
-
-@synthesize icons, pluginTheme;
-
--(void) drawRect:(struct CGRect) rect
+-(void) drawIcons:(struct CGRect) rect
 {
 	float screenWidth = rect.size.width; 
 	int width = ((screenWidth - 10) / 6);
@@ -91,19 +73,13 @@
 			s.width *= scale;
 			s.height *= scale;
 
-			CGRect r = CGRectMake((width * i) + (width / 2) - (s.width / 2), (rect.size.height / 2) - (s.height / 2), s.width, s.height);
+			CGRect r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + (rect.size.height / 2) - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
 		}
 	}
 }
 
-@end
-
-@implementation WIForecastTempView
-
-@synthesize timestamp, updatedString;
-
--(void) drawRect:(struct CGRect) rect
+-(void) drawTemps:(struct CGRect) rect
 {
 	float screenWidth = rect.size.width;
 	int width = ((screenWidth - 10) / 6);
@@ -112,16 +88,21 @@
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-        	CGRect r = CGRectMake((width * i) - 5, 1, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
-        	[self.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+        	CGRect r = CGRectMake(rect.origin.x + (width * i) - 5, rect.origin.y, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
 
-        	r.origin.y -= 1;
-        	[self.theme.summaryStyle.textColor set];
+		if (self.theme.detailStyle.shadowOffset.height != 0)
+		{
+     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
+	        	[self.theme.detailStyle.shadowColor set];
+			[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
+		}
+
+	        [self.theme.summaryStyle.textColor set];
 		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake((width * i) + r.size.width - 5, 0, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
+        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width - 5, rect.origin.y, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
 
 		if (self.theme.detailStyle.shadowOffset.height != 0)
 		{
@@ -143,21 +124,22 @@
 		NSString* str = [NSString stringWithFormat:@"%@ %@", self.updatedString, [df stringFromDate:[NSDate dateWithTimeIntervalSince1970:self.timestamp.doubleValue]]];
 
 		UIFont* font = [UIFont boldSystemFontOfSize:(self.theme.detailStyle.font.pointSize - 2)];
-		CGRect r = CGRectMake(0, self.theme.detailStyle.font.pointSize + 8, screenWidth, font.pointSize);
-        	[self.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+		CGRect r = CGRectMake(rect.origin.x, rect.origin.y + self.theme.detailStyle.font.pointSize + 7, screenWidth, font.pointSize);
 
-        	r.origin.y -= 1;
+		if (self.theme.detailStyle.shadowOffset.height != 0)
+		{
+     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
+	        	[self.theme.detailStyle.shadowColor set];
+			[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
+		}
+
         	[self.theme.detailStyle.textColor set];
 		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
-@end
-
-@implementation WIForecastDaysView
-
--(void) drawRect:(struct CGRect) rect
+-(void) drawDays:(struct CGRect) rect
 {
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
@@ -170,7 +152,7 @@
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
-        	CGRect r = CGRectMake((width * i), 0, width, self.theme.detailStyle.font.pointSize + 2);
+        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y, width, self.theme.detailStyle.font.pointSize + 2);
 
 		if (self.theme.detailStyle.shadowOffset.height != 0)
 		{
@@ -185,13 +167,21 @@
 	}
 }
 
+-(void) drawRect:(struct CGRect) rect
+{
+	float height = self.theme.detailStyle.font.pointSize + 6;
+	[self drawDays:CGRectMake(0, 0, rect.size.width, height)];
+	[self drawIcons:CGRectMake(0, height, rect.size.width, 30)];
+	[self drawTemps:CGRectMake(0, height + 30, rect.size.width, (self.timestamp ? 2 * height : height))];
+}
+
 @end
 
 extern "C" UIImage *_UIImageWithName(NSString *);
 
 @implementation WeatherIconPlugin
 
-@synthesize dataCache, iconCache, plugin, daysView, iconView, tempView, updateLock, reloadCondition, theme;
+@synthesize dataCache, iconCache, plugin, forecastView, updateLock, reloadCondition, theme;
 
 - (void) loadTheme
 {
@@ -226,7 +216,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-        return 3;
+        return 1;
 }
 
 - (NSString *)tableView:(LITableView *)tableView detailForHeaderInSection:(NSInteger)section
@@ -308,20 +298,12 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 - (CGFloat)tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	switch (indexPath.row)
-	{
-		case 0:
-			return tableView.theme.detailStyle.font.pointSize + 6;
-		case 1:
-			return 30;
-		case 2:
-			BOOL show = false;
-			if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
-				show = n.boolValue;
+	float height = tableView.theme.detailStyle.font.pointSize + 6;
+	BOOL show = false;
+	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
+		show = n.boolValue;
 
-			float height = tableView.theme.detailStyle.font.pointSize + 6;
-			return (show ? 2 * height : height);
-	}
+	return (show ? (height * 3) + 30 : (height * 2) + 30);
 }
 
 - (NSString *)tableView:(LITableView *)tableView titleForHeaderInSection:(NSInteger)section
@@ -342,10 +324,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
 
-	self.daysView.forecast = forecast;
-	[self.daysView setNeedsDisplay];
-
-	self.iconView.forecast = forecast;
+	self.forecastView.forecast = forecast;
 
 	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
 	for (int i = 0; i < forecast.count && i < 6; i++)
@@ -358,77 +337,48 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 		[arr addObject:(icon == nil ? [NSNull null] : icon)];
 	}
-	self.iconView.icons = arr;
-	self.iconView.pluginTheme = self.theme;
-	[self.iconView setNeedsDisplay];
+	self.forecastView.icons = arr;
+	self.forecastView.pluginTheme = self.theme;
 
 	BOOL show = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
 		show = n.boolValue;
 
-	self.tempView.forecast = forecast;
-	self.tempView.updatedString = localize(@"Updated");
-	self.tempView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
-	[self.tempView setNeedsDisplay];
+	self.forecastView.updatedString = localize(@"Updated");
+	self.forecastView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
+	[self.forecastView setNeedsDisplay];
 
 	[forecast release];
 }
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	WIForecastView* fcv = nil;
-	switch (indexPath.row)
-	{
-		case 0:
-			fcv = self.daysView;
-			break;
-		case 1:
-			fcv = self.iconView;
-			break;
-		case 2:
-			fcv = self.tempView;
-			break;
-	}
-
-	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-	NSString* reuse = [NSString stringWithFormat:@"Forecast%d", indexPath.row];
-
-	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:reuse];
+	UITableViewCell *fc = [tableView dequeueReusableCellWithIdentifier:@"WIForecast"];
 	if (fc == nil)
 	{
-		fc = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [[UIScreen mainScreen] rotatedScreenSize].width, height) reuseIdentifier:reuse] autorelease];
+		fc = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"WIForecast"] autorelease];
 		fc.backgroundColor = [UIColor clearColor];
 	}
 
-	for (UIView* subview in fc.contentView.subviews)
-		[subview removeFromSuperview];
-	[fc.contentView addSubview:fcv];
-
-	fcv.frame = CGRectMake(10, (indexPath.row == 0 ? 2 : 0), [[UIScreen mainScreen] rotatedScreenSize].width - 10, height);
-	fcv.backgroundColor = [UIColor clearColor];
-	fcv.theme = tableView.theme;
-	fcv.hidden = false;
-	fcv.alpha = 1;
+	[fc.contentView addSubview:self.forecastView];
+	self.forecastView.theme = tableView.theme;
 
 	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
 	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
-	fcv.forecast = forecast;
+	self.forecastView.forecast = forecast;
 
-	if (indexPath.row == 1)
+	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
+	for (int i = 0; i < forecast.count && i < 6; i++)
 	{
-		NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
-		for (int i = 0; i < forecast.count && i < 6; i++)
-		{
-			NSDictionary* day = [forecast objectAtIndex:i];
-			UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
-	
-			if (icon == nil)
-				icon = [self defaultIcon:[day objectForKey:@"code"]];
-	
-			[arr addObject:(icon == nil ? [NSNull null] : icon)];
-		}
-		self.iconView.icons = arr;
+		NSDictionary* day = [forecast objectAtIndex:i];
+		UIImage* icon = [self loadIcon:[day objectForKey:@"icon"]];
+
+		if (icon == nil)
+			icon = [self defaultIcon:[day objectForKey:@"code"]];
+
+		[arr addObject:(icon == nil ? [NSNull null] : icon)];
 	}
+	self.forecastView.icons = arr;
 
 	[forecast release];
 
@@ -436,11 +386,12 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
 		show = n.boolValue;
 
-	self.tempView.updatedString = localize(@"Updated");
-	self.tempView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
+	self.forecastView.updatedString = localize(@"Updated");
+	self.forecastView.timestamp = (show ? [weather objectForKey:@"timestamp"] : nil);
+	self.forecastView.frame = fc.contentView.bounds;
 
 	// mark dirty
-	[fcv setNeedsDisplay];
+	[self.forecastView setNeedsDisplay];
 
 	return fc;
 }
@@ -452,17 +403,10 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	self.dataCache = [NSMutableDictionary dictionaryWithCapacity:10];
 	self.iconCache = [NSMutableDictionary dictionaryWithCapacity:10];
 
-	self.daysView = [[[WIForecastDaysView alloc] init] autorelease];
-	self.daysView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-	self.daysView.contentMode = UIViewContentModeRedraw;
-
-	self.iconView = [[[WIForecastIconView alloc] init] autorelease];
-	self.iconView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-	self.iconView.contentMode = UIViewContentModeRedraw;
-
-	self.tempView = [[[WIForecastTempView alloc] init] autorelease];
-	self.tempView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-	self.tempView.contentMode = UIViewContentModeRedraw;
+	self.forecastView = [[[WIForecastView alloc] init] autorelease];
+	self.forecastView.backgroundColor = [UIColor clearColor];
+	self.forecastView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+	self.forecastView.contentMode = UIViewContentModeRedraw;
 
 	self.reloadCondition = [[[NSCondition alloc] init] autorelease];
 	self.updateLock = [[[NSLock alloc] init] autorelease];

@@ -6,14 +6,6 @@
 @synthesize dateFormat, timeFormat;
 @synthesize showCalendar;
 
-/*
--(void) setFrame:(CGRect) f
-{
-	[super setFrame:f];
-	[self setNeedsLayout];
-}
-*/
-
 -(id) initWithFrame:(CGRect) frame
 {
 	self = [super initWithFrame:frame];
