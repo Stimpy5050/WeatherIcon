@@ -69,17 +69,9 @@
 
 @synthesize icons, pluginTheme;
 
-/*
--(void) setFrame:(CGRect) r
-{
-	[super setFrame:r];
-	[self setNeedsDisplay];
-}
-*/
-
 -(void) drawRect:(struct CGRect) rect
 {
-	float screenWidth = rect.size.width; //[[UIScreen mainScreen] rotatedScreenSize].width;
+	float screenWidth = rect.size.width; 
 	int width = ((screenWidth - 10) / 6);
 	double scale = 0.66;
 
@@ -111,17 +103,9 @@
 
 @synthesize timestamp, updatedString;
 
-/*
--(void) setFrame:(CGRect) r
-{
-	[super setFrame:r];
-	[self setNeedsDisplay];
-}
-*/
-
 -(void) drawRect:(struct CGRect) rect
 {
-	float screenWidth = rect.size.width; //[[UIScreen mainScreen] rotatedScreenSize].width;
+	float screenWidth = rect.size.width;
 	int width = ((screenWidth - 10) / 6);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
@@ -137,12 +121,17 @@
 		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake((width * i) + r.size.width - 5, 1, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
-        	[self.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+        	r = CGRectMake((width * i) + r.size.width - 5, 0, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
 
-        	r.origin.y -= 1;
-        	[self.theme.detailStyle.textColor set];
+		if (self.theme.detailStyle.shadowOffset.height != 0)
+		{
+     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
+	        	[self.theme.detailStyle.shadowColor set];
+			[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
+		}
+
+       		[self.theme.detailStyle.textColor set];
 		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 
@@ -168,20 +157,12 @@
 
 @implementation WIForecastDaysView
 
-/*
--(void) setFrame:(CGRect) r
-{
-	[super setFrame:r];
-	[self setNeedsDisplay];
-}
-*/
-
 -(void) drawRect:(struct CGRect) rect
 {
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
 
-	float screenWidth = rect.size.width; //[[UIScreen mainScreen] rotatedScreenSize].width;
+	float screenWidth = rect.size.width;
 	int width = ((screenWidth - 10) / 6);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
@@ -189,11 +170,16 @@
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
-        	CGRect r = CGRectMake((width * i), 1, width, self.theme.detailStyle.font.pointSize + 2);
-        	[self.theme.detailStyle.shadowColor set];
-		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        	CGRect r = CGRectMake((width * i), 0, width, self.theme.detailStyle.font.pointSize + 2);
 
-        	r.origin.y -= 1;
+		if (self.theme.detailStyle.shadowOffset.height != 0)
+		{
+     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
+	        	[self.theme.detailStyle.shadowColor set];
+			[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
+		}
+
         	[self.theme.summaryStyle.textColor set];
 		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
