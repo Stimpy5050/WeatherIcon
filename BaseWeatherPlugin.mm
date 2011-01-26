@@ -10,6 +10,7 @@
 {
 	self = [super initWithFrame:frame];
 	self.contentMode = UIViewContentModeRedraw;
+	self.backgroundColor = [UIColor clearColor];
 	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
         self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
 	[self updateTime];
