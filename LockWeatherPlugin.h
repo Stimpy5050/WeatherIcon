@@ -3,6 +3,7 @@
 @interface LWHeaderView : LockHeaderView
 
 @property (nonatomic, retain) UIImageView* background;
+@property (nonatomic, retain) UIImageView* themedBackground;
 @property (nonatomic, retain) UIImageView* icon;
 @property (nonatomic, retain) UILabel* description;
 @property (nonatomic, retain) UILabel* city;

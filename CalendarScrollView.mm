@@ -166,8 +166,8 @@
 
 	UIButton* b = [UIButton buttonWithType:UIButtonTypeCustom];
 	b.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
-	b.frame = CGRectMake(frame.size.width - 40, 0, 40, 40);
-	b.imageEdgeInsets = UIEdgeInsetsMake(3, b.frame.size.width - jump.size.width - 5, b.frame.size.height - jump.size.height - 3, 5);
+	b.frame = CGRectMake(0, 0, 40, 40);
+	b.imageEdgeInsets = UIEdgeInsetsMake(0, 0, b.frame.size.height - jump.size.height, b.frame.size.width - jump.size.width);
 	b.showsTouchWhenHighlighted = YES;
 	[b setImage:jump forState:UIControlStateNormal];
 	[b addTarget:self action:@selector(resetDate) forControlEvents:UIControlEventTouchUpInside];
@@ -203,7 +203,7 @@
         CGRect r = CGRectMake(viewRect.origin.x, 2, viewRect.size.width, self.headerStyle.font.pointSize);
         NSString* s = [[df stringFromDate:self.date] uppercaseString];
         [self.dayStyle.textColor set];
-        [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+        [s drawInRect:r withLIStyle:self.dayStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 
         [self.headerStyle.textColor set];
 	r.size.width = width;
@@ -217,7 +217,7 @@
                 r.origin.x = rect.origin.x + (i * width);
                 int index = (i + firstWeekday - 1);
                 NSString* s = [[weekdays objectAtIndex:(index >= weekdays.count ? index - weekdays.count : index)] uppercaseString];
-                [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+                [s drawInRect:r withLIStyle:self.dayStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
         }
 
         NSRange dayRange = [cal rangeOfUnit:NSDayCalendarUnit inUnit:NSMonthCalendarUnit forDate:self.date];
@@ -249,17 +249,10 @@
         		[self.headerStyle.textColor set];
                 	NSString* s = [NSString stringWithFormat:@"W%d", comp.week + week];
 			CGRect wr = CGRectMake(5, r.origin.y, 40, r.size.height);
-	                [s drawInRect:wr withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+	                [s drawInRect:wr withLIStyle:self.dayStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 		}
 
                 NSString* s = [[NSNumber numberWithInt:i + 1] stringValue];
-
-                if (self.dayStyle.shadowColor)
-		{
-                        [self.dayStyle.shadowColor set];
-
-                        [s drawInRect:CGRectOffset(r, self.dayStyle.shadowOffset.width, self.dayStyle.shadowOffset.height) withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
-                }
 
 		BOOL showMarker = NO;
                 if (today == i + 1)
@@ -281,7 +274,7 @@
                         [self.dayStyle.textColor set];
                 }
 
-                [s drawInRect:r withFont:self.dayStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+                [s drawInRect:r withLIStyle:self.dayStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
         }
 }
 

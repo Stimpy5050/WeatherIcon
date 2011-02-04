@@ -53,15 +53,12 @@
 
 -(void) drawIcons:(struct CGRect) rect
 {
-	float screenWidth = rect.size.width; 
-	int width = ((screenWidth - 10) / 6);
+	int width = ((rect.size.width - 10) / 6);
 	double scale = 0.66;
 
 	NSBundle* bundle = [NSBundle mainBundle];
 	if (NSNumber* n = [self.pluginTheme objectForKey:@"LockInfoImageScale"])
 		scale = n.doubleValue;
-
-	NSLog(@"WIP: Scale: %f", scale);
 
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
@@ -73,7 +70,7 @@
 			s.width *= scale;
 			s.height *= scale;
 
-			CGRect r = CGRectMake(rect.origin.x + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + (rect.size.height / 2) - (s.height / 2), s.width, s.height);
+			CGRect r = CGRectMake(rect.origin.x + 5 + (width * i) + (width / 2) - (s.width / 2), rect.origin.y + (rect.size.height / 2) - (s.height / 2), s.width, s.height);
 			[image drawInRect:r];
 		}
 	}
@@ -81,39 +78,19 @@
 
 -(void) drawTemps:(struct CGRect) rect
 {
-	float screenWidth = rect.size.width;
-	int width = ((screenWidth - 10) / 6);
+	int width = ((rect.size.width - 10) / 6);
+	CGSize size = [@"Test" sizeWithFont:self.theme.detailStyle.font];
+
+        CGRect r = CGRectMake(rect.origin.x + 5, rect.origin.y, (width / 2) + 5, size.height);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i) - 5, rect.origin.y, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
-
-		if (self.theme.detailStyle.shadowOffset.height != 0)
-		{
-     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
-	        	[self.theme.detailStyle.shadowColor set];
-			[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
-     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
-		}
-
-	        [self.theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+		[str drawInRect:CGRectOffset(r, (width * i), 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-        	r = CGRectMake(rect.origin.x + (width * i) + r.size.width - 5, rect.origin.y, (width / 2) + 5, self.theme.detailStyle.font.pointSize);
-
-		if (self.theme.detailStyle.shadowOffset.height != 0)
-		{
-     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
-	        	[self.theme.detailStyle.shadowColor set];
-			[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
-     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
-		}
-
-       		[self.theme.detailStyle.textColor set];
-		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+		[str drawInRect:CGRectOffset(r, (width * i) + r.size.width, 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 
 	if (self.timestamp)
@@ -123,19 +100,8 @@
 		df.timeStyle = NSDateFormatterShortStyle;
 		NSString* str = [NSString stringWithFormat:@"%@ %@", self.updatedString, [df stringFromDate:[NSDate dateWithTimeIntervalSince1970:self.timestamp.doubleValue]]];
 
-		UIFont* font = [UIFont boldSystemFontOfSize:(self.theme.detailStyle.font.pointSize - 2)];
-		CGRect r = CGRectMake(rect.origin.x, rect.origin.y + self.theme.detailStyle.font.pointSize + 7, screenWidth, font.pointSize);
-
-		if (self.theme.detailStyle.shadowOffset.height != 0)
-		{
-     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
-	        	[self.theme.detailStyle.shadowColor set];
-			[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
-     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
-		}
-
-        	[self.theme.detailStyle.textColor set];
-		[str drawInRect:r withFont:font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+		CGRect r = CGRectMake(rect.origin.x, rect.origin.y + size.height + 2, rect.size.width, size.height);
+		[str drawInRect:r withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
@@ -144,33 +110,27 @@
         NSDateFormatter* df = [[[NSDateFormatter alloc] init] autorelease];
         NSArray* weekdays = df.shortStandaloneWeekdaySymbols;
 
-	float screenWidth = rect.size.width;
-	int width = ((screenWidth - 10) / 6);
+	int width = ((rect.size.width - 10) / 6);
+
+	CGSize size = [@"Test" sizeWithFont:self.theme.detailStyle.font];
+        CGRect r = CGRectMake(rect.origin.x + 5, rect.origin.y, width, size.height);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
 		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
-        	CGRect r = CGRectMake(rect.origin.x + (width * i), rect.origin.y, width, self.theme.detailStyle.font.pointSize + 2);
 
-		if (self.theme.detailStyle.shadowOffset.height != 0)
-		{
-     			r.origin.y += self.theme.detailStyle.shadowOffset.height;
-	        	[self.theme.detailStyle.shadowColor set];
-			[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
-     			r.origin.y -= self.theme.detailStyle.shadowOffset.height;
-		}
-
-        	[self.theme.summaryStyle.textColor set];
-		[str drawInRect:r withFont:self.theme.detailStyle.font lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
+		[str drawInRect:CGRectOffset(r, (width * i), 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
 }
 
 -(void) drawRect:(struct CGRect) rect
 {
-	float height = self.theme.detailStyle.font.pointSize + 6;
-	[self drawDays:CGRectMake(0, 0, rect.size.width, height)];
+	CGSize sz = [@"Test" sizeWithFont:self.theme.detailStyle.font];
+	float height = sz.height;
+
+	[self drawDays:CGRectMake(0, 1, rect.size.width, height)];
 	[self drawIcons:CGRectMake(0, height, rect.size.width, 30)];
 	[self drawTemps:CGRectMake(0, height + 30, rect.size.width, (self.timestamp ? 2 * height : height))];
 }
@@ -298,12 +258,15 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 - (CGFloat)tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	float height = tableView.theme.detailStyle.font.pointSize + 6;
+	CGSize sz = [@"Test" sizeWithFont:tableView.theme.detailStyle.font];
+
+	float height = sz.height;
+
 	BOOL show = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
 		show = n.boolValue;
 
-	return (show ? (height * 3) + 30 : (height * 2) + 30);
+	return (show ? (height * 3) + 4 : (height * 2)) + 30;
 }
 
 - (NSString *)tableView:(LITableView *)tableView titleForHeaderInSection:(NSInteger)section

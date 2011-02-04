@@ -9,7 +9,7 @@
 
 @implementation LWHeaderView
 
-@synthesize background, icon, description, city, temp, time, date, high, low;
+@synthesize background, themedBackground, icon, description, city, temp, time, date, high, low;
 
 -(void) layoutSubviews
 {
@@ -18,6 +18,7 @@
 	float center = (self.frame.size.width / 2);
 
 	self.background.frame = self.bounds;
+	self.themedBackground.frame = self.bounds;
 
 	self.date.frame = CGRectMake(5, 56, center - 40, 18);
 	self.city.frame = CGRectMake(5, 73, center - 40, 18);
@@ -56,6 +57,10 @@
 	iv.frame = self.bounds;
 	self.background = iv;
 	[self addSubview:iv];
+
+	UIImageView* iv2 = [[[UIImageView alloc] initWithFrame:self.bounds] autorelease];
+	self.themedBackground = iv2;
+	[self addSubview:iv2];
 
 	self.time = [[[UILabel alloc] initWithFrame:CGRectMake(0, 4, self.frame.size.width, 50)] autorelease];
 	self.time.font = [UIFont fontWithName:@"LockClock-Light" size:50];
@@ -174,9 +179,11 @@
 
 	if (themeBG)
 	{
-		header.background.image = self.plugin.theme.largeHeaderBackground;
-		header.background.alpha = self.plugin.headerTransparency;
+		header.themedBackground.image = self.plugin.theme.largeHeaderBackground;
+		header.themedBackground.alpha = self.plugin.headerTransparency;
+		header.background.alpha = 0;
 
+/*
 		UIImageView* countBG = [[[UIImageView alloc] initWithImage:self.plugin.theme.countBackground] autorelease];
                 countBG.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
                 countBG.tag = 93450;
@@ -188,14 +195,14 @@
                 countRect.origin.x = header.bounds.size.width - countRect.size.width - 3;
                 countBG.frame = countRect;
                 CGPoint countBGCenter = countBG.center;
-
 		[header addSubview:countBG];
+*/
 	}
 	else
 	{
-		header.background.image = _UIImageWithName(@"UILCDBackground.png");
 		header.background.alpha = 1.0;
-                [[header viewWithTag:93450] removeFromSuperview];
+		header.themedBackground.alpha = 0;
+//                [[header viewWithTag:93450] removeFromSuperview];
 	}
 
 	UIImageView* icon = [self weatherIcon];
