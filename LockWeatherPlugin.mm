@@ -144,7 +144,7 @@
 	NSString* dateStr = [df stringFromDate:now];
 	if (![dateStr isEqualToString:self.date.text])
 	{
-		NSLog(@"LI:Weather: Refreshing date.");
+//		NSLog(@"LI:Weather: Refreshing date.");
 	        self.date.text = [df stringFromDate:now];
 		[self.date setNeedsLayout];
 	}
@@ -153,7 +153,7 @@
 	NSString* timeStr = [df stringFromDate:now];
 	if (![timeStr isEqualToString:self.time.text])
 	{
-		NSLog(@"LI:Weather: Refreshing time.");
+//		NSLog(@"LI:Weather: Refreshing time.");
 	        self.time.text = [df stringFromDate:now];
 		[self.time setNeedsLayout];
 	}
