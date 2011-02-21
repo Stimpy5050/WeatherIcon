@@ -91,11 +91,6 @@ MSHook(void, _undimScreen, id self, SEL sel)
 
 	return (detail == 1);
 }
-
-- (UIImageView *)tableView:(LITableView *)tableView iconForHeaderInSection:(NSInteger)section
-{
-	return [self weatherIcon];
-}
         
 - (CGFloat) tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
