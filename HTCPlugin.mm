@@ -664,7 +664,7 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 {	
 	[super updateWeatherViews];
 		
-	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
+	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] copy];
 	HTCHeaderView* header = self.headerView;
 	
 	[header updatePreferences:self.plugin.preferences];

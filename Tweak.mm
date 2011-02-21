@@ -395,7 +395,6 @@ static NSString* defaultCode = @"3200";
 
 -(void) alertView:(UIAlertView*) view clickedButtonAtIndex:(int) index
 {
-	[view release];
 	if (index == 1)
 		[[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"cydia://package/libstatusbar"]];
 }

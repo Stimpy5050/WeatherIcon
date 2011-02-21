@@ -123,10 +123,9 @@ void createIndicator(int index, NSDictionary* current)
                 [image drawInRect:rect];
         }
 
-	if (indicators[index])
-		[indicators[index] release];
-
+	id tmp = indicators[index];
         indicators[index] = [UIGraphicsGetImageFromCurrentImageContext() retain];
+	[tmp release];
 
         UIGraphicsEndImageContext();
 }

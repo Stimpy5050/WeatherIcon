@@ -81,16 +81,16 @@
 	int width = ((rect.size.width - 10) / 6);
 	CGSize size = [@"Test" sizeWithFont:self.theme.detailStyle.font];
 
-        CGRect r = CGRectMake(rect.origin.x + 5, rect.origin.y, (width / 2) + 5, size.height);
+        CGRect r = CGRectMake(rect.origin.x + 5, rect.origin.y, (width / 2), size.height);
 	for (int i = 0; i < self.forecast.count && i < 6; i++)
 	{
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 
 		NSString* str = [NSString stringWithFormat:@"%@\u00B0", [day objectForKey:@"high"]];
-		[str drawInRect:CGRectOffset(r, (width * i), 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
+		[str drawInRect:CGRectOffset(r, (width * i) - 2, 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentRight];
 
 		str = [NSString stringWithFormat:@" %@\u00B0", [day objectForKey:@"low"]];
-		[str drawInRect:CGRectOffset(r, (width * i) + r.size.width, 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
+		[str drawInRect:CGRectOffset(r, (width * i) + r.size.width + 2, 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentLeft];
 	}
 
 	if (self.timestamp)

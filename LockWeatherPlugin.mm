@@ -169,7 +169,7 @@
 {
 	[super updateWeatherViews];
 
-	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
+	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] copy];
 
 	LWHeaderView* header = (LWHeaderView*)self.headerView;
 
