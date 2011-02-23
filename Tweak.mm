@@ -853,7 +853,7 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 					refresh = true;
 
 					[_controller loadPreferences];
-					[_controller updateWeatherIcon];
+        				[_controller performSelectorOnMainThread:@selector(updateWeatherIcon) withObject:nil waitUntilDone:NO];
 				}
 			}
 		}
