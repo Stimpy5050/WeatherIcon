@@ -331,8 +331,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	[fc.contentView addSubview:self.forecastView];
 	self.forecastView.theme = tableView.theme;
 
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
+	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] copy];
+	NSArray* forecast = [weather objectForKey:@"forecast"];
 	self.forecastView.forecast = forecast;
 
 	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
@@ -348,8 +348,6 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	}
 	self.forecastView.icons = arr;
 
-	[forecast release];
-
 	BOOL show = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
 		show = n.boolValue;
@@ -360,6 +358,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	// mark dirty
 	[self.forecastView setNeedsDisplay];
+
+	[weather release];
 
 	return fc;
 }
