@@ -11,9 +11,12 @@ LDFLAGS=	-framework Foundation \
 		-framework GraphicsServices \
 		-framework Preferences \
 		-L"$(SDK)/usr/lib" \
+		-L$(SDK)/var/lib \
+	        -L$(SDK)/usr/lib/system \
 		-F"$(SDK)/System/Library/Frameworks" \
 		-F"$(SDK)/System/Library/PrivateFrameworks" \
 		-lsubstrate \
+		-lweather \
 		-lobjc 
 
 CFLAGS= -I$(SDK)/var/include \
@@ -37,7 +40,7 @@ WeatherIconSettings: WeatherIconSettings.o
 		ldid -S WeatherIconSettings
 
 WeatherIconPlugin: WeatherIconPlugin.o
-		$(LD) $(LDFLAGS) -bundle -o $@ $(filter %.o,$^)
+		$(LD) $(LDFLAGS) -l weather -bundle -o $@ $(filter %.o,$^)
 		ldid -S WeatherIconPlugin
 
 WeatherIconStatusBar.dylib: WeatherIconStatusBar.o
@@ -53,7 +56,7 @@ LockWeatherPlugin: WeatherIconPlugin.o CalendarScrollView.o BaseWeatherPlugin.o 
 		ldid -S LockWeatherPlugin
 
 $(Target):	Tweak.o
-		$(LD) $(LDFLAGS) -dynamiclib -init _TweakInit -o $@ $^
+		$(LD) $(LDFLAGS) -l weather -dynamiclib -init _TweakInit -o $@ $^
 		ldid -S $(Target)
 
 %.o:	%.mm

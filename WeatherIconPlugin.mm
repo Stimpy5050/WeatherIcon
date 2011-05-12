@@ -2,6 +2,7 @@
 #include <UIKit/UIKit.h>
 #include <UIKit/UIScreen.h>
 #include <substrate.h>
+#include <libweather.h>
 
 @interface UIScreen (WeatherIcon)
 
@@ -434,7 +435,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	if (NSDictionary* current = [[objc_getClass("LibWeatherController") sharedInstance] currentCondition])
+	if (NSDictionary* current = [[LibWeatherController sharedInstance] currentCondition])
 	{
 //		NSLog(@"LI:Weather: Updating when view is ready");
 		[self updateWeather:current];
