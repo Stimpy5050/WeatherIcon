@@ -11,6 +11,7 @@ LDFLAGS=	-framework Foundation \
 		-framework GraphicsServices \
 		-framework Preferences \
 		-L"$(SDK)/usr/lib" \
+		-L"$(SDK)/var/lib" \
 		-F"$(SDK)/System/Library/Frameworks" \
 		-F"$(SDK)/System/Library/PrivateFrameworks" \
 		-lsubstrate \
@@ -121,7 +122,7 @@ statusbar: WeatherIconStatusBar.dylib
 	find package/statusbar -name .svn -print0 | xargs -0 rm -rf
 	dpkg-deb -b package/statusbar WeatherIconStatusBar_$(shell grep ^Version: statusbar-control | cut -d ' ' -f 2).deb
 
-package:	$(Target) WeatherIconStatusBar.dylib WeatherIconSettings lockinfo lockweather HTC clock
+weathericon:	$(Target) WeatherIconStatusBar.dylib WeatherIconSettings 
 	mkdir -p package/weathericon/DEBIAN
 	mkdir -p package/weathericon/Library/MobileSubstrate/DynamicLibraries
 	mkdir -p package/weathericon/Library/PreferenceLoader/Preferences
@@ -140,3 +141,5 @@ package:	$(Target) WeatherIconStatusBar.dylib WeatherIconSettings lockinfo lockw
 	find package/weathericon -name .svn -print0 | xargs -0 rm -rf
 	find package/weathericon -name .DS_Store -print0 | xargs -0 rm
 	dpkg-deb -b package/weathericon WeatherIcon_$(shell grep ^Version: control | cut -d ' ' -f 2).deb
+
+package:	weathericon lockinfo lockweather HTC clock

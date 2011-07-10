@@ -65,77 +65,27 @@
 			<string>Show Badge</string>
 		</dict>
 		<dict>
-			<key>cell</key>
-			<string>PSLinkListCell</string>
-			<key>default</key>
-			<string>com.apple.weather</string>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>detail</key>
-			<string>PSListItemsController</string>
-			<key>key</key>
+                        <key>cell</key>
+                        <string>PSLinkCell</string>
+                        <key>label</key>
+                        <string>Icon To Theme</string>
+                        <key>isController</key>
+                        <true/>
+                        <key>bundle</key>
+                        <string>AppList</string>
+                        <key>ALNavigationTitle</key>
+                        <string>Icon To Theme</string>
+                        <key>ALChangeNotification</key>
+                        <string>com.ashman.WeatherIcon.iconToTheme</string>
+			<key>ALSettingsKey</key>
 			<string>WeatherBundleIdentifier</string>
-			<key>id</key>
-			<string>WeatherBundleIdentifier</string>
-			<key>label</key>
-			<string>Application</string>
-			<key>validTitles</key>
-			<array>
-				<string>iPhone Weather</string>
-				<string>The Weather Channel</string>
-				<string>The Weather Channel Max</string>
-				<string>WeatherBug</string>
-				<string>WeatherBug Elite</string>
-				<string>Outside</string>
-				<string>Weather HD</string>
-				<string>AccuWeather.com</string>
-				<string>Fizz Weather</string>
-				<string>Fizz Traveller</string>
-				<string>WeatherEye</string>
-				<string>My Weather</string>
-				<string>Oz Weather</string>
-				<string>Pocket Weather</string>
-				<string>Weather Pro</string>
-				<string>WeatherNZ</string>
-				<string>Custom</string>
-			</array>
-			<key>validValues</key>
-			<array>
-				<string>com.apple.weather</string>
-				<string>com.weather.TWC</string>
-				<string>com.yourcompany.TWCMax</string>
-				<string>com.aws.weatherbug.pro</string>
-				<string>com.aws.weatherbug.elite</string>
-				<string>com.icelantern.Outside</string>
-				<string>com.vimov.weatherhd</string>
-				<string>com.yourcompany.TestWithCustomTabs</string>
-				<string>fizzsoftware.com.fizzweather</string>
-				<string>fizzsoftware.com.fizztraveller</string>
-				<string>com.theweathernetwork.weathereye</string>
-				<string>com.MyWeather.MyWeather</string>
-				<string>com.ajnaware.ozweather</string>
-				<string>com.russellivanovic.pocketweather</string>
-				<string>de.meteogroup.WeatherPro</string>
-				<string>nz.co.orsome.weatherNZ</string>
-				<string>Custom</string>
-			</array>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSEditTextCell</string>
-			<key>id</key>
-			<string>CustomWeatherBundleIdentifier</string>
-			<key>defaults</key>
-			<string>com.ashman.WeatherIcon</string>
-			<key>detail</key>
-			<string>PSDetailController</string>
-			<key>key</key>
-			<string>CustomWeatherBundleIdentifier</string>
-			<key>label</key>
-			<string>Custom</string>
-			<key>placeholder</key>
-			<string>Enter Bundle Identifier</string>
-		</dict>
+                        <key>ALAllowsSelection</key>
+                        <true/>
+			<key>ALSingleEnabledMode</key>
+			<true/>
+                        <key>ALSettingsPath</key>
+                        <string>/User/Library/Preferences/com.ashman.WeatherIcon.plist</string>
+                </dict>
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
