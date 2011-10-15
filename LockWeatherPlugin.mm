@@ -15,6 +15,7 @@
 {
 	[super layoutSubviews];
 
+	LIDebug(@"LI:LW: %@", self.superview.superview);
 	float center = (self.frame.size.width / 2);
 
 	self.background.frame = self.bounds;
@@ -130,6 +131,7 @@
 -(void) setFrame:(CGRect) frame
 {
 	[super setFrame:frame];
+	NSLog(@"LI:LW: setFrame: %@", [NSThread callStackSymbols]);
 	[self setNeedsLayout];
 }
 

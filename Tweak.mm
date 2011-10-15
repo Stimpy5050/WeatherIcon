@@ -1,4 +1,5 @@
 #import <substrate.h>
+#import <libweather.h>
 #import <execinfo.h>
 #import <notify.h>
 #import <SpringBoard/SBIcon.h>
@@ -417,7 +418,7 @@ static NSString* defaultCode = @"3200";
 {
 	lock = [[NSConditionLock alloc] init];
 	[self loadPreferences];
-	self.currentCondition = [[objc_getClass("LibWeatherController") sharedInstance] currentCondition];
+	self.currentCondition = [[LibWeatherController sharedInstance] currentCondition];
 
 	if (objc_getClass("UIStatusBar"))
 		[self initMessaging];

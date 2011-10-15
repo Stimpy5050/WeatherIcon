@@ -7,6 +7,12 @@
 #define localize(str) \
 [self.plugin.bundle localizedStringForKey:str value:str table:nil]
 
+#define isInvalidSize(size) \
+isnan(size.width) || isnan(size.height) || size.width == 0 || size.height == 0
+
+#define isInvalidNumber(x) \
+isnan(x) || x == 0
+
 #define Hook(cls, sel, imp) \
 _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
@@ -113,20 +119,44 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	
 }
 
--(UIImage*) getDigit:(int)digit
+- (UIImage*)getImage:(NSString*)name
+{
+	NSBundle* bundle = [NSBundle bundleWithIdentifier:@"com.burgch.lockinfo.HTCPlugin"];
+	
+	NSString* imagePath = [bundle pathForResource:name ofType:@"png"];
+	UIImage* image = [UIImage li_imageWithContentsOfResolutionIndependentFile:imagePath];
+	
+	if (image)
+		[self.imageCache setObject:image forKey:name];
+	
+	return image;
+}
+
+- (UIImage*)getDigit:(int)digit
 {	
 	NSString* digitName = [digits objectAtIndex:digit];
 	UIImage* returnDigit = [self.imageCache objectForKey:digitName];
-
-	return returnDigit;
+	
+	if (returnDigit)
+	{
+		return returnDigit;
+	} else {
+		return [self getImage:digitName];
+	}	
 }
 
--(UIImage*) getBackground:(int)background
+- (UIImage*)getBackground:(int)background
 {	
 	NSString* backgroundName = [backgrounds objectAtIndex:background];
 	UIImage* returnBackground = [self.imageCache objectForKey:backgroundName];
-
-	return returnBackground;
+	
+	if (returnBackground)
+	{
+		return returnBackground;
+	} else {
+		return [self getImage:backgroundName];
+	}
+	
 }
 
 @end
@@ -139,32 +169,16 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 {
 	self = [super initWithFrame:frame];
 	
-	UIImage* initImage = [imageCacheControl getDigit:0];
-	CGSize originalDigitSize;
-	
-	if (isnan(initImage.size.width) || isnan(initImage.size.height) || initImage.size.width == 0 || initImage.size.height == 0)
-	{
-		originalDigitSize = CGSizeMake(36, 60);
-	} else {
-		originalDigitSize = initImage.size;
-	}
-
-	CGSize newDigitSize = CGSizeMake((int)((frame.size.height / originalDigitSize.height) * originalDigitSize.width), frame.size.height);
-	
-	self.hoursTens = [[[UIImageView alloc] initWithFrame:CGRectMake(0, 0, newDigitSize.width, newDigitSize.height)] autorelease];
-	self.hoursTens.image = initImage;
+	self.hoursTens = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
 	[self addSubview:self.hoursTens];
 	
-	self.hoursUnits = [[[UIImageView alloc] initWithFrame:CGRectMake(newDigitSize.width, 0, newDigitSize.width, newDigitSize.height)] autorelease];
-	self.hoursUnits.image = initImage;
+	self.hoursUnits = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
 	[self addSubview:self.hoursUnits];
 	
-	self.minutesTens = [[[UIImageView alloc] initWithFrame:CGRectMake(frame.size.width - (newDigitSize.width * 2), 0, newDigitSize.width, newDigitSize.height)] autorelease];
-	self.minutesTens.image = initImage;		
+	self.minutesTens = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];	
 	[self addSubview:self.minutesTens];
 	
-	self.minutesUnits = [[[UIImageView alloc] initWithFrame:CGRectMake(frame.size.width - newDigitSize.width, 0, newDigitSize.width, newDigitSize.height)] autorelease];
-	self.minutesUnits.image = initImage;
+	self.minutesUnits = [[[UIImageView alloc] initWithFrame:CGRectZero] autorelease];
 	[self addSubview:self.minutesUnits];
 	
 	return self;
@@ -176,21 +190,26 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	
 	UIImage* initImage = [imageCacheControl getDigit:0];
 	
-	CGSize originalDigitSize;
-	
-	if (isnan(initImage.size.width) || isnan(initImage.size.height) || initImage.size.width == 0 || initImage.size.height == 0)
+	if (initImage)
 	{
-		originalDigitSize = CGSizeMake(36, 60);
-	} else {
-		originalDigitSize = initImage.size;
+		CGSize originalDigitSize = initImage.size;
+		
+		double newDigitScale = (self.frame.size.height / originalDigitSize.height);
+		
+		CGSize newDigitSize = CGSizeMake((int)(newDigitScale * originalDigitSize.width), self.frame.size.height);
+		
+		if (isInvalidSize(newDigitSize))
+		{
+			NSLog(@"HTC: Invalid digit size so not updating frames");
+		} else {
+			self.hoursTens.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
+			self.hoursUnits.frame = CGRectMake(newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
+			self.minutesTens.frame = CGRectMake(self.frame.size.width - (newDigitSize.width * 2), 0, newDigitSize.width, newDigitSize.height);
+			self.minutesUnits.frame = CGRectMake(self.frame.size.width - newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
+		}
+	
 	}
 	
-	CGSize newDigitSize = CGSizeMake((int)((self.frame.size.height / originalDigitSize.height) * originalDigitSize.width), self.frame.size.height);
-	
-	self.hoursTens.frame = CGRectMake(0, 0, newDigitSize.width, newDigitSize.height);
-	self.hoursUnits.frame = CGRectMake(newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
-	self.minutesTens.frame = CGRectMake(self.frame.size.width - (newDigitSize.width * 2), 0, newDigitSize.width, newDigitSize.height);
-	self.minutesUnits.frame = CGRectMake(self.frame.size.width - newDigitSize.width, 0, newDigitSize.width, newDigitSize.height);
 }
 
 @end
@@ -332,37 +351,48 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 	self.background.image = bgImage;
 	
 	/*Update Icon Size and Position */
-	double iconStandardScale = 3.00;
-	CGSize iconSize = self.icon.image.size; 
 	
-	if (isnan(iconSize.width) || isnan(iconSize.height) || iconSize.height == 0 || iconSize.width == 0)
+	if (self.icon.image)
 	{
-		NSLog(@"HTC: Icon size was invalid - replacing now");
-		iconSize = CGSizeMake(80, 80);
-	}
-	CGPoint ic = CGPointMake(center, 135);
-	
-	if (spaceSave)
-	{
-		if (iconSize.width > iconSize.height)
+		double iconStandardScale = 1.00;
+		CGSize iconSize = self.icon.image.size;
+		
+		CGPoint ic = CGPointMake(center, 135);
+		
+		if (spaceSave)
 		{
-			iconStandardScale = (55 / iconSize.width);
+			if (iconSize.width > iconSize.height)
+			{
+				iconStandardScale = (55 / iconSize.width);
+			} else {
+				iconStandardScale = (55 / iconSize.height);
+			}
+			ic = CGPointMake(center, 85);
 		} else {
-			iconStandardScale = (55 / iconSize.height);
+			if (iconSize.width > iconSize.height)
+			{
+				iconStandardScale = (80 / iconSize.width);
+			} else {
+				iconStandardScale = (80 / iconSize.height);
+			}
 		}
-		ic = CGPointMake(center, 85);
-	} else {
-		if (iconSize.width > iconSize.height)
+		
+		if (isInvalidNumber(iconStandardScale))
 		{
-			iconStandardScale = (80 / iconSize.width);
+			NSLog(@"HTC: Icon scale was invalid - replacing now");
+			iconStandardScale = 1.00;
+		}
+		
+		iconSize.width *= (iconStandardScale * iconScale);
+		iconSize.height *= (iconStandardScale * iconScale);
+		
+		if (isInvalidSize(iconSize))
+		{
+			NSLog(@"HTC: invalid icon size so not updating frame");
 		} else {
-			iconStandardScale = (80 / iconSize.height);
+			self.icon.frame = CGRectMake(ic.x - (int)(iconSize.width / 2), ic.y - (int)(iconSize.height / 2), iconSize.width, iconSize.height);
 		}
 	}
-	iconSize.width *= (iconStandardScale * iconScale);
-	iconSize.height *= (iconStandardScale * iconScale);
-	
-	self.icon.frame = CGRectMake(ic.x - (int)(iconSize.width / 2), ic.y - (int)(iconSize.height / 2), iconSize.width, iconSize.height);
 	
 	/* Set Frame Sizes */
 	
@@ -664,7 +694,7 @@ static utilTools* utilToolsControl = [[utilTools alloc] init];
 {	
 	[super updateWeatherViews];
 		
-	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] copy];
+	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] retain];
 	HTCHeaderView* header = self.headerView;
 	
 	[header updatePreferences:self.plugin.preferences];

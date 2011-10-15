@@ -1,6 +1,6 @@
 Package: com.ashman.weathericon
 Name: WeatherIcon
-Version: 2.4.4.0
+Version: 2.5.0.0
 Architecture: iphoneos-arm
 Description: Puts live weather information on top of the weather icon.
 Homepage: http://modmyi.com/info/weathericon.php
@@ -9,5 +9,9 @@ Maintainer: poetic_folly <poetic_folly@modmyi.com>
 Author: David Ashman (Stimpy5050) <dashman@gmail.com>
 Sponsor: ModMyi.com <http://modmyi.com/forums/index.php?styleid=31>
 Section: Tweaks
+<<<<<<< HEAD
 Pre-Depends: mobilesubstrate, preferenceloader, com.ashman.libweather, firmware (<< 4.0) | libstatusbar, applist
+=======
+Pre-Depends: mobilesubstrate, preferenceloader, com.ashman.libweather (>= 2.0.0.0), firmware (<< 4.0) | libstatusbar
+>>>>>>> 52add6a95e818ad285b1d935b66836b1120fc57a
 Conflicts: com.ashman.weathericonstatusbar

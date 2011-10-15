@@ -2,6 +2,7 @@
 #include <UIKit/UIKit.h>
 #include <UIKit/UIScreen.h>
 #include <substrate.h>
+#include <libweather.h>
 
 @interface UIScreen (WeatherIcon)
 
@@ -331,8 +332,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	[fc.contentView addSubview:self.forecastView];
 	self.forecastView.theme = tableView.theme;
 
-	NSDictionary* weather = [self.dataCache objectForKey:@"weather"];
-	NSArray* forecast = [[weather objectForKey:@"forecast"] copy];
+	NSDictionary* weather = [[self.dataCache objectForKey:@"weather"] copy];
+	NSArray* forecast = [weather objectForKey:@"forecast"];
 	self.forecastView.forecast = forecast;
 
 	NSMutableArray* arr = [NSMutableArray arrayWithCapacity:6];
@@ -348,8 +349,6 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	}
 	self.forecastView.icons = arr;
 
-	[forecast release];
-
 	BOOL show = false;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowUpdateTime"])
 		show = n.boolValue;
@@ -360,6 +359,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	// mark dirty
 	[self.forecastView setNeedsDisplay];
+
+	[weather release];
 
 	return fc;
 }
@@ -434,7 +435,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	if (NSDictionary* current = [[objc_getClass("LibWeatherController") sharedInstance] currentCondition])
+	if (NSDictionary* current = [[LibWeatherController sharedInstance] currentCondition])
 	{
 //		NSLog(@"LI:Weather: Updating when view is ready");
 		[self updateWeather:current];
