@@ -1,6 +1,9 @@
 #include "BaseWeatherPlugin.h"
 #include <UIKit/UIScreen.h>
 
+
+#define iOS5() NSClassFromString(@"SBNewsstand") != nil
+
 @implementation LockHeaderView
 
 @synthesize dateFormat, timeFormat;
@@ -22,7 +25,9 @@
 	UITouch* touch = [touches anyObject];
 	CGPoint p = [touch locationInView:self];
 	self.showCalendar = (p.x < self.frame.size.width / 2);
-	return [self.nextResponder touchesEnded:touches withEvent:event];
+
+	if (!iOS5())
+		return [self.nextResponder touchesEnded:touches withEvent:event];
 }
 
 -(void) updateTime

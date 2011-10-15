@@ -1,4 +1,4 @@
-#import "SDK/Plugin.h"
+#import "Plugin.h"
 #include "Constants.h"
 #include <Foundation/Foundation.h>
 

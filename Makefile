@@ -19,6 +19,7 @@ LDFLAGS=	-framework Foundation \
 
 CFLAGS= -I$(SDK)/var/include \
   -I/var/include \
+  -I../iphone/LockInfo/SDK/LockInfo \
   -I/var/include/gcc/darwin/4.0 \
   -I"$(SDK)/usr/include" \
   -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/include" \

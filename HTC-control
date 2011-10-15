@@ -1,6 +1,6 @@
 Package: com.burgess.htcplugin
 Name: HTC Plugin for LockInfo (Native)
-Version: 1.4.0.9
+Version: 1.5.0.0
 Architecture: iphoneos-arm
 Priority: extra
 Section: LockInfo Addons
