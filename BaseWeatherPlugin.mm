@@ -22,7 +22,9 @@
 	UITouch* touch = [touches anyObject];
 	CGPoint p = [touch locationInView:self];
 	self.showCalendar = (p.x < self.frame.size.width / 2);
-	return [self.nextResponder touchesEnded:touches withEvent:event];
+
+	if (NSClassFromString(@"SBNewsstand") == nil)
+		return [self.nextResponder touchesEnded:touches withEvent:event];
 }
 
 -(void) updateTime
@@ -35,6 +37,12 @@ MSHook(void, _undimScreen, id self, SEL sel)
 {
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
 	__undimScreen(self, sel);
+}
+
+MSHook(void, undimScreen, id self, SEL sel)
+{
+	[[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
+	_undimScreen(self, sel);
 }
 
 @implementation BaseWeatherPlugin
@@ -174,6 +182,7 @@ MSHook(void, _undimScreen, id self, SEL sel)
 
 	Class $SBAwayController = objc_getClass("SBAwayController");
 	Hook(SBAwayController, _undimScreen, _undimScreen);
+	Hook(SBAwayController, undimScreen, undimScreen);
 
 	NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
         [center addObserver:self selector:@selector(updateTime) name:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];

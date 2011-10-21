@@ -11,6 +11,8 @@ LDFLAGS=	-framework Foundation \
 		-framework GraphicsServices \
 		-framework Preferences \
 		-L"$(SDK)/usr/lib" \
+	        -L$(SDK)/usr/lib/system \
+       		-L$(SDK)/var/lib \
 		-F"$(SDK)/System/Library/Frameworks" \
 		-F"$(SDK)/System/Library/PrivateFrameworks" \
 		-lsubstrate \
@@ -18,6 +20,7 @@ LDFLAGS=	-framework Foundation \
 
 CFLAGS= -I$(SDK)/var/include \
   -I/var/include \
+  -I../iphone/LockInfo/SDK/LockInfo \
   -I/var/include/gcc/darwin/4.0 \
   -I"$(SDK)/usr/include" \
   -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/include" \
