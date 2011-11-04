@@ -1,10 +1,15 @@
-#import "BaseWeatherPlugin.h"
+#import <substrate.h>
+#import "Plugin.h"
+#import "CalendarScrollView.h"
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBStatusBarTimeView.h>
 #import <SpringBoard/SBAwayController.h>
 #import <SpringBoard/SBAwayView.h>
 #import <SpringBoard/SBAwayDateView.h>
 #import <TelephonyUI/TPLCDTextView.h>
+
+#define Hook(cls, sel, imp) \
+        _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
 extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
 

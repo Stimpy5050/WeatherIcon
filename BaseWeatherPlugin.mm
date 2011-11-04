@@ -1,5 +1,6 @@
 #include "BaseWeatherPlugin.h"
 #include <UIKit/UIScreen.h>
+#include <UIKit/UITapGestureRecognizer.h>
 
 @implementation LockHeaderView
 
@@ -13,19 +14,35 @@
 	self.backgroundColor = [UIColor clearColor];
 	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
         self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
+
+	UITapGestureRecognizer* gr = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(headerTapped:)] autorelease];
+	gr.delegate = self;
+	[self addGestureRecognizer:gr];
+
 	[self updateTime];
 	return self;
 }
 
--(void) touchesEnded:(NSSet*) touches withEvent:(UIEvent*) event
+-(BOOL) gestureRecognizer:(UIGestureRecognizer*)gr shouldReceiveTouch:(UITouch*) touch
+{
+	CGPoint p = [touch locationInView:self];
+	self.showCalendar = (p.x < self.frame.size.width / 2);
+	return NO;
+}
+
+-(void) headerTapped:(UIGestureRecognizer*) gr
+{
+}
+
+/*
+-(void) touchesBegan:(NSSet*) touches withEvent:(UIEvent*) event
 {
 	UITouch* touch = [touches anyObject];
 	CGPoint p = [touch locationInView:self];
 	self.showCalendar = (p.x < self.frame.size.width / 2);
-
-	if (NSClassFromString(@"SBNewsstand") == nil)
-		return [self.nextResponder touchesEnded:touches withEvent:event];
+	return [self.nextResponder touchesBegan:touches withEvent:event];
 }
+*/
 
 -(void) updateTime
 {

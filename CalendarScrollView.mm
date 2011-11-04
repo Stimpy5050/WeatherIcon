@@ -25,9 +25,9 @@
 @synthesize scrollView, jumpButton;
 @synthesize lastMonth, nextMonth, currentMonth;
 
--(void) setFrame:(CGRect) r
+-(void) layoutSubviews
 {
-	[super setFrame:r];
+	CGRect r = self.frame;
 	self.lastMonth.frame = CGRectMake(0, 0, r.size.width, r.size.height);
 	self.currentMonth.frame = CGRectMake(r.size.width, 0, r.size.width, r.size.height);
 	self.nextMonth.frame = CGRectMake(r.size.width * 2, 0, r.size.width, r.size.height);
