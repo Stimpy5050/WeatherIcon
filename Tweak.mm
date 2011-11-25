@@ -860,6 +860,19 @@ MSHook(void, deactivated, SBApplication *self, SEL sel)
 	}
 }
 
+MSHook(void, setDisplayedIconImageV5, id self, SEL sel, id image)
+{
+	if (_controller.showWeatherIcon && [[self icon] respondsToSelector:@selector(leafIdentifier)] && [_controller isWeatherIcon:[[self icon] leafIdentifier]])
+	{
+		NSLog(@"WI: Overriding weather icon");
+		_setDisplayedIconImageV5(self, sel, _controller.icon);
+	}
+	else
+	{
+		_setDisplayedIconImageV5(self, sel, image);
+	}
+}
+
 MSHook(void, setDisplayedIconImage, SBIcon *self, SEL sel, id image)
 {
 	if (_controller.showWeatherIcon && [self respondsToSelector:@selector(leafIdentifier)] && [_controller isWeatherIcon:[self leafIdentifier]])
@@ -937,6 +950,9 @@ extern "C" void TweakInit() {
 
 	Class $SBIcon = objc_getClass("SBIcon");
 	Hook(SBIcon, setDisplayedIconImage:, setDisplayedIconImage);
+    
+	Class $SBIconView = objc_getClass("SBIconView");
+	Hook(SBIconView, setDisplayedIconImage:, setDisplayedIconImageV5);
 
 	// only hook these in 3.0
 	Class $SBStatusBarIndicatorView = objc_getClass("SBStatusBarIndicatorView");
