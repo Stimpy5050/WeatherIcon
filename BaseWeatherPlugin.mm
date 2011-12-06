@@ -174,6 +174,8 @@ MSHook(void, undimScreen, id self, SEL sel)
 
 		[scroll showWeeks:showWeeks];
 		[scroll setTheme:tableView.theme];
+        
+        [scroll setNeedsLayout];
 
 		return cell;
 	}
