@@ -28,13 +28,17 @@
 -(void) layoutSubviews
 {
 	CGRect r = self.frame;
-	self.lastMonth.frame = CGRectMake(0, 0, r.size.width, r.size.height);
-	self.currentMonth.frame = CGRectMake(r.size.width, 0, r.size.width, r.size.height);
-	self.nextMonth.frame = CGRectMake(r.size.width * 2, 0, r.size.width, r.size.height);
+	if (self.scrollView.contentSize.width != (r.size.width * 3))
+	{
+		self.lastMonth.frame = CGRectMake(0, 0, r.size.width, r.size.height);
+		self.currentMonth.frame = CGRectMake(r.size.width, 0, r.size.width, r.size.height);
+		self.nextMonth.frame = CGRectMake(r.size.width * 2, 0, r.size.width, r.size.height);
 
-	self.scrollView.frame = self.bounds;
-	self.scrollView.contentSize = CGSizeMake(r.size.width * 3, r.size.height);
-	self.scrollView.contentOffset = CGPointMake(r.size.width, 0);
+		LIDebug(@"LI:Weather: Scroll: %@", self.scrollView);
+		self.scrollView.frame = self.bounds;
+		self.scrollView.contentSize = CGSizeMake(r.size.width * 3, r.size.height);
+		self.scrollView.contentOffset = CGPointMake(r.size.width, 0);
+	}
 }
 
 -(void) setDate:(NSDate*) date
