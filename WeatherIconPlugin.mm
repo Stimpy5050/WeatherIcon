@@ -60,7 +60,7 @@
 	if (NSNumber* n = [self.pluginTheme objectForKey:@"LockInfoImageScale"])
 		scale = n.doubleValue;
 
-	for (int i = 0; i < self.forecast.count && i < 6; i++)
+	for (int i = 0; i < self.icons.count && i < 6; i++)
 	{
 		id image = [self.icons objectAtIndex:i];
 		if (image != [NSNull null])

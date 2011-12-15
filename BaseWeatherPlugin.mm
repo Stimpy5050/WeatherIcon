@@ -13,12 +13,12 @@
 	self.contentMode = UIViewContentModeRedraw;
 	self.backgroundColor = [UIColor clearColor];
 	self.dateFormat = [[NSString stringWithFormat:@"EEE, %@", (NSString*)UIDateFormatStringForFormatType(CFSTR("UIAbbreviatedMonthDayFormat"))] retain];
-        self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
-
+    self.timeFormat = [(NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat")) retain];
+    
 	UITapGestureRecognizer* gr = [[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(headerTapped:)] autorelease];
 	gr.delegate = self;
 	[self addGestureRecognizer:gr];
-
+    
 	[self updateTime];
 	return self;
 }
@@ -35,32 +35,20 @@
 }
 
 /*
--(void) touchesBegan:(NSSet*) touches withEvent:(UIEvent*) event
-{
-	UITouch* touch = [touches anyObject];
-	CGPoint p = [touch locationInView:self];
-	self.showCalendar = (p.x < self.frame.size.width / 2);
-	return [self.nextResponder touchesBegan:touches withEvent:event];
-}
-*/
+ -(void) touchesBegan:(NSSet*) touches withEvent:(UIEvent*) event
+ {
+ UITouch* touch = [touches anyObject];
+ CGPoint p = [touch locationInView:self];
+ self.showCalendar = (p.x < self.frame.size.width / 2);
+ return [self.nextResponder touchesBegan:touches withEvent:event];
+ }
+ */
 
 -(void) updateTime
 {
 }
 
 @end
-
-MSHook(void, _undimScreen, id self, SEL sel)
-{
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
-	__undimScreen(self, sel);
-}
-
-MSHook(void, undimScreen, id self, SEL sel)
-{
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
-	_undimScreen(self, sel);
-}
 
 @implementation BaseWeatherPlugin
 
@@ -69,20 +57,20 @@ MSHook(void, undimScreen, id self, SEL sel)
 
 -(void) _updateTime
 {
-        [self.headerView updateTime];
+    [self.headerView updateTime];
 }
 
 -(void) updateTime
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(updateTime) object:nil];
 	NSDate* now = [NSDate date];
-        NSCalendar* cal = [NSCalendar currentCalendar];
-        NSDateComponents* comps = [cal components:NSHourCalendarUnit | NSMinuteCalendarUnit | NSSecondCalendarUnit fromDate:now];
-        [self performSelector:@selector(updateTime) withObject:nil afterDelay:(60 - comps.second)];
-
-
+    NSCalendar* cal = [NSCalendar currentCalendar];
+    NSDateComponents* comps = [cal components:NSHourCalendarUnit | NSMinuteCalendarUnit | NSSecondCalendarUnit fromDate:now];
+    [self performSelector:@selector(updateTime) withObject:nil afterDelay:(60 - comps.second)];
+    
+    
 	[self _updateTime];
-
+    
 	if (self.calendarScrollView)
 		if (comps.hour == 0 && comps.minute == 0)
 			[self.calendarScrollView setDate:now];
@@ -96,10 +84,10 @@ MSHook(void, undimScreen, id self, SEL sel)
 -(void) updateWeatherViews
 {
 	[super updateWeatherViews];
-
+    
 	if (self.headerView == nil)
 		self.headerView = [self createHeaderView];
-
+    
 	[self updateTime];
 }
 
@@ -108,25 +96,25 @@ MSHook(void, undimScreen, id self, SEL sel)
 	int detail = 0;
 	if (NSNumber* n = [self.plugin.preferences objectForKey:@"Detail"])
 		detail = n.intValue;
-
+    
 	if (detail == 2)
 	{
 		return self.headerView.showCalendar;
 	}
-
+    
 	return (detail == 1);
 }
-        
+
 - (CGFloat) tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	if (self.showCalendar)
 	{
 		if (indexPath.row > 0)
 			return 0;
-
-	       	 return (6 * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
+        
+        return (6 * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
 	}
-
+    
 	return [super tableView:tableView heightForRowAtIndexPath:indexPath];
 }
 
@@ -137,15 +125,15 @@ MSHook(void, undimScreen, id self, SEL sel)
 		if (indexPath.row > 0)
 		{
 			UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"LWBlankCell"];
-       			if (cell == nil)
+            if (cell == nil)
 			{
-	                	cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"LWBlankCell"] autorelease];
+                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"LWBlankCell"] autorelease];
 			}
 			return cell;
 		}
-
+        
 		UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"LWCalendarCell"];
-
+        
 		if (cell == nil)
 		{
 			int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
@@ -154,7 +142,7 @@ MSHook(void, undimScreen, id self, SEL sel)
 			NSString* iconSet = @"Silver";
 			
 			if ([tableView.theme respondsToSelector:@selector(sectionIconSet)])
-				 iconSet = tableView.theme.sectionIconSet;
+                iconSet = tableView.theme.sectionIconSet;
 			
 			UIImage* marker = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LIClockTodayMarker", iconSet] ofType:@"png"]];
 			UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LICurrentMonth", iconSet] ofType:@"png"]];
@@ -163,20 +151,20 @@ MSHook(void, undimScreen, id self, SEL sel)
 			scroll.tag = 9494;
 			self.calendarScrollView = scroll;
 			[cell.contentView addSubview:scroll];
-			 
+            
 		}
-		 
+        
 		CalendarScrollView* scroll = [cell.contentView viewWithTag:9494];
-
+        
 		BOOL showWeeks = NO;
 		if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowCalendarWeeks"])
 			showWeeks = n.boolValue;
-
+        
 		[scroll showWeeks:showWeeks];
 		[scroll setTheme:tableView.theme];
         
         [scroll setNeedsLayout];
-
+        
 		return cell;
 	}
 	
@@ -198,14 +186,10 @@ MSHook(void, undimScreen, id self, SEL sel)
 -(id) initWithPlugin:(LIPlugin*) plugin
 {
 	self = [super initWithPlugin:plugin];
-
-	Class $SBAwayController = objc_getClass("SBAwayController");
-	Hook(SBAwayController, _undimScreen, _undimScreen);
-	Hook(SBAwayController, undimScreen, undimScreen);
-
+    
 	NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-        [center addObserver:self selector:@selector(updateTime) name:@"com.ashman.lockinfo.BaseWeatherPlugin.updateTime" object:nil];
-
+    [center addObserver:self selector:@selector(updateTime) name:LIUndimScreenNotification object:nil];
+    
 	return self;
 }
 

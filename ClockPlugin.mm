@@ -9,15 +9,9 @@
 #import <TelephonyUI/TPLCDTextView.h>
 
 #define Hook(cls, sel, imp) \
-        _ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
+_ ## imp = MSHookMessage($ ## cls, @selector(sel), &$ ## imp)
 
 extern "C" CFStringRef UIDateFormatStringForFormatType(CFStringRef type);
-
-MSHook(void, _undimScreen, id self, SEL sel)
-{
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"com.ashman.lockinfo.ClockPlugin.updateTime" object:nil];
-        __undimScreen(self, sel);
-}
 
 @interface ClockHeaderView : UIView
 
@@ -31,13 +25,6 @@ MSHook(void, _undimScreen, id self, SEL sel)
 @implementation ClockHeaderView
 
 @synthesize time, date, ampm, alignBottom;
-
--(void) setFrame:(CGRect) f
-{
-	[super setFrame:f];
-	[self.time setNeedsDisplay];
-	[self.date setNeedsDisplay];
-}
 
 -(void) layoutSubviews
 {
@@ -80,7 +67,7 @@ MSHook(void, _undimScreen, id self, SEL sel)
 	df.dateFormat = (NSString*)UIDateFormatStringForFormatType(CFSTR("UIWeekdayNoYearDateFormat"));
 	NSString* newDate = [df stringFromDate:now];
 	self.date.text = newDate;
-
+    
 	if (self.ampm)
 	{
 		df.dateStyle = NSDateFormatterNoStyle;
@@ -92,7 +79,7 @@ MSHook(void, _undimScreen, id self, SEL sel)
 		df.dateFormat = (NSString*)UIDateFormatStringForFormatType(CFSTR("UINoAMPMTimeFormat"));
 		self.time.text = [df stringFromDate:now];
 	}
-
+    
 	[self setNeedsLayout];
 }
 
@@ -103,18 +90,18 @@ MSHook(void, _undimScreen, id self, SEL sel)
 	self.autoresizesSubviews = YES;
 	self.backgroundColor = [UIColor clearColor];
 	self.ampm = true;
-
+    
 	self.time = [[[objc_getClass("LILabel") alloc] initWithFrame:self.bounds] autorelease];
 	self.time.autoresizingMask = UIViewAutoresizingFlexibleRightMargin;
 	self.time.backgroundColor = [UIColor clearColor];
 	[self addSubview:self.time];
-
+    
 	self.date = [[[objc_getClass("LILabel") alloc] initWithFrame:self.bounds] autorelease];
 	self.date.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
 	self.date.textAlignment = UITextAlignmentRight;
 	self.date.backgroundColor = [UIColor clearColor];
 	[self addSubview:self.date];
-
+    
 	return self;
 }
 
@@ -139,9 +126,9 @@ MSHook(void, _undimScreen, id self, SEL sel)
 	NSCalendar* cal = [NSCalendar currentCalendar];
 	NSDateComponents* comps = [cal components:NSMinuteCalendarUnit | NSHourCalendarUnit | NSSecondCalendarUnit fromDate:now];
 	[self performSelector:@selector(updateTime) withObject:nil afterDelay:(60 - comps.second)];
-
+    
 	[self.header updateTime];
-
+    
 	if (self.calendar)
 		if (comps.hour == 0 && comps.minute == 0)
 			[self.calendar setDate:now];
@@ -153,13 +140,10 @@ MSHook(void, _undimScreen, id self, SEL sel)
 	self.plugin = plugin;
 	self.plugin.tableViewDataSource = self;
 	self.plugin.tableViewDelegate = self;
-
-	Class $SBAwayController = objc_getClass("SBAwayController");
-        Hook(SBAwayController, _undimScreen, _undimScreen);
-
-        NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
-        [center addObserver:self selector:@selector(updateTime) name:@"com.ashman.lockinfo.ClockPlugin.updateTime" object:nil];
-
+    
+    NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+    [center addObserver:self selector:@selector(updateTime) name:LIUndimScreenNotification object:nil];
+    
 	return self;
 }
 
@@ -171,64 +155,64 @@ MSHook(void, _undimScreen, id self, SEL sel)
 - (UIView *)tableView:(LITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
 	if (self.header == nil)
-		self.header = [[[ClockHeaderView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 25)] autorelease];
-
-	LIStyle* style = [[tableView.theme.headerStyle copy] autorelease];
+		self.header = [[[ClockHeaderView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 25)] autorelease];
+    
+	LIStyle* style = [[self.plugin.theme.headerStyle copy] autorelease];
 	style.font = [UIFont boldSystemFontOfSize:25];
 	self.header.time.style = style;
-
-	self.header.date.style = tableView.theme.headerStyle;
-
+    
+	self.header.date.style = self.plugin.theme.headerStyle;
+    
 	if (NSNumber* b = [self.plugin.preferences objectForKey:@"ShowAMPM"])
 		self.header.ampm = b.boolValue;
 	
 	if (NSNumber* ab = [self.plugin.preferences objectForKey:@"AlignBottom"])
 		self.header.alignBottom = ab.boolValue;
-
+    
 	[self updateTime];
-
+    
 	return self.header;
 }
 
 - (CGFloat) tableView:(LITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-        return (6 * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
+    return (6 * (tableView.theme.detailStyle.font.pointSize + 6)) + (tableView.theme.headerStyle.font.pointSize * 2) + 9;
 }
 
 - (NSInteger)tableView:(LITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-        return 1;
+    return 1;
 }
 
 - (UITableViewCell *)tableView:(LITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"LWCalendarCell"];
-
-        if (cell == nil)
-        {
-        	int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
-                cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:@"LWCalendarCell"] autorelease];
-
-                UIImage* marker = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LIClockTodayMarker", tableView.theme.sectionIconSet] ofType:@"png"]];
-                UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LICurrentMonth", tableView.theme.sectionIconSet] ofType:@"png"]];
-                CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) marker:marker jump:jump] autorelease];
-                scroll.tag = 9494;
+    
+    if (cell == nil)
+    {
+        int height = [self tableView:tableView heightForRowAtIndexPath:indexPath];
+        cell = [[[UITableViewCell alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) reuseIdentifier:@"LWCalendarCell"] autorelease];
+        
+        UIImage* marker = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LIClockTodayMarker", self.plugin.theme.sectionIconSet] ofType:@"png"]];
+        UIImage* jump = [UIImage li_imageWithContentsOfResolutionIndependentFile:[self.plugin.bundle pathForResource:[NSString stringWithFormat:@"%@_LICurrentMonth", self.plugin.theme.sectionIconSet] ofType:@"png"]];
+        CalendarScrollView* scroll = [[[CalendarScrollView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, height) marker:marker jump:jump] autorelease];
+        scroll.tag = 9494;
 		[scroll setDate:[NSDate date]];
-                self.calendar = scroll;
-
-                [cell.contentView addSubview:scroll];
+        self.calendar = scroll;
+        
+        [cell.contentView addSubview:scroll];
 	}
-
-        CalendarScrollView* scroll = [cell.contentView viewWithTag:9494];
-
-        BOOL showWeeks = NO;
-        if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowCalendarWeeks"])
-        	showWeeks = n.boolValue;
-
+    
+    CalendarScrollView* scroll = [cell.contentView viewWithTag:9494];
+    
+    BOOL showWeeks = NO;
+    if (NSNumber* n = [self.plugin.preferences objectForKey:@"ShowCalendarWeeks"])
+        showWeeks = n.boolValue;
+    
 	[scroll showWeeks:showWeeks];
-        [scroll setTheme:tableView.theme];
-
-        return cell;
+    [scroll setTheme:self.plugin.theme];
+    
+    return cell;
 }
 
 @end
