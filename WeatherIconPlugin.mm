@@ -405,7 +405,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 	{
 		NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:weather, @"weather", nil];
 		[self.dataCache setDictionary:dict];
-		[self performSelectorOnMainThread:@selector(updateWeatherViews) withObject:nil waitUntilDone:YES];
+		[self updateWeatherViews];
 		[self notifyLockInfo];
 		[self.updateLock unlock];
 	}
@@ -422,7 +422,7 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 -(void) updateOnUpdate:(NSNotification*) notif
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-	[self updateWeather:notif.userInfo];
+	[self performSelectorOnMainThread:@selector(updateWeather:) withObject:notif.userInfo waitUntilDone:YES];
 	[self.reloadCondition broadcast];
 	[pool release];
 }
@@ -436,8 +436,8 @@ extern "C" UIImage *_UIImageWithName(NSString *);
 
 	if (NSDictionary* current = [[objc_getClass("LibWeatherController") sharedInstance] currentCondition])
 	{
-//		NSLog(@"LI:Weather: Updating when view is ready");
-		[self updateWeather:current];
+        //		NSLog(@"LI:Weather: Updating when view is ready");
+        [self performSelectorOnMainThread:@selector(updateWeather:) withObject:current waitUntilDone:YES];
 	}
 
 	[pool release];
