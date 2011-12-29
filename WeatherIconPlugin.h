@@ -14,7 +14,7 @@
 @end
 
 
-@interface WeatherIconPlugin : NSObject <LIPluginController, LITableViewDelegate, UITableViewDataSource>
+@interface WeatherIconPlugin : UIViewController <LIPluginController, LITableViewDelegate, UITableViewDataSource>
 
 @property (nonatomic, retain) LIPlugin* plugin;
 @property (nonatomic, retain) NSMutableDictionary* iconCache;

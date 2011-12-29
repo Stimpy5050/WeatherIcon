@@ -68,12 +68,17 @@
     NSDateComponents* comps = [cal components:NSHourCalendarUnit | NSMinuteCalendarUnit | NSSecondCalendarUnit fromDate:now];
     [self performSelector:@selector(updateTime) withObject:nil afterDelay:(60 - comps.second)];
     
-    
 	[self _updateTime];
     
 	if (self.calendarScrollView)
 		if (comps.hour == 0 && comps.minute == 0)
 			[self.calendarScrollView setDate:now];
+}
+
+-(void) viewWillAppear:(BOOL) animated
+{
+    [super viewWillAppear:animated];
+    [self updateTime];
 }
 
 -(void) notifyLockInfo
@@ -86,7 +91,7 @@
 	[super updateWeatherViews];
     
 	if (self.headerView == nil)
-		self.headerView = [self createHeaderView];
+		self.headerView = self.view;
     
 	[self updateTime];
 }
@@ -174,6 +179,11 @@
 -(LockHeaderView*) createHeaderView
 {
 	return nil;
+}
+
+-(void) loadView
+{
+    self.view = [self createHeaderView];
 }
 
 -(UIView*) tableView:(LITableView*) tableView viewForHeaderInSection:(NSInteger) section
