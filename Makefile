@@ -1,30 +1,33 @@
-CC=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-gcc-4.2.1
-CPP=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-g++-4.2.1
+SDK_PATH=/XCode4.1
+CC=$(SDK_PATH)/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-gcc-4.0.1
+CPP=$(SDK_PATH)/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin10-g++-4.0.1
 LD=$(CC)
 
 SDKVER=4.2
-SDK=/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
-LDFLAGS=	-framework Foundation \
-		-framework UIKit \
-		-framework CoreFoundation \
-		-framework CoreGraphics \
-		-framework GraphicsServices \
-		-framework Preferences \
-		-L"$(SDK)/usr/lib" \
-	        -L$(SDK)/usr/lib/system \
-       		-L$(SDK)/var/lib \
-		-F"$(SDK)/System/Library/Frameworks" \
-		-F"$(SDK)/System/Library/PrivateFrameworks" \
-		-lsubstrate \
-		-lobjc 
+SDK=$(SDK_PATH)/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(SDKVER).sdk
+LDFLAGS=        -framework Foundation \
+                -framework UIKit \
+                -framework CoreFoundation \
+                -framework CoreGraphics \
+                -framework GraphicsServices \
+                -framework Preferences \
+                -L"$(SDK)/var/lib" \
+                -L"$(SDK)/usr/lib" \
+                -L"$(SDK)/usr/lib/system" \
+                -L"../Common" \
+                -F"$(SDK)/System/Library/Frameworks" \
+                -F"$(SDK)/System/Library/PrivateFrameworks" \
+                -lsubstrate \
+                -ldbacommon \
+                -lobjc
 
 CFLAGS= -I$(SDK)/var/include \
   -I/var/include \
-  -I../iphone/LockInfo/SDK/LockInfo \
   -I/var/include/gcc/darwin/4.0 \
+  -I../lockinfo/SDK/LockInfo \
   -I"$(SDK)/usr/include" \
-  -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/include" \
-  -I"/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/gcc/arm-apple-darwin9/4.0.1/include" \
+  -I"$(SDK_PATH)/Platforms/iPhoneOS.platform/Developer/usr/include" \
+  -I"$(SDK_PATH)/Platforms/iPhoneOS.platform/Developer/usr/lib/gcc/arm-apple-darwin10/4.0.1/include" \
   -DDEBUG -Diphoneos_version_min=2.0 -g
 
 Target=WeatherIcon.dylib

@@ -124,6 +124,7 @@
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
+		NSLog(@"Weather: Looking for daycode %@ at index %d", daycode, i);
 		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
 
 		[str drawInRect:CGRectOffset(r, (width * i), 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
