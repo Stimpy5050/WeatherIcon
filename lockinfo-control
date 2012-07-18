@@ -1,6 +1,6 @@
 Package: com.ashman.lockinfoweathericon
 Name: Weather Plugin for LockInfo (Native)
-Version: 1.5.0.7
+Version: 1.5.0.10
 Architecture: iphoneos-arm
 Description: Adds weather to your LockInfo screen including a six day forecast.
 Homepage: http://modmyi.com/info/lockinfoweathericon.php

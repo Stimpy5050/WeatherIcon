@@ -124,8 +124,10 @@
 		NSDictionary* day = [self.forecast objectAtIndex:i];
 		
 		NSNumber* daycode = [day objectForKey:@"daycode"];
-		NSLog(@"Weather: Looking for daycode %@ at index %d", daycode, i);
-		NSString* str = [[weekdays objectAtIndex:daycode.intValue] uppercaseString];
+
+		int daycodeInt = (daycode.intValue == 7 ? 0 : daycode.intValue);
+		NSLog(@"Weather: Looking for daycode %d at index %d", daycodeInt, i);
+		NSString* str = [[weekdays objectAtIndex:daycodeInt] uppercaseString];
 
 		[str drawInRect:CGRectOffset(r, (width * i), 0) withLIStyle:self.theme.detailStyle lineBreakMode:UILineBreakModeClip alignment:UITextAlignmentCenter];
 	}
